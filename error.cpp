@@ -6,5 +6,5 @@
 void error_exit(const std::string& str)
 {
     std::cerr << str << ": " << strerror(errno) << std::endl;
-    exit(1);
+    exit(errno);
 }

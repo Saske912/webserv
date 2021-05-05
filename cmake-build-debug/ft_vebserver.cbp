@@ -89,6 +89,9 @@
 		<Unit filename="/Users/pfile/webserv/main.cpp">
 			<Option target="ft_vebserver"/>
 		</Unit>
+		<Unit filename="/Users/pfile/webserv/server.cpp">
+			<Option target="ft_vebserver"/>
+		</Unit>
 		<Unit filename="/Users/pfile/webserv/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>

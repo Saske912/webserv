@@ -1,6 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/ft_vebserver.dir/error.cpp.o"
   "CMakeFiles/ft_vebserver.dir/main.cpp.o"
+  "CMakeFiles/ft_vebserver.dir/server.cpp.o"
   "ft_vebserver"
   "ft_vebserver.pdb"
 )

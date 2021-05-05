@@ -7,3 +7,6 @@ CMakeFiles/ft_vebserver.dir/error.cpp.o
 CMakeFiles/ft_vebserver.dir/main.cpp.o
  /Users/pfile/webserv/header.h
  /Users/pfile/webserv/main.cpp
+CMakeFiles/ft_vebserver.dir/server.cpp.o
+ /Users/pfile/webserv/header.h
+ /Users/pfile/webserv/server.cpp

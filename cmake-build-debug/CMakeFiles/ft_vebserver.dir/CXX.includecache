@@ -6,10 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/Users/pfile/webserv/error.cpp
-header.h
-/Users/pfile/webserv/header.h
-
 /Users/pfile/webserv/header.h
 iostream
 -
@@ -25,6 +21,10 @@ string
 -
 
 /Users/pfile/webserv/main.cpp
+header.h
+/Users/pfile/webserv/header.h
+
+/Users/pfile/webserv/server.cpp
 header.h
 /Users/pfile/webserv/header.h
 

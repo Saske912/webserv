@@ -3,4 +3,4 @@ project(ft_vebserver)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(ft_vebserver main.cpp header.h error.cpp)
+add_executable(ft_vebserver main.cpp header.h error.cpp server.cpp)

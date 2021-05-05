@@ -2,19 +2,21 @@
 
 int main( )
 {
-    int     fd;
-    struct sockaddr_in addr;
-    std::string     ip = "192.168.1.45";
-//    struct sockaddr addr2;
+    struct sockaddr_in  addr;
+    socklen_t           addrlen;
+    struct timeval      tv;
+    int                 fd;
+    int                 sock;
 
-//    fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_TCP);
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd == -1)
-        error_exit("bind error");
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    tv.tv_sec = 3;
+    tv.tv_usec = 500000;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1024);
-//    addr.sin_addr.s_addr = htonl(ip.c_str());
-    addr.sin_addr.s_addr = inet_addr(ip.c_str());
-    if (-1 == bind(fd, (struct sockaddr*)&addr, sizeof(addr)))
-        error_exit("fail to bind IP");
+    addr.sin_port = htons(12024);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addrlen = sizeof(addr);
+    if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
+        error_exit("fail to Connect");
+    fd = server(reinterpret_cast<sockaddr *>(&addr), &addrlen);
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
