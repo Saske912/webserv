@@ -142,6 +142,33 @@ ft_vebserver/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ft_vebserver.dir/build.make CMakeFiles/ft_vebserver.dir/build
 .PHONY : ft_vebserver/fast
 
+error.o: error.cpp.o
+
+.PHONY : error.o
+
+# target to build an object file
+error.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ft_vebserver.dir/build.make CMakeFiles/ft_vebserver.dir/error.cpp.o
+.PHONY : error.cpp.o
+
+error.i: error.cpp.i
+
+.PHONY : error.i
+
+# target to preprocess a source file
+error.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ft_vebserver.dir/build.make CMakeFiles/ft_vebserver.dir/error.cpp.i
+.PHONY : error.cpp.i
+
+error.s: error.cpp.s
+
+.PHONY : error.s
+
+# target to generate assembly for a file
+error.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ft_vebserver.dir/build.make CMakeFiles/ft_vebserver.dir/error.cpp.s
+.PHONY : error.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -178,6 +205,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... ft_vebserver"
+	@echo "... error.o"
+	@echo "... error.i"
+	@echo "... error.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

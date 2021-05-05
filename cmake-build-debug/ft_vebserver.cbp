@@ -80,6 +80,12 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/Users/pfile/webserv/error.cpp">
+			<Option target="ft_vebserver"/>
+		</Unit>
+		<Unit filename="/Users/pfile/webserv/header.h">
+			<Option target="ft_vebserver"/>
+		</Unit>
 		<Unit filename="/Users/pfile/webserv/main.cpp">
 			<Option target="ft_vebserver"/>
 		</Unit>
