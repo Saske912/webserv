@@ -1,7 +1,7 @@
 //
 // Created by Pamula File on 5/5/21.
 //
-#include "header.h"
+#include "../header.h"
 
 void error_exit(const std::string& str)
 {

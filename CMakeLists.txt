@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
-project(ft_vebserver)
+project(webserv)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(ft_vebserver main.cpp header.h error.cpp server.cpp)
+add_executable(webserv serverf/main.cpp header.h source/error.cpp clientf/main.cpp)

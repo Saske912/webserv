@@ -10,10 +10,11 @@
 #include <arpa/inet.h>
 #include <cstdio>
 #include <string>
+#include <fcntl.h>
+#include <unistd.h>
 #define QUEUE 16
 
 void error_exit(const std::string& str);
-int server(sockaddr *addr, socklen_t *addrlen);
 
 #define HEADER_H
 
