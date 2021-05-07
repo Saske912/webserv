@@ -21,6 +21,8 @@ int main(void)
 
     if ((host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         error_exit("bind error");
+    int opt = 1;
+    setsockopt(host, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (bind(host, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == -1)
         error_exit("fail to bind IP");
     if (listen(host, QUEUE) == -1)
@@ -65,8 +67,7 @@ int main(void)
             fcntl( client, F_SETFL, O_NONBLOCK);
             if ( FD_ISSET(*it, &t.read))
             {
-               rd = recv( client, buf, 1024, 0);
-                buf[rd] = 0;
+                rd = recv( client, buf, 1024, 0);
                 std::cout << buf  << std::endl;
                 if (rd == -1)
                 {
