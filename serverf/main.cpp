@@ -39,6 +39,10 @@ int main(void)
             FD_SET(*it, &t.write);             //if we have data to send
             it++;
         }
+//        if (!set.size())
+//            max_d = host;
+//        else
+//            max_d = *set.rbegin() > host ? *set.rbegin() : host;
         if ((ret = select(*set.rbegin() + 1, &t.read, &t.write, NULL, &tv)) < 1)
         {
             if (errno != EINTR)
@@ -64,21 +68,22 @@ int main(void)
         it = set.begin();
         while (it != set.end())
         {
-            fcntl( client, F_SETFL, O_NONBLOCK);
+            fcntl( *it, F_SETFL, O_NONBLOCK);
             if ( FD_ISSET(*it, &t.read))
             {
-                rd = recv( client, buf, 1024, 0);
-                std::cout << buf  << std::endl;
-                if (rd == -1)
+                while ((rd = recv( *it, buf, 1024, 0)) > 0)
                 {
-                    std::cout << "error here"  << std::endl;
+                    buf[rd] = 0;
+                    std::cout << buf;
                 }
-//                set.erase(client);
-                std::cout << std::endl;
+                if (rd == 0)
+                {
+                    set.erase(*it);
+                }
             }
             if ( FD_ISSET(*it, &t.write))
             {
-                send( client, "HTTP/1.1 200 OK\n", 16, 0);
+                send( (*it), "HTTP/1.1 200 OK\n", 16, 0);
             }
             it++;
         }

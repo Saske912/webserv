@@ -20,7 +20,7 @@ int main( )
     while ( true )
     {
         sleep(2);
-        send(sock, "he", 2, 0);
+        send(sock, "he\n", 3, 0);
     }
 //    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
