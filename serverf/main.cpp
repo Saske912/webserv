@@ -67,12 +67,22 @@ int main(void)
             if (( client = accept( host, &ad, &adlen)) == -1)
                 error_exit("fail to accept Client");
             fcntl( client, F_SETFL, O_NONBLOCK);
+            opt = 1;
+            setsockopt(client, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
             set.insert(client);
         }
         it = set.begin();
         while (it != set.end())
         {
 //            fcntl( *it, F_SETFL, O_NONBLOCK);
+            adlen = sizeof(opt);
+            getsockopt(*it, SOL_SOCKET, SO_KEEPALIVE, &opt, &adlen);
+            if (!opt)
+            {
+                std::cout << "catch"  << std::endl;
+                set.erase(it);
+                continue;
+            }
             if ( FD_ISSET(*it, &t.read))
             {
                 while ((rd = recv( *it, buf, 1024, 0)) > 0)
