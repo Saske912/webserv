@@ -17,7 +17,7 @@ int main(void)
     timeval             tv = init_timevals();
     std::set<int>      set;
     int                 ret;
-//    int                 max_d;
+    int                 max_d;
 
     if ((host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         error_exit("bind error");
@@ -30,7 +30,7 @@ int main(void)
     while (true)
     {
         t = init_fd_sets();
-        set.insert(host);
+//        set.insert(host);
         FD_SET(host, &t.read);
         std::set<int>::iterator it = set.begin();
         while ( it != set.end())
@@ -39,24 +39,28 @@ int main(void)
             FD_SET(*it, &t.write);             //if we have data to send
             it++;
         }
-//        if (!set.size())
-//            max_d = host;
-//        else
-//            max_d = *set.rbegin() > host ? *set.rbegin() : host;
-        if ((ret = select(*set.rbegin() + 1, &t.read, &t.write, NULL, &tv)) < 1)
+        if (set.empty())
         {
-            if (errno != EINTR)
-                error_exit("error in select");
-            else
-            {
-                //signal income
-            }
-            continue;
+            max_d = host;
         }
-        if (!ret)
+        else
         {
-            //timeout
-            continue;
+            max_d = *set.rbegin() > host ? *set.rbegin() : host;
+            if ((ret = select(max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
+            {
+                if (errno != EINTR)
+                    error_exit("error in select");
+                else
+                {
+                    //signal income
+                }
+                continue;
+            }
+            if (!ret)
+            {
+                //timeout
+                continue;
+            }
         }
         if ( FD_ISSET(host, &t.read))
         {
@@ -68,7 +72,7 @@ int main(void)
         it = set.begin();
         while (it != set.end())
         {
-            fcntl( *it, F_SETFL, O_NONBLOCK);
+//            fcntl( *it, F_SETFL, O_NONBLOCK);
             if ( FD_ISSET(*it, &t.read))
             {
                 while ((rd = recv( *it, buf, 1024, 0)) > 0)
@@ -79,6 +83,7 @@ int main(void)
                 if (rd == 0)
                 {
                     set.erase(*it);
+                    break;
                 }
             }
             if ( FD_ISSET(*it, &t.write))
