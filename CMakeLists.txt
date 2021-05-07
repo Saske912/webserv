@@ -3,4 +3,4 @@ project(webserv)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(webserv serverf/main.cpp header.h source/error.cpp clientf/main.cpp)
+add_executable(webserv serverf/main.cpp header.h source/error.cpp source/init.cpp source/add.cpp)

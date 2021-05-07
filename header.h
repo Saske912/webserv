@@ -13,8 +13,23 @@
 #include <fcntl.h>
 #include <unistd.h>
 #define QUEUE 16
+#define MAXFD 1024
+#define TVS 320000
+#define TVMS 0
+#define BUFSIZE 1024
 
-void error_exit(const std::string& str);
+typedef struct  s_data
+{
+    fd_set  read;
+    fd_set  write;
+    fd_set  emerg;
+}               t_data;
+
+void        error_exit(const std::string& str);
+t_data      init_fd_sets(void);
+sockaddr_in init_host_addr(void);
+timeval     init_timevals(void);
+void        add_fd_to_set(int fd, t_data *t);
 
 #define HEADER_H
 
