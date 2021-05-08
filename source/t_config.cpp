@@ -34,15 +34,26 @@ void t_config::set_port( unsigned int port ) {
     _port = port;
 }
 
-std::string t_config::get_server_name( ) {
-    return _server_name;
+std::list<std::string> t_config::get_server_name( ) {
+    return _server_names;
 }
 
-void t_config::set_server_name( const std::string &server_name ) {
-    _server_name = server_name;
+void t_config::set_server_name( const std::list<std::string> &server_name ) {
+    _server_names = server_name;
 }
 
 t_config::t_config( const std::string  &host, unsigned int port,
      const std::list<std::string >& error_page, long int client_body_size) :
-    _host(host), _port(port), _error_page(error_page), _client_body_size(client_body_size) {
+    _host(host), _port(port), _error_pages(error_page), _client_body_size(client_body_size) {
+}
+
+std::string t_config::get_path_to_request( const std::string &request ) {
+    std::list<route>::iterator it = _rout.begin();
+    while (it != _rout.end())
+    {
+        if (!(*it).check_name(request))
+            return (*it).swap_path(request);
+        it++;
+    }
+    return NULL;
 }

@@ -6,6 +6,7 @@
 #define T_CONFIG_HPP
 #include <string>
 #include <list>
+#include "route.hpp"
 
 class t_config {
 public:
@@ -14,23 +15,23 @@ public:
     ~t_config();
     t_config( void );
     t_config( t_config const &src );
-
     t_config &operator=( t_config const &src );
     std::string     get_host();
     void            set_host(std::string  const & host);
     unsigned int    get_port();
     void            set_port(unsigned int port);
-    std::string     get_server_name();
-    void            set_server_name(std::string  const & server_name);
+    std::list<std::string>     get_server_name();
+    void            set_server_name(std::list<std::string>  const & server_name);
+    std::string     get_path_to_request(std::string const & request);
 
 protected:
 private:
     std::string             _host;
     unsigned int            _port;
-    std::string             _server_name;
-    std::list<std::string>  _error_page;
+    std::list<std::string>  _server_names;
+    std::list<std::string>  _error_pages;
     long int                _client_body_size;
-    std::list<route>        _routs
+    std::list<route>        _rout;
 };
 
 
