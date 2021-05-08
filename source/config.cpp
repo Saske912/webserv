@@ -3,7 +3,7 @@
 //
 #include "../header.h"
 
-t_config    default_config(void)
-{
-
-}
+//t_config    default_config(void)
+//{
+//    return NULL;
+//}

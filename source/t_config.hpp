@@ -23,14 +23,13 @@ public:
     std::list<std::string>     get_server_name();
     void            set_server_name(std::list<std::string>  const & server_name);
     std::string     get_path_to_request(std::string const & request);
-
+    long int                _client_body_size;
 protected:
 private:
     std::string             _host;
     unsigned int            _port;
     std::list<std::string>  _server_names;
     std::list<std::string>  _error_pages;
-    long int                _client_body_size;
     std::list<route>        _rout;
 };
 

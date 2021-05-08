@@ -9,7 +9,7 @@
 
 class route {
 public:
-    route( void );
+    route(std::string const & name, std::string const & path) : _name(name), _path(path) {};
 
     ~route( void );
 
@@ -18,12 +18,13 @@ public:
     route &operator=( route const &src );
     bool            check_name(std::string const & request);
     std::string     swap_path(std::string const & request);
-
+    bool                    _autoindex;
 private:
-    std::pair<std::string const & , std::string const & >   _name_path;
-    std::list<std::string>                                  _http_methods;
-    bool                                                    _autoindex;
-    std::string                                             _default_page;
+    route( );
+    std::string             _name;
+    std::string             _path;
+    std::list<std::string>  _http_methods;
+    std::string             _default_page;
 };
 
 

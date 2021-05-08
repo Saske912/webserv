@@ -14,8 +14,8 @@ int main(int ac, char *av[])
 
 //    if (ac == 2)
 //        parse_config(av[1]);
-    if (ac == 1)
-        *conf.begin() = default_config();
+//    if (ac == 1)
+//        *conf.begin() = default_config();
     serv = init_serv();
     loop(tv, serv, t);
     return (0);

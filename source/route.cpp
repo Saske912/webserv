@@ -18,10 +18,10 @@ route &route::operator=( route const &src ) {
 }
 
 bool route::check_name( const std::string &request ) {
-    return (strncmp(_name_path.first.c_str(), request.c_str(), strlen(_name_path.first.c_str())));
+    return (strncmp(_name.c_str(), request.c_str(), strlen(_name.c_str())));
 }
 
 std::string route::swap_path( const std::string &request ) {
-    std::string tmp = request.substr(reinterpret_cast<unsigned long >(strlen(_name_path.first.c_str())), request.length());
-    return tmp += _name_path.second;
+    std::string tmp = request.substr(reinterpret_cast<unsigned long >(strlen(_name.c_str())), request.length());
+    return tmp += _path;
 }
