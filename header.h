@@ -8,11 +8,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <cstdio>
+//#include <cstdio>
 #include <string>
 #include <fcntl.h>
 #include <unistd.h>
+#include <cstring>
 #include <set>
+#include "source/t_config.hpp"
+
 #define QUEUE 16
 #define MAXFD 1024
 #define TVS 320000
@@ -44,18 +47,13 @@ typedef struct  s_client
         socklen_t           adlen;
 }               t_client;
 
-typedef struct  s_config
-{
-    int     conf;
-}               t_config;
-
 void        error_exit(const std::string& str);
 t_data      init_fd_sets(void);
 sockaddr_in init_host_addr(void);
 timeval     init_timevals(void);
-void        add_fd_to_set(int fd, t_data *t);
 t_serv      init_serv(void);
 void        loop(timeval &tv, t_serv &serv, t_data &t);
+t_config    default_config(void);
 
 #define HEADER_H
 

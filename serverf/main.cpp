@@ -3,22 +3,20 @@
 //
 #include "../header.h"
 
-
 int main(int ac, char *av[])
 {
-    (void)ac;
     (void)av;
+    (void)ac;
     t_data              t;
     t_serv              serv;
     timeval             tv = init_timevals();
-//    t_config            conf;
+    std::list<t_config> conf;
 
 //    if (ac == 2)
 //        parse_config(av[1]);
-//    else if (ac == 1)
-//    conf = default_config();
+    if (ac == 1)
+        *conf.begin() = default_config();
     serv = init_serv();
     loop(tv, serv, t);
     return (0);
 }
-
