@@ -3,16 +3,11 @@
 //
 #include "../header.h"
 
-int main(void)
+void    loop(timeval &tv, t_serv &serv, t_data &t)
 {
-    t_data              t;
-    int                 ret;
-    t_serv              serv;
     t_client            cli;
     std::set<int>       set;
-    timeval             tv = init_timevals();
 
-    serv = init_serv();
     while (true)
     {
         t = init_fd_sets();
@@ -31,19 +26,22 @@ int main(void)
         else
         {
             t.max_d = *set.rbegin() > serv.host ? *set.rbegin() : serv.host;
-            if ((ret = select(t.max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
+            if ((t.ret = select(t.max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
             {
                 if (errno != EINTR)
                     error_exit("error in select");
                 else
                 {
                     //signal income
+                    return;
                 }
+//                loop(tv, serv, t, cli, set);
                 continue;
             }
-            if (!ret)
+            if (!t.ret)
             {
                 //timeout
+//                loop(tv, serv, t, cli, set);
                 continue;
             }
         }
@@ -59,7 +57,6 @@ int main(void)
         it = set.begin();
         while (it != set.end())
         {
-//            fcntl( *it, F_SETFL, O_NONBLOCK);
             cli.adlen = sizeof(serv.opt);
             getsockopt(*it, SOL_SOCKET, SO_KEEPALIVE, &serv.opt, &cli.adlen);
             if (!serv.opt)
@@ -87,7 +84,18 @@ int main(void)
             }
             it++;
         }
+//    loop(tv, serv, t, cli, set);
     }
+}
+
+int main(void)
+{
+    t_data              t;
+    t_serv              serv;
+    timeval             tv = init_timevals();
+
+    serv = init_serv();
+    loop(tv, serv, t);
     return (0);
 }
 
