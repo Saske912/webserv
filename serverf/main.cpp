@@ -2,36 +2,21 @@
 // Created by Pamula File on 5/5/21.
 //
 #include "../header.h"
-#include <set>
 
 int main(void)
 {
-    int                 host;
-    sockaddr_in         addr = init_host_addr();
-    int client = 0;
-    sockaddr            ad;
-    socklen_t           adlen;
     t_data              t;
-    char                buf[BUFSIZE];
-    long int            rd;
-    timeval             tv = init_timevals();
-    std::set<int>      set;
     int                 ret;
-    int                 max_d;
+    t_serv              serv;
+    t_client            cli;
+    std::set<int>       set;
+    timeval             tv = init_timevals();
 
-    if ((host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        error_exit("bind error");
-    int opt = 1;
-    setsockopt(host, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    if (bind(host, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == -1)
-        error_exit("fail to bind IP");
-    if (listen(host, QUEUE) == -1)
-        error_exit("listening error");
+    serv = init_serv();
     while (true)
     {
         t = init_fd_sets();
-//        set.insert(host);
-        FD_SET(host, &t.read);
+        FD_SET(serv.host, &t.read);
         std::set<int>::iterator it = set.begin();
         while ( it != set.end())
         {
@@ -41,12 +26,12 @@ int main(void)
         }
         if (set.empty())
         {
-            max_d = host;
+            t.max_d = serv.host;
         }
         else
         {
-            max_d = *set.rbegin() > host ? *set.rbegin() : host;
-            if ((ret = select(max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
+            t.max_d = *set.rbegin() > serv.host ? *set.rbegin() : serv.host;
+            if ((ret = select(t.max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
             {
                 if (errno != EINTR)
                     error_exit("error in select");
@@ -62,22 +47,22 @@ int main(void)
                 continue;
             }
         }
-        if ( FD_ISSET(host, &t.read))
+        if ( FD_ISSET(serv.host, &t.read))
         {
-            if (( client = accept( host, &ad, &adlen)) == -1)
+            if (( cli.client = accept( serv.host, &cli.ad, &cli.adlen)) == -1)
                 error_exit("fail to accept Client");
-            fcntl( client, F_SETFL, O_NONBLOCK);
-            opt = 1;
-            setsockopt(client, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
-            set.insert(client);
+            fcntl( cli.client, F_SETFL, O_NONBLOCK);
+            serv.opt = 1;
+            setsockopt(cli.client, SOL_SOCKET, SO_KEEPALIVE, &serv.opt, sizeof(serv.opt));
+            set.insert(cli.client);
         }
         it = set.begin();
         while (it != set.end())
         {
 //            fcntl( *it, F_SETFL, O_NONBLOCK);
-            adlen = sizeof(opt);
-            getsockopt(*it, SOL_SOCKET, SO_KEEPALIVE, &opt, &adlen);
-            if (!opt)
+            cli.adlen = sizeof(serv.opt);
+            getsockopt(*it, SOL_SOCKET, SO_KEEPALIVE, &serv.opt, &cli.adlen);
+            if (!serv.opt)
             {
                 std::cout << "catch"  << std::endl;
                 set.erase(it);
@@ -85,12 +70,12 @@ int main(void)
             }
             if ( FD_ISSET(*it, &t.read))
             {
-                while ((rd = recv( *it, buf, 1024, 0)) > 0)
+                while ((t.rd = recv( *it, t.buf, 1024, 0)) > 0)
                 {
-                    buf[rd] = 0;
-                    std::cout << buf;
+                    t.buf[t.rd] = 0;
+                    std::cout << t.buf;
                 }
-                if (rd == 0)
+                if (t.rd == 0)
                 {
                     set.erase(*it);
                     break;
@@ -102,7 +87,6 @@ int main(void)
             }
             it++;
         }
-//        set.clear();
     }
     return (0);
 }

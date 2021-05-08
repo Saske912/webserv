@@ -31,3 +31,19 @@ timeval init_timevals(void)
     tv.tv_sec = TVS;
     return  tv;
 }
+
+t_serv  init_serv(void)
+{
+    t_serv              serv;
+
+    serv.addr = init_host_addr();
+    if ((serv.host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        error_exit("bind error");
+    serv.opt = 1;
+    setsockopt(serv.host, SOL_SOCKET, SO_REUSEADDR, &serv.opt, sizeof(serv.opt));
+    if (bind(serv.host, reinterpret_cast<sockaddr *>(&serv.addr), sizeof(serv.addr)) == -1)
+        error_exit("fail to bind IP");
+    if (listen(serv.host, QUEUE) == -1)
+        error_exit("listening error");
+    return serv;
+}

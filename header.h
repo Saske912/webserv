@@ -12,6 +12,7 @@
 #include <string>
 #include <fcntl.h>
 #include <unistd.h>
+#include <set>
 #define QUEUE 16
 #define MAXFD 1024
 #define TVS 320000
@@ -23,13 +24,32 @@ typedef struct  s_data
     fd_set  read;
     fd_set  write;
     fd_set  emerg;
+    char    buf[BUFSIZE];
+    int                 max_d;
+    long int            rd;
+    int                 ret;
 }               t_data;
+
+typedef struct  s_serv
+{
+    int                 host;
+    sockaddr_in         addr;
+    int                 opt;
+}               t_serv;
+
+typedef struct  s_client
+{
+        int                 client;
+        sockaddr            ad;
+        socklen_t           adlen;
+}               t_client;
 
 void        error_exit(const std::string& str);
 t_data      init_fd_sets(void);
 sockaddr_in init_host_addr(void);
 timeval     init_timevals(void);
 void        add_fd_to_set(int fd, t_data *t);
+t_serv      init_serv(void);
 
 #define HEADER_H
 
