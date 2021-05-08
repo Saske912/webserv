@@ -52,14 +52,12 @@ void    loop(timeval &tv, t_serv &serv, t_data &t)
                 error_exit("fail to accept Client");
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
-            setsockopt(cli.client, SOL_SOCKET, SO_KEEPALIVE, &serv.opt, sizeof(serv.opt));
+            setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
             set.insert(cli.client);
         }
         it = set.begin();
         while (it != set.end())
         {
-            cli.adlen = sizeof(serv.opt);
-            getsockopt(*it, SOL_SOCKET, SO_KEEPALIVE, &serv.opt, &cli.adlen);
             if (!serv.opt)
             {
                 std::cout << "catch"  << std::endl;
