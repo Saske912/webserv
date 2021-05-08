@@ -6,7 +6,7 @@ int main( )
     socklen_t           addrlen;
 //    struct timeval      tv;
     int                 sock;
-    std::string     ip = "10.21.21.134";
+    std::string     ip = "10.21.22.63";
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
 //    tv.tv_sec = 3;
