@@ -30,6 +30,33 @@ static void	communication_with_clients(std::set<int> &set, t_data &t)
         }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static int	Select(std::set<int> &set, t_data &t, timeval &tv, t_serv &serv)
 {
 	if (set.empty())

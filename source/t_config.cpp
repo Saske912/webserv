@@ -18,7 +18,7 @@ t_config &t_config::operator=( t_config const &src ) {
     return *this;
 }
 
-std::string t_config::get_host( ) {
+std::string t_config::get_host( ) const {
     return _host;
 }
 
@@ -26,7 +26,7 @@ void t_config::set_host( const std::string &host ) {
     _host = host;
 }
 
-unsigned int t_config::get_port( ) {
+unsigned int t_config::get_port( ) const {
     return _port;
 }
 
@@ -34,7 +34,7 @@ void t_config::set_port( unsigned int port ) {
     _port = port;
 }
 
-std::list<std::string> t_config::get_server_name( ) {
+std::list<std::string> t_config::get_server_names( ) const {
     return _server_names;
 }
 
@@ -48,12 +48,20 @@ t_config::t_config( const std::string  &host, unsigned int port,
 }
 
 std::string t_config::get_path_to_request( const std::string &request ) {
-    std::list<route>::iterator it = _rout.begin();
-    while (it != _rout.end())
+    std::list<route>::iterator it = _routs.begin();
+    while (it != _routs.end())
     {
         if (!(*it).check_name(request))
             return (*it).swap_path(request);
         it++;
     }
     return NULL;
+}
+
+std::list<std::string> t_config::get_error_pages( ) const {
+    return _error_pages;
+}
+
+void t_config::set_error_pages( const std::list<std::string> &err_pages ) {
+    _error_pages = err_pages;
 }

@@ -17,7 +17,6 @@
 #include "source/t_config.hpp"
 
 #define QUEUE 16
-#define MAXFD 1024
 #define TVS 320000
 #define TVMS 0
 #define BUFSIZE 1024

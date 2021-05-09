@@ -16,21 +16,23 @@ public:
     t_config( void );
     t_config( t_config const &src );
     t_config &operator=( t_config const &src );
-    std::string     get_host();
+    std::string     get_host() const;
     void            set_host(std::string  const & host);
-    unsigned int    get_port();
+    unsigned int    get_port() const;
     void            set_port(unsigned int port);
-    std::list<std::string>     get_server_name();
+    std::list<std::string>     get_server_names() const;
     void            set_server_name(std::list<std::string>  const & server_name);
     std::string     get_path_to_request(std::string const & request);
     long int                _client_body_size;
+    std::list<std::string >     get_error_pages() const;
+    void                        set_error_pages(std::list<std::string> const & err_pages);
 protected:
 private:
     std::string             _host;
     unsigned int            _port;
     std::list<std::string>  _server_names;
     std::list<std::string>  _error_pages;
-    std::list<route>        _rout;
+    std::list<route>        _routs;
 };
 
 
