@@ -17,6 +17,9 @@
 #include <set>
 #include "source/server.hpp"
 #include <algorithm>
+#include "pfile.h"
+#include "wpersimm.h"
+#include "itressa.h"
 extern "C"
 {
 	#include "libft/libft.h"
