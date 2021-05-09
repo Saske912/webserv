@@ -5,4 +5,9 @@
 #ifndef WPERSIMM_H
 #define WPERSIMM_H
 
+extern "C"
+{
+#include "libft/libft.h"
+}
+
 #endif //WPERSIMM_H

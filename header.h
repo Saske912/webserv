@@ -20,10 +20,6 @@
 #include "pfile.h"
 #include "wpersimm.h"
 #include "itressa.h"
-extern "C"
-{
-	#include "libft/libft.h"
-}
 
 #define QUEUE 16
 #define TVS 320000
