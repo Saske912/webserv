@@ -34,6 +34,7 @@ private:
     std::string             _root;
     std::list<std::string>  _http_methods;
     std::string             _default_page;
+    std::pair<std::string, std::string>     _sgi; // first - extension, second - filename
     bool                    _autoindex;
 };
 

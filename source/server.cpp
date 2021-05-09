@@ -2,17 +2,17 @@
 // Created by Pamula File on 5/8/21.
 //
 
-#include "t_config.hpp"
+#include "server.hpp"
 
-t_config::t_config( void ) { }
+server::server( void ) { }
 
-t_config::~t_config( void ) { }
+server::~server( void ) { }
 
-t_config::t_config( t_config const &src ) {
+server::server( server const &src ) {
     *this = src;
 }
 
-t_config &t_config::operator=( t_config const &src ) {
+server &server::operator=( server const &src ) {
     this->_host = src._host;
     this->_port = src._port;
     this->_routs = src._routs;
@@ -22,36 +22,36 @@ t_config &t_config::operator=( t_config const &src ) {
     return *this;
 }
 
-std::string t_config::get_host( ) const {
+std::string server::get_host( ) const {
     return _host;
 }
 
-void t_config::set_host( const std::string &host ) {
+void server::set_host( const std::string &host ) {
     _host = host;
 }
 
-unsigned int t_config::get_port( ) const {
+unsigned int server::get_port( ) const {
     return _port;
 }
 
-void t_config::set_port( unsigned int port ) {
+void server::set_port( unsigned int port ) {
     _port = port;
 }
 
-std::list<std::string> t_config::get_server_names( ) const {
+std::list<std::string> server::get_server_names( ) const {
     return _server_names;
 }
 
-void t_config::set_server_name( const std::list<std::string> &server_name ) {
+void server::set_server_name( const std::list<std::string> &server_name ) {
     _server_names = server_name;
 }
 
-t_config::t_config( const std::string  &host, unsigned int port,
+server::server( const std::string  &host, unsigned int port,
      const std::map<int, std::string >& error_pages, std::list<route> const & routs, long int client_body_size) :
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
 }
 
-std::string t_config::get_path_to_request( const std::string &request ) {
+std::string server::get_path_to_request( const std::string &request ) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
@@ -64,30 +64,30 @@ std::string t_config::get_path_to_request( const std::string &request ) {
     return NULL;
 }
 
-std::map<int, std::string> t_config::get_error_pages( ) const {
+std::map<int, std::string> server::get_error_pages( ) const {
     return _error_pages;
 }
 
-void t_config::set_error_pages( const std::map<int, std::string> &err_pages ) {
+void server::set_error_pages( const std::map<int, std::string> &err_pages ) {
     _error_pages = err_pages;
 }
 
-long int t_config::get_client_body_size( ) const {
+long int server::get_client_body_size( ) const {
     return _client_body_size;
 }
 
-std::list<route> t_config::get_routes( ) const {
+std::list<route> server::get_routes( ) const {
     return _routs;
 }
 
-std::string t_config::request_processing( const std::string &request, std::string const & def_file ) {
+std::string server::request_processing( const std::string &request, std::string const & def_file ) {
     if (is_file(request))
         return request;
     else
         return request + def_file;
 }
 
-bool t_config::is_file( std::string request ) {
+bool server::is_file( std::string request ) {
     int     ret;
     std::string::iterator it = request.begin();
 
@@ -104,4 +104,8 @@ bool t_config::is_file( std::string request ) {
         }
     }
     return false;
+}
+
+std::pair<std::string, std::string> server::split_request( const std::string &request ) {
+    int n = (int)request.find('?');
 }

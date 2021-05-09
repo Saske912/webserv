@@ -2,20 +2,20 @@
 // Created by Pamula File on 5/8/21.
 //
 
-#ifndef T_CONFIG_HPP
-#define T_CONFIG_HPP
+#ifndef SERVER_HPP
+#define SERVER_HPP
 #include <string>
 #include <list>
 #include <map>
 #include "route.hpp"
 
-class t_config {
+class server {
 public:
-    t_config(std::string  const & host, unsigned int port, const std::map<int, std::string>& error_pages,
+    server(std::string  const & host, unsigned int port, const std::map<int, std::string>& error_pages,
              std::list<route> const & routs, long int client_body_size = 1);
-    ~t_config();
-    t_config( t_config const &src );
-    t_config &operator=( t_config const &src );
+    ~server();
+    server( server const &src );
+    server &operator=( server const &src );
 
     std::string                 get_host() const;
     void                        set_host(std::string  const & host);
@@ -28,11 +28,12 @@ public:
     long int                    get_client_body_size() const;
     std::list<route>            get_routes() const;
 
-    std::string                 get_path_to_request(std::string const & request);
+    std::pair<std::string, std::string> split_request(std::string const & request);
 protected:
+    server();
     std::string                 request_processing(std::string const & request, std::string const & def_file);
-    t_config( void );
     bool                        is_file(std::string request);
+    std::string                 get_path_to_request(std::string const & request);
 private:
     std::string                 _host;
     unsigned int                _port;
@@ -43,4 +44,4 @@ private:
 };
 
 
-#endif //T_CONFIG_HPP
+#endif //SERVER_HPP
