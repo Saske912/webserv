@@ -1,5 +1,5 @@
 NAME = progs
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -Wall -Wextra -Werror -lft -Llibft 
 SERV = webserv
 CLI = client
 SRC_FLD = source/
@@ -9,7 +9,7 @@ SERV_SRC = ${SRC} serverf/main.cpp
 CLI_SRC = ${SRC} clientf/main.cpp
 
 ${NAME} : header.h
-	g++ ${FLAGS} ${SERV_SRC} -o ${SERV}
+	g++  ${FLAGS} ${SERV_SRC} -o ${SERV}
 	g++ ${FLAGS} ${CLI_SRC} -o ${CLI}
 
 all: ${NAME}

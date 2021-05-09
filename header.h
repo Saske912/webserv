@@ -18,6 +18,10 @@
 #include <set>
 #include <algorithm>
 #include "source/t_config.hpp"
+extern "C"
+{
+	#include "libft/libft.h"
+}
 
 #define QUEUE 16
 #define TVS 320000

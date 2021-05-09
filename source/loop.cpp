@@ -29,8 +29,8 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t)
 		}
 		if ( FD_ISSET((*it).fd, &t.write))
 		{
+			int fd;
 			send( (*it).fd, "HTTP/1.1 200 OK\n", 16, 0);
-			std::ifstream fd;
 			std::string string;
 			std::string string2;
 			struct stat stat;
@@ -40,16 +40,20 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t)
 		   	string += std::to_string(stat.st_size + 1);
 		  	str = (char *)string.c_str();
 			send( (*it).fd, str, strlen(str), 0);
-			fd.open("content/index.html", std::ios::in);
+			fd = open("content/index.html", O_RDONLY);
 			send((*it).fd, "\r\n\r\n", 4, 0);
-			while (!fd.eof())
+			while (get_next_line(fd, &str))
 			{
-				std::getline(fd, string);
-				string += "\n";
-		  		str = (char *)string.c_str();
 				send( (*it).fd, str, strlen(str), 0);
+				send( (*it).fd, "\n", 1, 0);
+				free(str);
+				str = 0;
 			}
-			fd.close();
+			send( (*it).fd, str, strlen(str), 0);
+			send( (*it).fd, "\n", 1, 0);
+			free(str);
+			str = 0;
+			close(fd);
 		}
 		it++;
 	}
