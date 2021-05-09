@@ -5,7 +5,9 @@
 #ifndef HEADER_H
 
 #include <iostream>
+#include <fstream>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 //#include <cstdio>
@@ -14,6 +16,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <set>
+#include <algorithm>
 #include "source/t_config.hpp"
 
 #define QUEUE 16
@@ -45,6 +48,12 @@ typedef struct  s_client
         sockaddr            ad;
         socklen_t           adlen;
 }               t_client;
+
+typedef struct	s_write
+{
+	int fd;
+	bool flag;
+}				t_write;
 
 void        error_exit(const std::string& str);
 t_data      init_fd_sets(void);
