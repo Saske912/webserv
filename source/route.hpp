@@ -11,21 +11,23 @@ class route {
 public:
     route(std::string const & name, std::string const & root, const std::list<std::string>& http_methods,
           bool autoindex = false, std::string const & def_page = "index.html");
-
     ~route( void );
-
     route( route const &src );
-
     route &operator=( route const &src );
+
     bool            check_name(std::string const & request);
     std::string     swap_path(std::string const & request);
-    std::string     get_default_page() const;
-    void            set_default_page(std::string const & page);
     void            autoindex_on();
     void            autoindex_off();
-    bool            get_autoindex() const;
-private:
+
+    std::string             get_default_page() const;
+    void                    set_default_page(std::string const & page);
+    bool                    get_autoindex() const;
+    std::list<std::string>  get_http_methods() const;
+    void                    set_http_methods(std::list<std::string> const & http_methods);
+protected:
     route( );
+private:
     std::string             _name;
     std::string             _root;
     std::list<std::string>  _http_methods;

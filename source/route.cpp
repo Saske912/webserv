@@ -49,3 +49,11 @@ void route::autoindex_off( ) {
 bool route::get_autoindex( ) const {
     return _autoindex;
 }
+
+std::list<std::string> route::get_http_methods( ) const {
+    return _http_methods;
+}
+
+void route::set_http_methods( const std::list<std::string> &http_methods ) {
+    _http_methods = http_methods;
+}

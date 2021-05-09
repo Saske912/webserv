@@ -43,8 +43,8 @@ void t_config::set_server_name( const std::list<std::string> &server_name ) {
 }
 
 t_config::t_config( const std::string  &host, unsigned int port,
-     const std::list<std::string >& error_page, long int client_body_size) :
-     _client_body_size(client_body_size),  _host(host), _port(port), _error_pages(error_page) {
+     const std::list<std::string >& error_page, std::list<route> const & routs, long int client_body_size) :
+     _host(host), _port(port), _error_pages(error_page), _routs(routs), _client_body_size(client_body_size) {
 }
 
 std::string t_config::get_path_to_request( const std::string &request ) {
@@ -64,4 +64,8 @@ std::list<std::string> t_config::get_error_pages( ) const {
 
 void t_config::set_error_pages( const std::list<std::string> &err_pages ) {
     _error_pages = err_pages;
+}
+
+long int t_config::get_client_body_size( ) const {
+    return _client_body_size;
 }
