@@ -17,7 +17,6 @@
 #include <set>
 #include "source/server.hpp"
 #include <algorithm>
-#include "source/t_config.hpp"
 extern "C"
 {
 	#include "libft/libft.h"
