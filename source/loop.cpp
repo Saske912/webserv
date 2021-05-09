@@ -30,33 +30,6 @@ static void	communication_with_clients(std::set<int> &set, t_data &t)
         }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static int	Select(std::set<int> &set, t_data &t, timeval &tv, t_serv &serv)
 {
 	if (set.empty())
@@ -88,12 +61,12 @@ static int	Select(std::set<int> &set, t_data &t, timeval &tv, t_serv &serv)
 	return (0);
 }
 
-void    loop(timeval &tv, t_serv &serv, t_data &t)
+void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<t_config> &conf)
 {
     t_client            cli;
     std::set<int>       set;
 	std::set<int>::iterator it;
-
+    (void)conf;
     while (true)
     {
         t = init_fd_sets();

@@ -51,7 +51,7 @@ t_data      init_fd_sets(void);
 sockaddr_in init_host_addr(void);
 timeval     init_timevals(void);
 t_serv      init_serv(void);
-void        loop(timeval &tv, t_serv &serv, t_data &t);
+void        loop(timeval &tv, t_serv &serv, t_data &t, std::list<t_config> &conf);
 t_config    default_config(void);
 
 #define HEADER_H

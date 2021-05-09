@@ -25,6 +25,7 @@ public:
     std::list<std::string >     get_error_pages() const;
     void                        set_error_pages(std::list<std::string> const & err_pages);
     long int                    get_client_body_size() const;
+    std::list<route>            get_routes() const;
 
     std::string                 get_path_to_request(std::string const & request);
 protected:

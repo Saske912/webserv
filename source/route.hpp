@@ -25,6 +25,8 @@ public:
     bool                    get_autoindex() const;
     std::list<std::string>  get_http_methods() const;
     void                    set_http_methods(std::list<std::string> const & http_methods);
+    std::string const &     get_name() const;
+    std::string const &     get_root() const;
 protected:
     route( );
 private:

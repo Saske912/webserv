@@ -15,6 +15,10 @@ t_config::t_config( t_config const &src ) {
 t_config &t_config::operator=( t_config const &src ) {
     this->_host = src._host;
     this->_port = src._port;
+    this->_routs = src._routs;
+    this->_client_body_size = src._client_body_size;
+//    this->_error_pages = src._error_pages;
+//    this->_server_names = src._server_names;
     return *this;
 }
 
@@ -68,4 +72,8 @@ void t_config::set_error_pages( const std::list<std::string> &err_pages ) {
 
 long int t_config::get_client_body_size( ) const {
     return _client_body_size;
+}
+
+std::list<route> t_config::get_routes( ) const {
+    return _routs;
 }
