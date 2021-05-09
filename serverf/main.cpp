@@ -16,17 +16,8 @@ int main(int ac, char *av[])
 //       conf =  parse_config(av[1]);
     if (ac == 1)
         conf.push_back(default_config());
-//    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
     serv = init_serv();
-    std::pair<std::string, std::string>     p;
-    try {
-        p = (*conf.begin()).split_request("http://yandex.ru/docs/index.php?method=GET,name=spoils");
-    }
-    catch (std::exception &e)
-    {
-        std::cout << "no request!"  << std::endl;
-    }
-    std::cout << p.first << " " << p.second  << std::endl;
+    tests(conf);
     loop(tv, serv, t, conf);
     return (0);
 }
