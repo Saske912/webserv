@@ -5,7 +5,6 @@
 #ifndef HEADER_H
 
 #include <iostream>
-#include <fstream>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <netinet/in.h>
@@ -16,6 +15,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <set>
+#include "source/server.hpp"
 #include <algorithm>
 #include "source/t_config.hpp"
 extern "C"
@@ -64,8 +64,8 @@ t_data      init_fd_sets(void);
 sockaddr_in init_host_addr(void);
 timeval     init_timevals(void);
 t_serv      init_serv(void);
-void        loop(timeval &tv, t_serv &serv, t_data &t, std::list<t_config> &conf);
-t_config    default_config(void);
+void        loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf);
+server    default_config(void);
 
 #define HEADER_H
 

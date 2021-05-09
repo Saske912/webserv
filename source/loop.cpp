@@ -91,7 +91,7 @@ static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
 	return (0);
 }
 
-void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<t_config> &conf)
+void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
 {
     t_client            cli;
     std::list<t_write>       set;
