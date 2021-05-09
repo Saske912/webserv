@@ -107,5 +107,10 @@ bool server::is_file( std::string request ) {
 }
 
 std::pair<std::string, std::string> server::split_request( const std::string &request ) {
+    std::pair<std::string, std::string> ret;
+
     int n = (int)request.find('?');
+    ret.second = request.substr(n + 1, request.length());
+    ret.first = get_path_to_request(request.substr(0, n));
+    return ret;
 }
