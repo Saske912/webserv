@@ -3,4 +3,27 @@ project(webserv)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(webserv serverf/main.cpp header.h source/error.cpp source/init.cpp source/loop.cpp source/config.cpp source/server.cpp source/server.hpp source/route.cpp source/route.hpp)
+include_directories(webserv source source/config .)
+
+add_executable(webserv
+        serverf/main.cpp
+        source/error.cpp
+        source/init.cpp
+        source/loop.cpp
+        source/default_config.cpp
+        source/server.cpp
+        source/server.hpp
+        source/route.cpp
+        source/route.hpp
+        source/config.cpp
+        source/config.hpp
+        source/config/parse.cpp
+        source/config/main.cpp
+        source/config/Token.cpp
+        source/config/Lexer.cpp
+        source/config/Position.cpp
+        source/config/Node.cpp
+        source/config/Parser.cpp
+        source/config/ParseResult.cpp
+        source/config/Interpreter.cpp
+        )

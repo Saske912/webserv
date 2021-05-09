@@ -6,7 +6,6 @@
 int main(int ac, char *av[])
 {
     (void)av;
-//    (void)ac;
     t_data              t;
     t_serv              serv;
     timeval             tv = init_timevals();
@@ -16,6 +15,10 @@ int main(int ac, char *av[])
 //       conf =  parse_config(av[1]);
     if (ac == 1)
         conf.push_back(default_config());
+    else {
+        //error_usage();
+        return 1;
+    }
 //    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
     serv = init_serv();
     loop(tv, serv, t, conf);
