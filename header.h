@@ -5,7 +5,9 @@
 #ifndef HEADER_H
 
 #include <iostream>
+#include <fstream>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 //#include <cstdio>
@@ -14,7 +16,12 @@
 #include <unistd.h>
 #include <cstring>
 #include <set>
+<<<<<<< HEAD
 #include "source/server.hpp"
+=======
+#include <algorithm>
+#include "source/t_config.hpp"
+>>>>>>> 596c198aa5cea08e4ba5a10f839c4715d5dc0053
 
 #define QUEUE 16
 #define TVS 320000
@@ -45,6 +52,12 @@ typedef struct  s_client
         sockaddr            ad;
         socklen_t           adlen;
 }               t_client;
+
+typedef struct	s_write
+{
+	int fd;
+	bool flag;
+}				t_write;
 
 void        error_exit(const std::string& str);
 t_data      init_fd_sets(void);

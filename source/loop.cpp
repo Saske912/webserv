@@ -3,34 +3,59 @@
 //
 #include "../header.h"
 
-
-static void	communication_with_clients(std::set<int> &set, t_data &t)
+int		sorter(t_write a, t_write b)
 {
-		std::set<int>::iterator it = set.begin();
-        while (it != set.end())
-        {
-            if ( FD_ISSET(*it, &t.read))
-            {
-                while ((t.rd = recv( *it, t.buf, 1024, 0)) > 0)
-                {
-                    t.buf[t.rd] = 0;
-                    std::cout << t.buf;
-                }
-                if (t.rd == 0)
-                {
-                    set.erase(*it);
-                    break;
-                }
-            }
-            if ( FD_ISSET(*it, &t.write))
-            {
-                send( (*it), "HTTP/1.1 200 OK\n", 16, 0);
-            }
-            it++;
-        }
+	return (a.fd < b.fd);
 }
 
-static int	Select(std::set<int> &set, t_data &t, timeval &tv, t_serv &serv)
+static void	communication_with_clients(std::list<t_write> &set, t_data &t)
+{
+	std::list<t_write>::iterator it = set.begin();
+	while (it != set.end())
+	{
+		if ( FD_ISSET((*it).fd, &t.read))
+		{
+			(*it).flag = 1;
+			while ((t.rd = recv( (*it).fd, t.buf, 1024, 0)) > 0)
+			{
+				t.buf[t.rd] = 0;
+				std::cout << t.buf;
+			}
+			if (t.rd == 0)
+			{
+				set.erase(it);
+				break;
+			}
+		}
+		if ( FD_ISSET((*it).fd, &t.write))
+		{
+			send( (*it).fd, "HTTP/1.1 200 OK\n", 16, 0);
+			std::ifstream fd;
+			std::string string;
+			std::string string2;
+			struct stat stat;
+			char *str;
+			lstat("content/index.html", &stat);
+			string = "Content-Length: ";
+		   	string += std::to_string(stat.st_size + 1);
+		  	str = (char *)string.c_str();
+			send( (*it).fd, str, strlen(str), 0);
+			fd.open("content/index.html", std::ios::in);
+			send((*it).fd, "\r\n\r\n", 4, 0);
+			while (!fd.eof())
+			{
+				std::getline(fd, string);
+				string += "\n";
+		  		str = (char *)string.c_str();
+				send( (*it).fd, str, strlen(str), 0);
+			}
+			fd.close();
+		}
+		it++;
+	}
+}
+
+static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
 {
 	if (set.empty())
 	{
@@ -38,7 +63,8 @@ static int	Select(std::set<int> &set, t_data &t, timeval &tv, t_serv &serv)
 	}
 	else
 	{
-		t.max_d = *set.rbegin() > serv.host ? *set.rbegin() : serv.host;
+		set.sort(sorter);
+		t.max_d = (*set.rbegin()).fd > serv.host ? (*set.rbegin()).fd : serv.host;
 		if ((t.ret = select(t.max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
 		{
 			if (errno != EINTR)
@@ -64,18 +90,21 @@ static int	Select(std::set<int> &set, t_data &t, timeval &tv, t_serv &serv)
 void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
 {
     t_client            cli;
-    std::set<int>       set;
-	std::set<int>::iterator it;
+    std::list<t_write>       set;
+	std::list<t_write>::iterator it;
     (void)conf;
     while (true)
     {
+		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         t = init_fd_sets();
         FD_SET(serv.host, &t.read);
         it = set.begin();
         while ( it != set.end())
         {
-            FD_SET(*it, &t.read);
-            FD_SET(*it, &t.write);             //if we have data to send
+            FD_SET((*it).fd, &t.read);
+			if ((*it).flag)
+           		 FD_SET((*it).fd, &t.write);             //if we have data to send
+			(*it).flag = 0;
             it++;
         }
 		if (Select(set, t, tv, serv))
@@ -87,7 +116,8 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            set.insert(cli.client);
+            t_write a = {cli.client, 0};
+			set.push_back(a);
         }
 		communication_with_clients(set, t);
 //    loop(tv, serv, t, cli, set);
