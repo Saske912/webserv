@@ -42,6 +42,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
+		head.setEnv(t.Env);
 		if ( FD_ISSET((*it).fd, &t.read))
 		{
 			(*it).flag = 1;

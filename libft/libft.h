@@ -6,7 +6,7 @@
 /*   By: wpersimm <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/10/30 13:02:16 by wpersimm          #+#    #+#             */
-/*   Updated: 2021/05/09 18:34:02 by wpersimm         ###   ########.fr       */
+/*   Updated: 2021/05/10 15:41:57 by wpersimm         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,5 +68,7 @@ void				ft_lstdelone(t_list *lst, void (*del)(void*));
 void				ft_lstclear(t_list **lst, void (*del)(void*));
 void				ft_lstiter(t_list *lst, void (*f)(void *));
 int					ft_lstsize(t_list *lst);
+char				**ft_doublecpy(char **);
+void				ft_doublefree(void *);
 
 #endif
