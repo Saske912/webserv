@@ -149,9 +149,15 @@ int    server::responce( Header & head ) {
 
     request = head.getRequest();
     int n = (int)request.find('?');
-    tmp = request.substr(0, n);
-    ret.first = get_path_to_request(tmp, head);
-//        std::cout << "first: " << ret.first << std::endl;
+    if (n > 0)
+    {
+        tmp = request.substr(0, n);
+        ret.first = get_path_to_request(tmp, head);
+    }
+    else
+    {
+        
+    }
     try
     {
         ret.second = request.substr(n + 1, request.length());
