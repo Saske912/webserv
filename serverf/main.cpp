@@ -3,20 +3,22 @@
 //
 #include "../header.h"
 
-int main(int ac, char *av[])
+int main(int ac, char *av[], char *env[])
 {
     (void)av;
 //    (void)ac;
     t_data              t;
     t_serv              serv;
     timeval             tv = init_timevals();
-    std::list<server> conf;
+    std::list<server>   conf;
 
 //    if (ac == 2)
 //       conf =  parse_config(av[1]);
     if (ac == 1)
         conf.push_back(default_config());
     serv = init_serv();
+    if (!(t.env = ft_doublecpy(env)))
+        error_exit("malloc error");
 //    tests(conf);
     loop(tv, serv, t, conf);
     return (0);

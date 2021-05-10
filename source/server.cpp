@@ -3,6 +3,7 @@
 //
 
 #include "server.hpp"
+#include <iostream>
 
 server::server( void ) { }
 
@@ -51,13 +52,13 @@ server::server( const std::string  &host, unsigned int port,
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
 }
 
-std::string server::get_path_to_request( const std::string &request ) {
+int server::get_path_to_request( const std::string &request, Header & head ) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        if (!(*it).check_name(request))
+        if (!(*it).check_name(dirs(request)))
         {
-            return request_processing((*it).swap_path(request), (*it).get_default_page());
+            return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
         }
         it++;
     }
@@ -80,17 +81,51 @@ std::list<route> server::get_routes( ) const {
     return _routs;
 }
 
-std::string server::request_processing( const std::string &request, std::string const & def_file ) {
+int     server::request_processing( const std::string &request, \
+std::string const & def_file, route const & route, Header & head ) {
+    int     fd;
+//    int     pid;
+//    int     stat;
+//    char    **arg;
+//    int     fds[2];
+
     if (is_file(request))
-        return request;
+    {
+        if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
+        {
+//            pipe(fds);
+//            if ((pid = fork()) == 0)
+//            {
+//                *arg = reinterpret_cast<char *>(ft_calloc(4, 1));
+//                arg[0] = strdup("content/sed.sh");
+//                arg[1] = strdup("content/error_template.html");
+//                arg[2] = strdup("{}");
+//                if (errno == EACCES)
+//                {
+//                    close(fds[0]);
+//                    dup2(fds[1], 1);
+//                    arg[3] = get_error(403);
+//                    execve("content/sed.sh", arg, head.getEnv());
+//                }
+////                else if (errno = smth) ...
+//            }
+//            close(fds[1]);
+//            waitpid(pid, &stat, 0);
+//            return fds[0];
+        }
+//        head.
+        return fd;
+    }
     else
-        return request + def_file;
+    {
+        return open((request + def_file).c_str(), O_RDONLY);
+    }
 }
 
 bool server::is_file( std::string request ) {
     int     ret;
     std::string::iterator it = request.begin();
-
+    std::cout << "check1: ";
     ret = static_cast<int>(request.rfind('/'));
     if (ret == -1)
         return false;
@@ -99,6 +134,7 @@ bool server::is_file( std::string request ) {
         it += ret;
         while (it != request.end())
         {
+            std::cout << *it  << std::endl;
             if (*it++ == '.')
                 return true;
         }
@@ -106,18 +142,33 @@ bool server::is_file( std::string request ) {
     return false;
 }
 
-std::pair<std::string, std::string> server::split_request( const std::string &request ) {
-    std::pair<std::string, std::string> ret;
-    std::string     tmp;
+int    server::responce( Header & head ) {
+    std::pair<int, std::string> ret;
+    std::string                 request;
+    std::string                 tmp;
 
+    request = head.getRequest();
     int n = (int)request.find('?');
-    ret.second = request.substr(n + 1, request.length());
-    try {
-        ret.first = get_path_to_request(request.substr(0, n));
+    tmp = request.substr(0, n);
+    ret.first = get_path_to_request(tmp, head);
+//        std::cout << "first: " << ret.first << std::endl;
+    try
+    {
+        ret.second = request.substr(n + 1, request.length());
+        std::cout << "second: " << ret.second  << std::endl;
     }
     catch (std::exception &e)
     {
-        throw std::exception();
+        std::cout << "no request"  << std::endl;
     }
-    return ret;
+    return ret.first;
+}
+
+std::string server::dirs( std::string ) {
+    return std::string( );
+}
+
+char *server::get_error(int err) {
+    std::string tmp = _error_pages[err];
+    return strdup(const_cast<char *>(tmp.c_str( )));
 }

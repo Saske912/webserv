@@ -35,6 +35,7 @@ typedef struct  s_data
     int                 max_d;
     long int            rd;
     int                 ret;
+    char                **env;
 }               t_data;
 
 typedef struct  s_serv
