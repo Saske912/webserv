@@ -17,7 +17,7 @@ int main(int ac, char *av[], char *env[])
     if (ac == 1)
         conf.push_back(default_config());
     serv = init_serv();
-    tests(conf);
+//    tests(conf);
     loop(tv, serv, t, conf);
     return (0);
 }

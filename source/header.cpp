@@ -1,5 +1,23 @@
 #include "../wpersimm.h"
 
+void Header::eraseStruct()
+{
+	Accept_Charsets.erase();
+	Accept_Language.erase();
+	Allow.erase();
+	Authorization.erase();
+	Content_Language.erase();
+	Content_Length.erase();
+	Content_Location.erase();
+	Content_Type.erase();
+	Referer.erase();
+	Retry_after.erase();
+	Server.erase();
+	Transfer_Encoding.erase();
+	User_Agent.erase();
+	WWW_Authenticate.erase();
+}
+
 void Header::setAccept_Charsets(std::string const &str)
 {
 	Accept_Charsets = str;
@@ -35,7 +53,7 @@ void Header::setContent_Location(std::string const &str)
 	Content_Location = str;
 }
 
-void Header::setContentType(std::string const &str)
+void Header::setContent_Type(std::string const &str)
 {
 	Content_Type = str;
 }
@@ -108,7 +126,7 @@ std::string &Header::getContent_Location()
 	return Content_Location;
 }
 
-std::string &Header::getContentType()
+std::string &Header::getContent_Type()
 {
 	return Content_Type;
 }

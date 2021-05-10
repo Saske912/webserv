@@ -8,8 +8,10 @@ int		sorter(t_write a, t_write b)
 	return (a.fd < b.fd);
 }
 
-static void	communication_with_clients(std::list<t_write> &set, t_data &t)
+static void	communication_with_clients(std::list<t_write> &set, t_data &t, Header &head)
 {
+	char *tmp;
+
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
@@ -19,6 +21,11 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t)
 			while ((t.rd = recv( (*it).fd, t.buf, 1024, 0)) > 0)
 			{
 				t.buf[t.rd] = 0;
+				if ((tmp = strstr(t.buf, "Accept-Language: ")))
+				{
+					tmp += strlen("Accept-Language: ");
+					head.setContent_Language("Content-Language: " + std::string(tmp, 0, strchr(tmp, '\n') - tmp));
+				}
 				std::cout << t.buf;
 			}
 			if (t.rd == 0)
@@ -35,6 +42,9 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t)
 			std::string string2;
 			struct stat stat;
 			char *str;
+			str = (char *)head.getContent_Language().c_str();
+			send( (*it).fd, str, strlen(str), 0);
+
 			lstat("content/index.html", &stat);
 			string = "Content-Length: ";
 		   	string += std::to_string(stat.st_size + 1);
@@ -54,6 +64,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t)
 			free(str);
 			str = 0;
 			close(fd);
+			head.eraseStruct();
 		}
 		it++;
 	}
@@ -96,6 +107,8 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     t_client            cli;
     std::list<t_write>       set;
 	std::list<t_write>::iterator it;
+	Header head;
+
     (void)conf;
     while (true)
     {
@@ -123,7 +136,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             t_write a = {cli.client, 0};
 			set.push_back(a);
         }
-		communication_with_clients(set, t);
+		communication_with_clients(set, t, head);
 //    loop(tv, serv, t, cli, set);
     }
 }
