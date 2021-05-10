@@ -18,8 +18,8 @@ server &server::operator=( server const &src ) {
     this->_port = src._port;
     this->_routs = src._routs;
     this->_client_body_size = src._client_body_size;
-//    this->_error_pages = src._error_pages;
-//    this->_server_names = src._server_names;
+    this->_error_pages = src._error_pages;
+    this->_server_names = src._server_names;
     return *this;
 }
 
@@ -62,32 +62,32 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
         }
         it++;
     }
-    throw std::exception();
+    return exception_processing(404, head);
 }
 
-std::map<int, std::string> server::get_error_pages( ) const {
+std::map<int, std::string> server::get_error_pages( ) const
+{
     return _error_pages;
 }
 
-void server::set_error_pages( const std::map<int, std::string> &err_pages ) {
+void server::set_error_pages( const std::map<int, std::string> &err_pages )
+{
     _error_pages = err_pages;
 }
 
-long int server::get_client_body_size( ) const {
+long int server::get_client_body_size( ) const
+{
     return _client_body_size;
 }
 
-std::list<route> server::get_routes( ) const {
+std::list<route> server::get_routes( ) const
+{
     return _routs;
 }
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head ) {
     int     fd;
-//    int     pid;
-//    int     stat;
-//    char    **arg;
-//    int     fds[2];
 
 	(void)route;
 	(void)head;
@@ -95,31 +95,20 @@ std::string const & def_file, route const & route, Header & head ) {
     {
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
-//            pipe(fds);
-//            if ((pid = fork()) == 0)
-//            {
-//                *arg = reinterpret_cast<char *>(ft_calloc(4, 1));
-//                arg[0] = strdup("content/sed.sh");
-//                arg[1] = strdup("content/error_template.html");
-//                arg[2] = strdup("{}");
-//                if (errno == EACCES)
-//                {
-//                    close(fds[0]);
-//                    dup2(fds[1], 1);
-//                    arg[3] = get_error(403);
-//                    execve("content/sed.sh", arg, head.getEnv());
-//                }
-////                else if (errno = smth) ...
-//            }
-//            close(fds[1]);
-//            waitpid(pid, &stat, 0);
-//            return fds[0];
+            if (errno == EACCES) {
+                exception_processing(403, head);
+            }
         }
-//        head.
+        head.setHttp("HTTP/1.1 ");
+        head.setRequest("200");
+        head.setMethod("OK");
         return fd;
     }
     else
     {
+        head.setHttp("HTTP/1.1 ");
+        head.setRequest("200");
+        head.setMethod("OK");
         return open((request + def_file).c_str(), O_RDONLY);
     }
 }
@@ -150,26 +139,15 @@ int    server::responce( Header & head ) {
     std::string                 tmp;
 
     request = head.getRequest();
-    std::cout << "request: " << request  << std::endl;
     int n = (int)request.find('?');
     if (n > 0)
     {
         tmp = request.substr(0, n);
         ret.first = get_path_to_request(tmp, head);
+        ret.second = request.substr(n + 1, request.length());
     }
     else
-    {
         ret.first = get_path_to_request(request, head);
-    }
-    try
-    {
-        ret.second = request.substr(n + 1, request.length());
-        std::cout << "second: " << ret.second  << std::endl;
-    }
-    catch (std::exception &e)
-    {
-        std::cout << "no request"  << std::endl;
-    }
     return ret.first;
 }
 
@@ -180,4 +158,30 @@ std::string server::dirs( std::string ) {
 char *server::get_error(int err) {
     std::string tmp = _error_pages[err];
     return strdup(const_cast<char *>(tmp.c_str( )));
+}
+
+int server::exception_processing( int except, Header &head ) {
+    int     pid;
+    int     stat;
+    char    **arg;
+    int     fds[2];
+
+    pipe(fds);
+    if ((pid = fork()) == 0)
+    {
+        arg = reinterpret_cast<char **>(ft_calloc(4, 1));
+        arg[0] = strdup("content/sed.sh");
+        arg[1] = strdup("content/error_template.html");
+        arg[2] = strdup("{}");
+        arg[3] = get_error(except);
+        close(fds[0]);
+        dup2(fds[1], 1);
+        execve("content/sed.sh", arg, head.getEnv());
+    }
+    close(fds[1]);
+    waitpid(pid, &stat, 0);
+    head.setHttp("HTTP/1.1 ");
+    head.setRequest(ft_itoa(except));
+    head.setMethod("OK");
+    return fds[0];
 }

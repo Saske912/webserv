@@ -39,6 +39,7 @@ protected:
     bool                        is_file(std::string request);
     int                         get_path_to_request(std::string const & request, Header & head );
     std::string                 dirs(std::string request);
+    int                         exception_processing(int except, Header &head);
     server();
 private:
     std::string                 _host;
