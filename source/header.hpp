@@ -14,9 +14,12 @@ class Header
 		std::string &getContent_Type();
 		std::string &getDate();
 		std::string &getHost();
+		std::string &getHttp();
 		std::string &getLast_Modified();
 		std::string &getLocation();
+		std::string &getMethod();
 		std::string &getReferer();
+		std::string &getRequest();
 		std::string &getRetry_after();
 		std::string &getServer();
 		std::string &getTransfer_Encoding();
@@ -32,9 +35,12 @@ class Header
 		void setContent_Type(std::string const &);
 		void setDate(std::string const &);
 		void setHost(std::string const &);
+		void setHttp(std::string const &);
 		void setLast_Modified(std::string const &);
 		void setLocation(std::string const &);
+		void setMethod(std::string const &);
 		void setReferer(std::string const &);
+		void setRequest(std::string const &);
 		void setRetry_after(std::string const &);
 		void setServer(std::string const &);
 		void setTransfer_Encoding(std::string const &);
@@ -42,6 +48,9 @@ class Header
 		void setWWW_Authenticate(std::string const &);
 		void eraseStruct();
 	private:
+		std::string Request;
+		std::string Method;
+		std::string Http;
 		std::string Accept_Charsets;
 		std::string Accept_Language;
 		std::string Allow;

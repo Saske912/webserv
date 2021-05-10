@@ -11,6 +11,7 @@ void Header::eraseStruct()
 	Content_Location.erase();
 	Content_Type.erase();
 	Referer.erase();
+	Request.erase();
 	Retry_after.erase();
 	Server.erase();
 	Transfer_Encoding.erase();
@@ -58,9 +59,24 @@ void Header::setContent_Type(std::string const &str)
 	Content_Type = str;
 }
 
+void Header::setHttp(std::string const &str)
+{
+	Http = str;
+}
+
+void Header::setMethod(std::string const &str)
+{
+	Method = str;
+}
+
 void Header::setReferer(std::string const &str)
 {
 	Referer = str;
+}
+
+void Header::setRequest(std::string const &str)
+{
+	Request = str;
 }
 
 void Header::setRetry_after(std::string const &str)
@@ -131,9 +147,24 @@ std::string &Header::getContent_Type()
 	return Content_Type;
 }
 
+std::string &Header::getHttp()
+{
+	return Http;
+}
+
+std::string &Header::getMethod()
+{
+	return Method;
+}
+
 std::string &Header::getReferer()
 {
 	return Referer;
+}
+
+std::string &Header::getRequest()
+{
+	return Request;
 }
 
 std::string &Header::getRetry_after()
