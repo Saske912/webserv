@@ -147,7 +147,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     while (true)
     {
 		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
-        t = init_fd_sets();
+        init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();
         while ( it != set.end())

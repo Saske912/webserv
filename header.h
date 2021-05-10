@@ -59,7 +59,7 @@ typedef struct	s_write
 }				t_write;
 
 void        error_exit(const std::string& str);
-t_data      init_fd_sets(void);
+void		init_fd_sets(t_data &);
 sockaddr_in init_host_addr(void);
 timeval     init_timevals(void);
 t_serv      init_serv(void);

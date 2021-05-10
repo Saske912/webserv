@@ -3,14 +3,11 @@
 //
 #include "../header.h"
 
-t_data    init_fd_sets(void)
+void init_fd_sets(t_data &ret)
 {
-    t_data  ret;
-
     FD_ZERO(&ret.read);
     FD_ZERO(&ret.write);
     FD_ZERO(&ret.emerg);
-    return ret;
 }
 
 sockaddr_in init_host_addr(void)

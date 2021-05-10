@@ -25,7 +25,8 @@ void Header::eraseStruct()
 	Transfer_Encoding.erase();
 	User_Agent.erase();
 	WWW_Authenticate.erase();
-	ft_doublefree(Env);
+	if (Env)
+		ft_doublefree(Env);
 	Env = 0;
 }
 
