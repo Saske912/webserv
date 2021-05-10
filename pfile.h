@@ -6,5 +6,6 @@
 #define PFILE_H
 
 void    tests(std::list<server> conf);
+server  find_server(std::list<server> serv, std::string const & host, unsigned int port);
 
 #endif //PFILE_H

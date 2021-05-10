@@ -20,7 +20,7 @@ static void parse_first_line(char *line, Header &head)
 	tmp = strchr(line + 1, '\0');
 	head.setHttp(std::string(line, 0, tmp - line - 1));
 
-	std::cout << "\n\n\nMethod =" << head.getMethod() << "\n\n\nRequest =" << head.getRequest() << "\n\n\nHttp =" << head.getHttp() << "\n\n\n" << std::endl;
+//	std::cout << "\n\n\nMethod =" << head.getMethod() << "\n\n\nRequest =" << head.getRequest() << "\n\n\nHttp =" << head.getHttp() << "\n\n\n" << std::endl;
 }
 
 static void parse_request(char *line, Header &head)
@@ -146,7 +146,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     (void)conf;
     while (true)
     {
-		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+//		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();

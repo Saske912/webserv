@@ -150,6 +150,7 @@ int    server::responce( Header & head ) {
     std::string                 tmp;
 
     request = head.getRequest();
+    std::cout << "request: " << request  << std::endl;
     int n = (int)request.find('?');
     if (n > 0)
     {
@@ -158,7 +159,7 @@ int    server::responce( Header & head ) {
     }
     else
     {
-        
+        ret.first = get_path_to_request(request, head);
     }
     try
     {
