@@ -84,41 +84,42 @@ std::list<route> server::get_routes( ) const {
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head ) {
     int     fd;
-    int     pid;
-    int     stat;
-    char    **arg;
-    int     fds[2];
+//    int     pid;
+//    int     stat;
+//    char    **arg;
+//    int     fds[2];
 
     if (is_file(request))
     {
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
-            pipe(fds);
-            if ((pid = fork()) == 0)
-            {
-                *arg = reinterpret_cast<char *>(ft_calloc(4, 1));
-                arg[0] = strdup("content/sed.sh");
-                arg[1] = strdup("content/error_template.html");
-                arg[2] = strdup("{}");
-                if (errno == EACCES)
-                {
-                    close(fds[0]);
-                    dup2(fds[1], 1);
-                    arg[3] = get_error(403);
-                    execve("content/sed.sh", arg, head.getEnv());
-                }
-//                else if (errno = smth) ...
-            }
-            close(fds[1]);
-            waitpid(pid, &stat, 0);
-            return fds[0];
+//            pipe(fds);
+//            if ((pid = fork()) == 0)
+//            {
+//                *arg = reinterpret_cast<char *>(ft_calloc(4, 1));
+//                arg[0] = strdup("content/sed.sh");
+//                arg[1] = strdup("content/error_template.html");
+//                arg[2] = strdup("{}");
+//                if (errno == EACCES)
+//                {
+//                    close(fds[0]);
+//                    dup2(fds[1], 1);
+//                    arg[3] = get_error(403);
+//                    execve("content/sed.sh", arg, head.getEnv());
+//                }
+////                else if (errno = smth) ...
+//            }
+//            close(fds[1]);
+//            waitpid(pid, &stat, 0);
+//            return fds[0];
         }
+//        head.
         return fd;
     }
-//    else
-//    {
-//        return request + def_file;
-//    }
+    else
+    {
+        return open((request + def_file).c_str(), O_RDONLY);
+    }
 }
 
 bool server::is_file( std::string request ) {
@@ -148,17 +149,9 @@ int    server::responce( Header & head ) {
 
     request = head.getRequest();
     int n = (int)request.find('?');
-    try
-    {
-        tmp = request.substr(0, n);
-        std::cout << "tmp: " << tmp << std::endl;
-        ret.first = get_path_to_request(tmp, head);
-        std::cout << "first: " << ret.first << std::endl;
-    }
-    catch (std::exception &e)
-    {
-        std::cout << "no valid path"  << std::endl;
-    }
+    tmp = request.substr(0, n);
+    ret.first = get_path_to_request(tmp, head);
+//        std::cout << "first: " << ret.first << std::endl;
     try
     {
         ret.second = request.substr(n + 1, request.length());
@@ -168,6 +161,7 @@ int    server::responce( Header & head ) {
     {
         std::cout << "no request"  << std::endl;
     }
+    return ret.first;
 }
 
 std::string server::dirs( std::string ) {
