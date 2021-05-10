@@ -42,6 +42,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
+		head.setEnv(t.env);
 		if ( FD_ISSET((*it).fd, &t.read))
 		{
 			(*it).flag = 1;
@@ -146,7 +147,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     while (true)
     {
 		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
-        t = init_fd_sets();
+        init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();
         while ( it != set.end())

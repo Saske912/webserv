@@ -6,6 +6,8 @@ char	**ft_doublecpy(char **line)
 	char	**str;
 
 	i = 0;
+	if (!line)
+		return 0;
 	while (line[i])
 		i++;
 	if (!(str = malloc(sizeof(char *) * (i + 1))))

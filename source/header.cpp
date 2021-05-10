@@ -1,4 +1,10 @@
 #include "../wpersimm.h"
+#include "header.hpp"
+
+Header::Header()
+{
+	Env = 0;
+}
 
 void Header::eraseStruct()
 {
@@ -10,6 +16,8 @@ void Header::eraseStruct()
 	Content_Length.erase();
 	Content_Location.erase();
 	Content_Type.erase();
+	Http.erase();
+	Method.erase();
 	Referer.erase();
 	Request.erase();
 	Retry_after.erase();
@@ -17,6 +25,9 @@ void Header::eraseStruct()
 	Transfer_Encoding.erase();
 	User_Agent.erase();
 	WWW_Authenticate.erase();
+	if (Env)
+		ft_doublefree(Env);
+	Env = 0;
 }
 
 void Header::setAccept_Charsets(std::string const &str)
@@ -104,8 +115,17 @@ void Header::setWWW_Authenticate(std::string const &str)
 	WWW_Authenticate = str;
 }
 
+void Header::setEnv(char **env)
+{
+	if (Env)
+		ft_doublefree(Env);
+	Env = ft_doublecpy(env);
+}
 
-
+char **Header::getEnv()
+{
+	return Env;
+}
 
 std::string &Header::getAccept_Charsets()
 {

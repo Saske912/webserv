@@ -4,6 +4,7 @@
 class Header
 {
 	public:
+		Header();
 		std::string &getAccept_Charsets();
 		std::string &getAccept_Language();
 		std::string &getAllow();
@@ -25,6 +26,8 @@ class Header
 		std::string &getTransfer_Encoding();
 		std::string &getUser_Agent();
 		std::string &getWWW_Authenticate();
+		char **getEnv();
+		void setEnv(char **env);
 		void setAccept_Charsets(std::string const &);
 		void setAccept_Language(std::string const &);
 		void setAllow(std::string const &);
@@ -48,6 +51,7 @@ class Header
 		void setWWW_Authenticate(std::string const &);
 		void eraseStruct();
 	private:
+		char **Env;
 		std::string Request;
 		std::string Method;
 		std::string Http;

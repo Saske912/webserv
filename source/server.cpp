@@ -89,6 +89,8 @@ std::string const & def_file, route const & route, Header & head ) {
 //    char    **arg;
 //    int     fds[2];
 
+	(void)route;
+	(void)head;
     if (is_file(request))
     {
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
