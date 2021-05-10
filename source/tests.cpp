@@ -5,14 +5,9 @@
 
 void    tests(std::list<server> conf)
 {
-    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
+    std::string request = "http://yandex.ru/docs/index.php?method=GET,name=spoils";
+//    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
     std::pair<std::string, std::string>     p;
-    try {
-        p = (*conf.begin()).split_request("http://yandex.ru/docs/index.php?method=GET,name=spoils");
-    }
-    catch (std::exception &e)
-    {
-        std::cout << "no request!"  << std::endl;
-    }
-    std::cout << p.first << " " << p.second  << std::endl;
+    p = (*conf.begin()).split_request(request);
+//    std::cout << p.first << " " << p.second  << std::endl;
 }

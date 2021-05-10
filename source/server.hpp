@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include "route.hpp"
+#include "../wpersimm.h"
 
 class server {
 public:
@@ -28,12 +29,14 @@ public:
     long int                    get_client_body_size() const;
     std::list<route>            get_routes() const;
 
-    std::pair<std::string, std::string> split_request(std::string const & request);
+    int                        responce( Header & head );
 protected:
-    server();
+
     std::string                 request_processing(std::string const & request, std::string const & def_file);
     bool                        is_file(std::string request);
     std::string                 get_path_to_request(std::string const & request);
+    std::string                 dirs(std::string request);
+    server();
 private:
     std::string                 _host;
     unsigned int                _port;

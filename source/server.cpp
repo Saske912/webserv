@@ -3,6 +3,7 @@
 //
 
 #include "server.hpp"
+#include <iostream>
 
 server::server( void ) { }
 
@@ -55,7 +56,7 @@ std::string server::get_path_to_request( const std::string &request ) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        if (!(*it).check_name(request))
+        if (!(*it).check_name(dirs(request)))
         {
             return request_processing((*it).swap_path(request), (*it).get_default_page());
         }
@@ -90,7 +91,7 @@ std::string server::request_processing( const std::string &request, std::string 
 bool server::is_file( std::string request ) {
     int     ret;
     std::string::iterator it = request.begin();
-
+    std::cout << "check1: ";
     ret = static_cast<int>(request.rfind('/'));
     if (ret == -1)
         return false;
@@ -99,6 +100,7 @@ bool server::is_file( std::string request ) {
         it += ret;
         while (it != request.end())
         {
+            std::cout << *it  << std::endl;
             if (*it++ == '.')
                 return true;
         }
@@ -106,18 +108,35 @@ bool server::is_file( std::string request ) {
     return false;
 }
 
-std::pair<std::string, std::string> server::split_request( const std::string &request ) {
-    std::pair<std::string, std::string> ret;
-    std::string     tmp;
+int    server::responce( Header & head ) {
+    std::pair<int, std::string> ret;
+    std::string                 request;
+
 
     int n = (int)request.find('?');
-    ret.second = request.substr(n + 1, request.length());
-    try {
-        ret.first = get_path_to_request(request.substr(0, n));
+    try
+    {
+//        tmp = request.substr(0, n);
+//        std::cout << "tmp: " << tmp << std::endl;
+//        ret.first = get_path_to_request(tmp);
+        std::cout << "first: " << ret.first << std::endl;
     }
     catch (std::exception &e)
     {
-        throw std::exception();
+        std::cout << "no valid path"  << std::endl;
+    }
+    try
+    {
+        ret.second = request.substr(n + 1, request.length());
+        std::cout << "second: " << ret.second  << std::endl;
+    }
+    catch (std::exception &e)
+    {
+        std::cout << "no request"  << std::endl;
     }
     return ret;
+}
+
+std::string server::dirs( std::string ) {
+    return std::string( );
 }
