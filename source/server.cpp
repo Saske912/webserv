@@ -150,15 +150,14 @@ int server::exception_processing( int except, Header &head ) {
     pipe(fds);
     if ((pid = fork()) == 0)
     {
-        arg = reinterpret_cast<char **>(ft_calloc(4, 1));
-        arg[0] = strdup("content/sed.sh");
-        arg[1] = strdup("content/error_template.html");
-        arg[2] = strdup("{}");
-//        arg[3] = get_error(except);
+        arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
+        arg[0] = strdup("/usr/bin/sed");
+        arg[1] = strdup("s/SWAP/Not Found/");//        get_error(except);
+        arg[2] = strdup("content/error_template.html");
         head.setMethod("Not Found");
         close(fds[0]);
         dup2(fds[1], 1);
-        execve("content/sed.sh", arg, head.getEnv());
+        execve(arg[0], arg, head.getEnv());
         exit(1);
     }
     close(fds[1]);
