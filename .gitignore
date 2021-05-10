@@ -1,2 +1,5 @@
 .idea
 cmake-build-debug/
+source/*.swp
+serverf/*.swp
+*.swp
