@@ -40,6 +40,7 @@ protected:
     int                         get_path_to_request(std::string const & request, Header & head );
     std::string                 dirs(std::string request);
     int                         exception_processing(int except, Header &head);
+    int                         targeting(Header &head, std::string request);
     server();
 private:
     std::string                 _host;

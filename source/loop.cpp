@@ -82,7 +82,6 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 		if ( FD_ISSET((*it).fd, &t.write))
 		{
 			int fd;
-			send( (*it).fd, "HTTP/1.1 200 OK\n", 16, 0);
 			std::string string;
 			std::string string2;
 			struct stat stat;
@@ -90,16 +89,25 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 			
 			
 			
-			str = (char *)(*it).head.getContent_Language().c_str();
-			send( (*it).fd, str, strlen(str), 0);
 ////////////////////////////////////
 			fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 			fstat(fd, &stat);
+			str = (char *)(*it).head.getHttp().c_str();
+			send( (*it).fd, str, strlen(str), 0);
+			str = (char *)(*it).head.getRequest().c_str();
+			send( (*it).fd, str, strlen(str), 0);
+			send( (*it).fd, " ", 1, 0);
+			str = (char *)(*it).head.getMethod().c_str();
+			send( (*it).fd, str, strlen(str), 0);
+			send( (*it).fd, "\n", 1, 0);
+			/*
+			str = (char *)(*it).head.getContent_Language().c_str();
+			send( (*it).fd, str, strlen(str), 0);
+			*/
 			string = "Content-Length: ";
 		   	string += std::to_string(stat.st_size + 1);
 		  	str = (char *)string.c_str();
 			send( (*it).fd, str, strlen(str), 0);
-//			fd = open("content/index.html", O_RDONLY);
 			send((*it).fd, "\r\n\r\n", 4, 0);
 
 ///////////////////////////////////			
