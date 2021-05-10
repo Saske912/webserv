@@ -99,7 +99,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 		   	string += std::to_string(stat.st_size + 1);
 		  	str = (char *)string.c_str();
 			send( (*it).fd, str, strlen(str), 0);
-			fd = open("content/index.html", O_RDONLY);
+//			fd = open("content/index.html", O_RDONLY);
 			send((*it).fd, "\r\n\r\n", 4, 0);
 
 ///////////////////////////////////			
