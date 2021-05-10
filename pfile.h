@@ -5,4 +5,6 @@
 #ifndef PFILE_H
 #define PFILE_H
 
+void    tests(std::list<server> conf);
+
 #endif //PFILE_H

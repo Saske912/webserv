@@ -61,7 +61,7 @@ std::string server::get_path_to_request( const std::string &request ) {
         }
         it++;
     }
-    return NULL;
+    throw std::exception();
 }
 
 std::map<int, std::string> server::get_error_pages( ) const {
@@ -108,9 +108,16 @@ bool server::is_file( std::string request ) {
 
 std::pair<std::string, std::string> server::split_request( const std::string &request ) {
     std::pair<std::string, std::string> ret;
+    std::string     tmp;
 
     int n = (int)request.find('?');
     ret.second = request.substr(n + 1, request.length());
-    ret.first = get_path_to_request(request.substr(0, n));
+    try {
+        ret.first = get_path_to_request(request.substr(0, n));
+    }
+    catch (std::exception &e)
+    {
+        throw std::exception();
+    }
     return ret;
 }

@@ -64,5 +64,9 @@ class Header
 		std::string User_Agent;
 		std::string WWW_Authenticate;
 };
+extern "C"
+{
+#include "libft/libft.h"
+}
 
 #endif //WPERSIMM_H

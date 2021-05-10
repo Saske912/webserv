@@ -16,8 +16,8 @@ int main(int ac, char *av[])
 //       conf =  parse_config(av[1]);
     if (ac == 1)
         conf.push_back(default_config());
-//    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
     serv = init_serv();
+    tests(conf);
     loop(tv, serv, t, conf);
     return (0);
 }
