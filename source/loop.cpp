@@ -94,12 +94,17 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 			fstat(fd, &stat);
 			str = (char *)(*it).head.getHttp().c_str();
 			send( (*it).fd, str, strlen(str), 0);
+			printf("str = %s\n", str);
 			str = (char *)(*it).head.getRequest().c_str();
 			send( (*it).fd, str, strlen(str), 0);
+			printf("str = %s\n", str);
 			send( (*it).fd, " ", 1, 0);
+			printf("str = %s\n", str);
 			str = (char *)(*it).head.getMethod().c_str();
 			send( (*it).fd, str, strlen(str), 0);
+			printf("str = %s\n", str);
 			send( (*it).fd, "\n", 1, 0);
+			printf("str = %s\n", str);
 			/*
 			str = (char *)(*it).head.getContent_Language().c_str();
 			send( (*it).fd, str, strlen(str), 0);
@@ -108,6 +113,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 		   	string += std::to_string(stat.st_size + 1);
 		  	str = (char *)string.c_str();
 			send( (*it).fd, str, strlen(str), 0);
+			printf("str = %s\n", str);
 			send((*it).fd, "\r\n\r\n", 4, 0);
 
 ///////////////////////////////////			
