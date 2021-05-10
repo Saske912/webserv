@@ -39,7 +39,7 @@ void route::set_default_page( const std::string &page ) {
     _default_page = page;
 }
 
-std::string route::get_default_page( ) const {
+std::string route::get_default_page() const {
     return _default_page;
 }
 

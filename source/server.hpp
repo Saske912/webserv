@@ -9,6 +9,7 @@
 #include <map>
 #include "route.hpp"
 #include "../wpersimm.h"
+#include <fcntl.h>
 
 class server {
 public:
@@ -28,13 +29,15 @@ public:
     void                        set_error_pages(std::map<int, std::string> const & err_pages);
     long int                    get_client_body_size() const;
     std::list<route>            get_routes() const;
+    char                        *get_error(int);
 
     int                        responce( Header & head );
 protected:
 
-    std::string                 request_processing(std::string const & request, std::string const & def_file);
+    int                         request_processing(std::string const & request, \
+    std::string const & def_file, route const & route, Header & head );
     bool                        is_file(std::string request);
-    std::string                 get_path_to_request(std::string const & request);
+    int                         get_path_to_request(std::string const & request, Header & head );
     std::string                 dirs(std::string request);
     server();
 private:

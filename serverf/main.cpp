@@ -17,6 +17,8 @@ int main(int ac, char *av[], char *env[])
     if (ac == 1)
         conf.push_back(default_config());
     serv = init_serv();
+    if (!(t.env = ft_doublecpy(env)))
+        error_exit("malloc error");
 //    tests(conf);
     loop(tv, serv, t, conf);
     return (0);
