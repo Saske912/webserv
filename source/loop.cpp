@@ -8,9 +8,36 @@ int		sorter(t_write a, t_write b)
 	return (a.fd < b.fd);
 }
 
-static void	communication_with_clients(std::list<t_write> &set, t_data &t, Header &head)
+
+static void parse_first_line(char *line, Header &head)
 {
 	char *tmp;
+
+	tmp = strchr(line, ' ');
+	head.setMethod(std::string(line, 0, tmp - line));
+	line = strchr(tmp + 1, ' ') + 1;
+	head.setRequest(std::string(tmp, 1, line - tmp - 2));
+	tmp = strchr(line + 1, '\0');
+	head.setHttp(std::string(line, 0, tmp - line - 1));
+
+	std::cout << "\n\n\nMethod =" << head.getMethod() << "\n\n\nRequest =" << head.getRequest() << "\n\n\nHttp =" << head.getHttp() << "\n\n\n" << std::endl;
+}
+
+static void parse_request(char *line, Header &head)
+{
+	char *tmp;
+	
+	if ((tmp = strstr(line, "Accept-Language: ")))
+	{
+		tmp += strlen("Accept-Language: ");
+		head.setContent_Language("Content-Language: " + std::string(tmp));
+	}
+}
+
+static void	communication_with_clients(std::list<t_write> &set, t_data &t, Header &head)
+{
+	char *line;
+	int	 ct = 0;
 
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
@@ -18,21 +45,27 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 		if ( FD_ISSET((*it).fd, &t.read))
 		{
 			(*it).flag = 1;
-			while ((t.rd = recv( (*it).fd, t.buf, 1024, 0)) > 0)
+			while ((t.rd = recive_next_line((*it).fd, &line)) > 0)
 			{
-				t.buf[t.rd] = 0;
-				if ((tmp = strstr(t.buf, "Accept-Language: ")))
+				if (ct == 0)
 				{
-					tmp += strlen("Accept-Language: ");
-					head.setContent_Language("Content-Language: " + std::string(tmp, 0, strchr(tmp, '\n') - tmp));
+					parse_first_line(line, head);
+					++ct;
 				}
-				std::cout << t.buf;
+				else
+					parse_request(line, head);
+
+				std::cout << line << std::endl;
+				free(line);
+				line = 0;
 			}
 			if (t.rd == 0)
 			{
 				set.erase(it);
 				break;
 			}
+			free(line);
+			line = 0;
 		}
 		if ( FD_ISSET((*it).fd, &t.write))
 		{
