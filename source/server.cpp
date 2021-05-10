@@ -154,7 +154,8 @@ int server::exception_processing( int except, Header &head ) {
         arg[0] = strdup("content/sed.sh");
         arg[1] = strdup("content/error_template.html");
         arg[2] = strdup("{}");
-        arg[3] = get_error(except);
+//        arg[3] = get_error(except);
+        head.setMethod("Not Found");
         close(fds[0]);
         dup2(fds[1], 1);
         execve("content/sed.sh", arg, head.getEnv());
