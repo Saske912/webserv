@@ -87,30 +87,11 @@ std::list<route> server::get_routes( ) const
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head ) {
-    int     fd;
-
 	(void)route;
-	(void)head;
     if (is_file(request))
-    {
-        if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
-        {
-            if (errno == EACCES) {
-                exception_processing(403, head);
-            }
-        }
-        head.setHttp("HTTP/1.1 ");
-        head.setRequest("200");
-        head.setMethod("OK");
-        return fd;
-    }
+        return targeting(head, request);
     else
-    {
-        head.setHttp("HTTP/1.1 ");
-        head.setRequest("200");
-        head.setMethod("OK");
-        return open((request + def_file).c_str(), O_RDONLY);
-    }
+        return targeting(head, request + def_file);
 }
 
 bool server::is_file( std::string request ) {
@@ -177,11 +158,32 @@ int server::exception_processing( int except, Header &head ) {
         close(fds[0]);
         dup2(fds[1], 1);
         execve("content/sed.sh", arg, head.getEnv());
+        exit(1);
     }
     close(fds[1]);
     waitpid(pid, &stat, 0);
+    if (stat == 1)
+        std::cout << "error"  << std::endl;
     head.setHttp("HTTP/1.1 ");
     head.setRequest(ft_itoa(except));
-    head.setMethod("OK");
+    head.setMethod(get_error(except));
     return fds[0];
+}
+
+int server::targeting( Header &head, std::string request ) {
+    int     fd;
+
+    if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
+    {
+        if (errno == EACCES) {
+            fd = exception_processing(403, head);
+        }
+    }
+    else
+    {
+        head.setHttp("HTTP/1.1 ");
+        head.setRequest("200");
+        head.setMethod("OK");
+    }
+    return fd;
 }
