@@ -75,6 +75,11 @@ void Header::setHttp(std::string const &str)
 	Http = str;
 }
 
+void Header::setHost(std::string const &str)
+{
+	Host = str;
+}
+
 void Header::setMethod(std::string const &str)
 {
 	Method = str;
@@ -122,9 +127,19 @@ void Header::setEnv(char **env)
 	Env = ft_doublecpy(env);
 }
 
+void Header::setPort(unsigned int  const &port)
+{
+	Port = port;
+}
+
 char **Header::getEnv()
 {
 	return Env;
+}
+
+unsigned int Header::getPort()
+{
+	return Port;
 }
 
 std::string &Header::getAccept_Charsets()
@@ -170,6 +185,11 @@ std::string &Header::getContent_Type()
 std::string &Header::getHttp()
 {
 	return Http;
+}
+
+std::string &Header::getHost()
+{
+	return Host;
 }
 
 std::string &Header::getMethod()

@@ -26,15 +26,26 @@ static void parse_first_line(char *line, Header &head)
 static void parse_request(char *line, Header &head)
 {
 	char *tmp;
+	char *tmp2;
 	
 	if ((tmp = strstr(line, "Accept-Language: ")))
 	{
 		tmp += strlen("Accept-Language: ");
 		head.setContent_Language("Content-Language: " + std::string(tmp));
 	}
+	else if ((tmp = strstr(line, "Host: ")))
+	{
+		tmp += strlen("Host: ");
+		tmp2 = strchr(tmp, ':');
+		head.setHost(std::string(tmp, 0, tmp2 - tmp));
+		head.setPort(std::stoi(tmp2 + 1));
+		std::cout << "Host = " << head.getHost() << std::endl;
+		std::cout << "Port = " << head.getPort() << std::endl;
+	}
+
 }
 
-static void	communication_with_clients(std::list<t_write> &set, t_data &t, Header &head)
+static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
 {
 	char *line;
 	int	 ct = 0;
@@ -42,7 +53,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
-		head.setEnv(t.env);
+		(*it).head.setEnv(t.env);
 		if ( FD_ISSET((*it).fd, &t.read))
 		{
 			(*it).flag = 1;
@@ -50,11 +61,11 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 			{
 				if (ct == 0)
 				{
-					parse_first_line(line, head);
+					parse_first_line(line, (*it).head);
 					++ct;
 				}
 				else
-					parse_request(line, head);
+					parse_request(line, (*it).head);
 
 				std::cout << line << std::endl;
 				free(line);
@@ -76,16 +87,22 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 			std::string string2;
 			struct stat stat;
 			char *str;
-			str = (char *)head.getContent_Language().c_str();
+			
+			
+			
+			str = (char *)(*it).head.getContent_Language().c_str();
 			send( (*it).fd, str, strlen(str), 0);
-
-			lstat("content/index.html", &stat);
+////////////////////////////////////
+			fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
+			fstat(fd, &stat);
 			string = "Content-Length: ";
 		   	string += std::to_string(stat.st_size + 1);
 		  	str = (char *)string.c_str();
 			send( (*it).fd, str, strlen(str), 0);
 			fd = open("content/index.html", O_RDONLY);
 			send((*it).fd, "\r\n\r\n", 4, 0);
+
+///////////////////////////////////			
 			while (get_next_line(fd, &str))
 			{
 				send( (*it).fd, str, strlen(str), 0);
@@ -98,7 +115,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, Heade
 			free(str);
 			str = 0;
 			close(fd);
-			head.eraseStruct();
+			(*it).head.eraseStruct();
 		}
 		it++;
 	}
@@ -141,7 +158,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     t_client            cli;
     std::list<t_write>       set;
 	std::list<t_write>::iterator it;
-	Header head;
 
     (void)conf;
     while (true)
@@ -167,10 +183,10 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            t_write a = {cli.client, 0};
+            t_write a = {Header(), cli.client, 0};
 			set.push_back(a);
         }
-		communication_with_clients(set, t, head);
+		communication_with_clients(set, t, conf);
 //    loop(tv, serv, t, cli, set);
     }
 }

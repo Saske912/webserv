@@ -27,7 +27,9 @@ class Header
 		std::string &getUser_Agent();
 		std::string &getWWW_Authenticate();
 		char **getEnv();
+		unsigned int getPort();
 		void setEnv(char **env);
+		void setPort(unsigned int const &);
 		void setAccept_Charsets(std::string const &);
 		void setAccept_Language(std::string const &);
 		void setAllow(std::string const &);
@@ -52,6 +54,7 @@ class Header
 		void eraseStruct();
 	private:
 		char **Env;
+		unsigned int Port;
 		std::string Request;
 		std::string Method;
 		std::string Http;
