@@ -166,7 +166,8 @@ int server::exception_processing( int except, Header &head ) {
         std::cout << "error"  << std::endl;
     head.setHttp("HTTP/1.1 ");
     head.setRequest(ft_itoa(except));
-    head.setMethod(get_error(except));
+//    head.setMethod(get_error(except));
+    head.setMethod("Not Found");
     return fds[0];
 }
 
