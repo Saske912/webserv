@@ -189,6 +189,7 @@ int server::exception_processing( int except, Header &head ) {
 int server::targeting( Header &head, std::string request ) {
     int     fd;
 
+
     if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
     {
 //        if (errno == EACCES) {
