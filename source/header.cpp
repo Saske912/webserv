@@ -28,7 +28,7 @@ void Header::eraseStruct()
 	if (Env)
 		ft_doublefree(Env);
 	Host.erase();
-	Ip = 0;
+	Port = 0;
 	Env = 0;
 }
 
