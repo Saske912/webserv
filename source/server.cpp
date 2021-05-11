@@ -5,7 +5,7 @@
 #include "server.hpp"
 #include <iostream>
 
-server::server( void ) { }
+server::server() : _server_names(), _error_pages(), _routs() {}
 
 server::~server( void ) { }
 
@@ -39,12 +39,17 @@ void server::set_port( unsigned int port ) {
     _port = port;
 }
 
-std::list<std::string> server::get_server_names( ) const {
+const std::list<std::string>& server::get_server_names( ) const {
     return _server_names;
 }
 
-void server::set_server_name( const std::list<std::string> &server_name ) {
+void server::set_server_names( const std::list<std::string> &server_name ) {
     _server_names = server_name;
+}
+
+void server::add_server_name(const std::string &server_name)
+{
+	_server_names.push_back(std::string(server_name));
 }
 
 server::server( const std::string  &host, unsigned int port,
@@ -65,8 +70,7 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
     return exception_processing(404, head);
 }
 
-std::map<int, std::string> server::get_error_pages( ) const
-{
+const std::map<int, std::string>& server::get_error_pages( ) const {
     return _error_pages;
 }
 
@@ -75,23 +79,35 @@ void server::set_error_pages( const std::map<int, std::string> &err_pages )
     _error_pages = err_pages;
 }
 
-long int server::get_client_body_size( ) const
+void server::add_error_page(int error_code, const std::string &filename)
 {
+	_error_pages.insert(std::pair<int, std::string>(error_code, filename));
+}
+
+long int server::get_client_body_size( ) const {
     return _client_body_size;
 }
 
-std::list<route> server::get_routes( ) const
-{
+void server::set_client_body_size(long int size) {
+	_client_body_size = size;
+}
+
+const std::list<route>& server::get_routes( ) const {
     return _routs;
+}
+
+void server::add_route(const route &route_)
+{
+	_routs.push_back(route_);
 }
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head ) {
 	(void)route;
-    if (is_file(request))
-        return targeting(head, request);
-    else
-        return targeting(head, request + def_file);
+	if (is_file(request))
+		return targeting(head, request);
+	else
+		return targeting(head, request + def_file);
 }
 
 bool server::is_file( std::string request ) {
@@ -187,4 +203,27 @@ int server::targeting( Header &head, std::string request ) {
         head.setMethod("OK");
     }
     return fd;
+}
+
+std::ostream &operator<<(std::ostream &o, const server &serv) {
+	o << "\tserver:" << std::endl;
+	o << "\t\thost: " << serv.get_host() << std::endl;
+	o << "\t\tport: " << serv.get_port() << std::endl;
+	o << "\t\tserver_names:";
+	for (std::list<std::string>::const_iterator it = serv.get_server_names().begin();
+		it != serv.get_server_names().end(); ++it) {
+		o << " " << *it;
+	}
+	o << std::endl;
+	o << "\t\terror_pages: " << std::endl;
+	for (std::map<int, std::string>::const_iterator it = serv.get_error_pages().begin();
+		 it != serv.get_error_pages().end(); ++it) {
+		o << "\t\t\t" << it->first << ": " << it->second << std::endl;
+	}
+	o << "\t\tclient_max_body_size: " << serv.get_client_body_size() << std::endl;
+	for (std::list<route>::const_iterator it = serv.get_routes().begin();
+		it != serv.get_routes().end(); ++it) {
+		o << *it;
+	}
+	return o;
 }

@@ -1,5 +1,5 @@
 NAME = progs
-FLAGS = -Wall -Wextra -Werror -Llibft -lft -g
+FLAGS = -Wall -Wextra -Werror -Llibft -lft -I. -Isource -Isource/config -g
 SERV = webserv
 CLI = client
 SRC_FLD = source/
