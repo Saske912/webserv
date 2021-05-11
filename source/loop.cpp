@@ -39,8 +39,6 @@ static void parse_request(char *line, Header &head)
 		tmp2 = strchr(tmp, ':');
 		head.setHost(std::string(tmp, 0, tmp2 - tmp));
 		head.setPort(std::stoi(tmp2 + 1));
-		std::cout << "Host = " << head.getHost() << std::endl;
-		std::cout << "Port = " << head.getPort() << std::endl;
 	}
 
 }
