@@ -13,13 +13,17 @@ int main(int ac, char *av[], char *env[])
     config              config_class;
     std::list<server>   conf;
 
-//    if (ac == 1)
-	conf.push_back(default_config());
+
     if (ac == 2) {
 		config_class = parse(av[1]);
+		conf = config_class.servers;
 		std::cout << "parse complete" << std::endl;
 		std::cout << config_class << std::endl;
 	}
+    else if (ac == 1)
+    {
+        conf.push_back(default_config());
+    }
     else {
 		// fixme error_usage();
 		std::cerr << "Config file expected!" << std::endl;

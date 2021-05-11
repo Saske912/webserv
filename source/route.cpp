@@ -30,6 +30,7 @@ route &route::operator=( route const &src ) {
 }
 
 bool route::check_name( const std::string &request ) {
+    std::cout << "|" << _name << "| |" << request << "|"  << std::endl;
     return (strncmp(_name.c_str(), request.c_str(), std::strlen(_name.c_str())));
 }
 
