@@ -2,8 +2,10 @@
 // Created by Pamula File on 5/8/21.
 //
 
-#include "server.hpp"
-#include <iostream>
+//#include "server.hpp"
+//#include <iostream>
+//#include <cstring>
+#include "../header.h"
 
 server::server() : _server_names(), _error_pages(), _routs() {}
 
@@ -103,11 +105,10 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head ) {
-	(void)route;
 	if (is_file(request))
-		return targeting(head, request);
+		return targeting(head, request, route);
 	else
-		return targeting(head, request + def_file);
+		return targeting(head, request + def_file, route);
 }
 
 bool server::is_file( std::string request ) {
@@ -121,7 +122,6 @@ bool server::is_file( std::string request ) {
         it += ret;
         while (it != request.end())
         {
-            std::cout << *it  << std::endl;
             if (*it++ == '.')
                 return true;
         }
@@ -186,22 +186,52 @@ int server::exception_processing( int except, Header &head ) {
     return fds[0];
 }
 
-int server::targeting( Header &head, std::string request ) {
+int server::targeting( Header &head, std::string request, route const & route ) {
     int     fd;
+    int     pid;
+    int     stat;
+    char    **arg;
 
-    if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
+    if (is_сgi(request, route))
     {
-//        if (errno == EACCES) {
-            fd = exception_processing(403, head);
-//        }
-    }
-    else
-    {
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 655)) < 0)
+            error_exit("open error");
+        if ((pid = fork()) == 0)
+        {
+            arg = (char **)ft_calloc(2, sizeof(char **));
+            arg[0] = const_cast<char *>(request.c_str());
+            dup2(fd, 1);
+            execve(arg[0], arg, head.getEnv());
+        }
+        else if (pid == -1)
+            error_exit("fork_error");
+        waitpid(pid, &stat, 0);
+        lseek(fd, 0, 0);
         head.setHttp("HTTP/1.1 ");
         head.setRequest("200");
         head.setMethod("OK");
+        return fd;
+    }
+    else
+    {
+        if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
+        {
+//        if (errno == EACCES) {
+            fd = exception_processing(403, head);
+//        }
+        }
+        else
+        {
+            head.setHttp("HTTP/1.1 ");
+            head.setRequest("200");
+            head.setMethod("OK");
+        }
     }
     return fd;
+}
+
+bool server::is_сgi( const std::string& request, route  const & route ) const {
+    return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

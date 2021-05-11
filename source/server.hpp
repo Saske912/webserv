@@ -46,7 +46,8 @@ protected:
     int                         get_path_to_request(std::string const & request, Header & head );
     std::string                 dirs(std::string request);
     int                         exception_processing(int except, Header &head);
-    int                         targeting(Header &head, std::string request);
+    int                         targeting(Header &head, std::string request, route const & route);
+    bool                        is_сgi(const std::string& request, route  const & route) const;
 private:
     std::string                 _host;
     unsigned int                _port;
