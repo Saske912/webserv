@@ -20,6 +20,7 @@ Interpreter::Interpreter(const Interpreter &other) : conf(other.conf) {
 }
 
 Interpreter &Interpreter::operator=(const Interpreter &other) {
+    this->conf = other.conf;
     return *this;
 }
 
