@@ -27,6 +27,8 @@ void Header::eraseStruct()
 	WWW_Authenticate.erase();
 	if (Env)
 		ft_doublefree(Env);
+	Host.erase();
+	Ip = 0;
 	Env = 0;
 }
 
