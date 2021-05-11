@@ -113,7 +113,6 @@ std::string const & def_file, route const & route, Header & head ) {
 bool server::is_file( std::string request ) {
     int     ret;
     std::string::iterator it = request.begin();
-    std::cout << "check1: ";
     ret = static_cast<int>(request.rfind('/'));
     if (ret == -1)
         return false;
@@ -190,13 +189,11 @@ int server::exception_processing( int except, Header &head ) {
 int server::targeting( Header &head, std::string request ) {
     int     fd;
 
-    std::cout << "open: |"<< request  << "|" << std::endl;
     if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
     {
-        if (errno == EACCES) {
+//        if (errno == EACCES) {
             fd = exception_processing(403, head);
-        }
-        std::cout << "errno: " << errno  << std::endl;
+//        }
     }
     else
     {

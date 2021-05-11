@@ -103,8 +103,6 @@ route Interpreter::visit(RouteNode *node)
 			std::cerr << "Unknown Route param: " << *it << std::endl; // fixme ErrorNode?
 		}
 	}
-
-	std::cout << "root: " << root  << std::endl;
 	route route_ = route(name, root, methods, autoindex, index.empty() ? std::string() : index.front());
 	route_.set_upload_location(upload_location);
 	route_.set_cgi(cgi);

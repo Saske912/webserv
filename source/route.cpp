@@ -37,7 +37,7 @@ bool route::check_name( const std::string &request ) {
 std::string route::swap_path( const std::string &request ) {
 //    std::string tmp = request.substr(reinterpret_cast<unsigned long >(strlen(_name.c_str())), request.length());
 //    std::cout << tmp  << std::endl;
-    std::cout << "root: " << _root  << std::endl;
+//    std::cout << "root: " << _root  << std::endl;
     return _root += request;
 }
 
