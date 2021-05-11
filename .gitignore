@@ -6,3 +6,4 @@ serverf/*.swp
 *.dSYM
 webserv
 client
+Makefile

@@ -148,8 +148,8 @@ int    server::responce( Header & head ) {
     return ret.first;
 }
 
-std::string server::dirs( std::string ) {
-    return std::string( );
+std::string server::dirs( std::string request ) {
+    return request;
 }
 
 char *server::get_error(int err) {
@@ -190,11 +190,13 @@ int server::exception_processing( int except, Header &head ) {
 int server::targeting( Header &head, std::string request ) {
     int     fd;
 
+    std::cout << "open: |"<< request  << "|" << std::endl;
     if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
     {
         if (errno == EACCES) {
             fd = exception_processing(403, head);
         }
+        std::cout << "errno: " << errno  << std::endl;
     }
     else
     {

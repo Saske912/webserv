@@ -30,13 +30,15 @@ route &route::operator=( route const &src ) {
 }
 
 bool route::check_name( const std::string &request ) {
-    std::cout << "|" << _name << "| |" << request << "|"  << std::endl;
+//    std::cout << "|" << _name << "| |" << request << "|"  << std::endl;
     return (strncmp(_name.c_str(), request.c_str(), std::strlen(_name.c_str())));
 }
 
 std::string route::swap_path( const std::string &request ) {
-    std::string tmp = request.substr(reinterpret_cast<unsigned long >(strlen(_name.c_str())), request.length());
-    return _root += tmp;
+//    std::string tmp = request.substr(reinterpret_cast<unsigned long >(strlen(_name.c_str())), request.length());
+//    std::cout << tmp  << std::endl;
+    std::cout << "root: " << _root  << std::endl;
+    return _root += request;
 }
 
 void route::set_default_page( const std::string &page ) {

@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 98)
 
 include_directories(webserv source source/config .)
 
-add_link_options(-L../libft -lft)
+add_link_options(-Llibft -lft)
 
 add_executable(webserv
         header.h
@@ -33,4 +33,6 @@ add_executable(webserv
         source/config/Parser.cpp
         source/config/ParseResult.cpp
         source/config/Interpreter.cpp
+        source/header.cpp
+        source/header.hpp
         )
