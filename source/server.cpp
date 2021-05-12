@@ -334,6 +334,7 @@ std::string server::get_allow( std::list<std::string> arr ) {
             ret += ", ";
         it++;
     }
+    ret += '\n';
     return ret;
 }
 
