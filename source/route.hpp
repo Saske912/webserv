@@ -18,7 +18,7 @@ public:
     route( route const &src );
     route &operator=( route const &src );
 
-    bool            check_name(std::string const & request);
+    bool            check_name(std::string request);
     std::string     swap_path(std::string const & request);
     void            autoindex_on();
     void            autoindex_off();

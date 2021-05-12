@@ -29,13 +29,20 @@ route &route::operator=( route const &src ) {
     return *this;
 }
 
-bool route::check_name( const std::string &request ) {
-//    std::cout << "|" << _name << "| |" << request << "|"  << std::endl;
-    return (strncmp(_name.c_str(), request.c_str(), std::strlen(_name.c_str())));
+bool route::check_name( std::string request ) {
+//    std::string n1 = trim(_name, "/");
+//    std::string n2 = trim(request, "/");
+//    std::cout << "|" << n1 << "| |" << n2 << "|"  << std::endl;
+    return (strncmp(trim(_name, "/").c_str(), trim(request, "/").c_str(), std::strlen(trim(_name, "/").c_str())));
 }
 
 std::string route::swap_path( const std::string &request ) {
-    std::string tmp(request, _name.length(), request.length() - _name.length());
+    std::string tmp;
+//    std::cout << "HERE " << _name << " " << request  << std::endl;
+    if (_name.length() < request.length())
+        tmp = std::string(request, _name.length(), request.length() - _name.length());
+    else
+        tmp = "/";
 //    std::cout << tmp  << std::endl;
 //    std::cout << "root: " << _root  << std::endl;
     return _root += tmp;

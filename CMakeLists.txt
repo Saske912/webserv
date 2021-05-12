@@ -35,4 +35,5 @@ add_executable(webserv
         source/config/Interpreter.cpp
         source/header.cpp
         source/header.hpp
+        source/trim.cpp
         )

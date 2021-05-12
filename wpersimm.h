@@ -6,9 +6,9 @@
 #include <iostream>
 #include "source/header.hpp"
 
-std::string &rtrim(std::string &s, char *t);
-std::string &ltrim(std::string &s, char *t);
-std::string &trim(std::string &s, char *t);
+std::string rtrim(std::string s, std::string t);
+std::string ltrim(std::string s, std::string t);
+std::string trim(std::string s, std::string t);
 extern "C"
 {
 #include "libft/libft.h"

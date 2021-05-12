@@ -24,6 +24,7 @@ server &server::operator=( server const &src ) {
     this->_client_body_size = src._client_body_size;
     this->_error_pages = src._error_pages;
     this->_server_names = src._server_names;
+    this->_default_error_pages = src._default_error_pages;
     return *this;
 }
 
@@ -169,37 +170,41 @@ int server::exception_processing( int except, Header &head ) {
     std::string concat;
     std::string to_head;
 
-    pipe(fds);
-    if ((pid = fork()) == 0)
+    try
     {
-        concat = "s/SWAP/";
-        arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
-//        arg[0] = strdup("/usr/bin/sed");
-        arg[0] = strdup("content/sed.sh");
-        try
-            {
-                to_head += get_error(except, _error_pages);
-            }
-        catch (std::exception &)
-            {to_head += get_error(except, _default_error_pages);}
-        concat += to_head + "/";
-        arg[1] = strdup(concat.c_str());
-        arg[2] = strdup("content/error_template.html");
-        head.setMethod("Not Found");
-        close(fds[0]);
-        dup2(fds[1], 1);
-        execve(arg[0], arg, head.getEnv());
-        exit(1);
+        to_head = get_error(except, _error_pages);
+        head.setHttp("HTTP/1.1 ");
+        head.setRequest(ft_itoa(except));
+        head.setMethod(get_error(except, _default_error_pages));
+        return open(to_head.c_str(), O_RDONLY);
     }
-    close(fds[1]);
-    waitpid(pid, &stat, 0);
-    if (stat == 1)
-        error_exit("system error in execve");
-    head.setHttp("HTTP/1.1 ");
-    head.setRequest(ft_itoa(except));
-    head.setMethod(to_head);
-//    head.setMethod("Not Found");
-    return fds[0];
+    catch (std::exception &)
+    {
+        pipe(fds);
+        if ((pid = fork()) == 0)
+        {
+            concat = "s/SWAP/";
+            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
+            arg[0] = strdup("content/sed.sh");
+            to_head = get_error(except, _default_error_pages);
+            concat += to_head + "/";
+            arg[1] = strdup(concat.c_str());
+            std::cout << arg[1]  << std::endl;
+            arg[2] = strdup("content/error_template.html");
+            close(fds[0]);
+            dup2(fds[1], 1);
+            execve(arg[0], arg, head.getEnv());
+            exit(1);
+        }
+        close(fds[1]);
+        waitpid(pid, &stat, 0);
+        if (stat == 1)
+            error_exit("system error in execve");
+        head.setHttp("HTTP/1.1 ");
+        head.setRequest(ft_itoa(except));
+        head.setMethod(to_head);
+        return fds[0];
+    }
 }
 
 int server::targeting( Header &head, std::string request, route const & route ) {
@@ -232,9 +237,11 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     {
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
-//        if (errno == EACCES) {
-            fd = exception_processing(403, head);
-//        }
+            if (errno == EACCES) {
+                fd = exception_processing(403, head);
+            }
+            else
+                fd = exception_processing(404, head);
         }
         else
         {
@@ -261,6 +268,10 @@ void server::set_default_error_pages( ) {
     _default_error_pages[502] = "Bad Gateway";
     _default_error_pages[503] = "Service Unavailable";
     _default_error_pages[504] = "Gateway Timeout";
+}
+
+std::map<int, std::string> server::get_def_error_pages( ) const {
+    return _default_error_pages;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

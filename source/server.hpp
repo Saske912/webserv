@@ -35,6 +35,7 @@ public:
 	void                        set_client_body_size(long int size);
     const std::list<route>&            get_routes() const;
     void						add_route(const route &route_);
+    std::map<int, std::string>  get_def_error_pages() const;
 
     int                        responce( Header & head );
 protected:
