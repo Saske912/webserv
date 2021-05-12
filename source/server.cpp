@@ -6,8 +6,10 @@
 //#include <iostream>
 //#include <cstring>
 #include "../header.h"
+#include "server.hpp"
 
-server::server() : _server_names(), _error_pages(), _routs() {}
+
+server::server() : _server_names(), _error_pages(), _routs() {set_default_error_pages();}
 
 server::~server( void ) { }
 
@@ -57,6 +59,7 @@ void server::add_server_name(const std::string &server_name)
 server::server( const std::string  &host, unsigned int port,
      const std::map<int, std::string >& error_pages, std::list<route> const & routs, long int client_body_size) :
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
+    set_default_error_pages();
 }
 
 int server::get_path_to_request( const std::string &request, Header & head ) {
@@ -151,9 +154,11 @@ std::string server::dirs( std::string request ) {
     return request;
 }
 
-char *server::get_error(int err) {
-    std::string tmp = _error_pages[err];
-    return strdup(const_cast<char *>(tmp.c_str( )));
+std::string server::get_error(int err, std::map<int, std::string> ers) {
+    std::string tmp = ers[err];
+    if (tmp.empty())
+        throw std::exception();
+    return tmp;
 }
 
 int server::exception_processing( int except, Header &head ) {
@@ -161,13 +166,24 @@ int server::exception_processing( int except, Header &head ) {
     int     stat;
     char    **arg;
     int     fds[2];
+    std::string concat;
+    std::string to_head;
 
     pipe(fds);
     if ((pid = fork()) == 0)
     {
+        concat = "s/SWAP/";
         arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
-        arg[0] = strdup("/usr/bin/sed");
-        arg[1] = strdup("s/SWAP/Not Found/");//        get_error(except);
+//        arg[0] = strdup("/usr/bin/sed");
+        arg[0] = strdup("content/sed.sh");
+        try
+            {
+                to_head += get_error(except, _error_pages);
+            }
+        catch (std::exception &)
+            {to_head += get_error(except, _default_error_pages);}
+        concat += to_head + "/";
+        arg[1] = strdup(concat.c_str());
         arg[2] = strdup("content/error_template.html");
         head.setMethod("Not Found");
         close(fds[0]);
@@ -178,11 +194,11 @@ int server::exception_processing( int except, Header &head ) {
     close(fds[1]);
     waitpid(pid, &stat, 0);
     if (stat == 1)
-        std::cout << "error"  << std::endl;
+        error_exit("system error in execve");
     head.setHttp("HTTP/1.1 ");
     head.setRequest(ft_itoa(except));
-//    head.setMethod(get_error(except));
-    head.setMethod("Not Found");
+    head.setMethod(to_head);
+//    head.setMethod("Not Found");
     return fds[0];
 }
 
@@ -232,6 +248,19 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 
 bool server::is_сgi( const std::string& request, route  const & route ) const {
     return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
+}
+
+void server::set_default_error_pages( ) {
+    _default_error_pages[400] = "Bad Request";
+    _default_error_pages[403] = "Forbidden";
+    _default_error_pages[404] = "Not Found";
+    _default_error_pages[405] = "Method Not Allowed";
+    _default_error_pages[413] = "Request Entity Too Large";
+    _default_error_pages[414] = "Request-URL Too Long";
+    _default_error_pages[500] = "Internal Server Error";
+    _default_error_pages[502] = "Bad Gateway";
+    _default_error_pages[503] = "Service Unavailable";
+    _default_error_pages[504] = "Gateway Timeout";
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {
