@@ -2,14 +2,11 @@
 // Created by Pamula File on 5/8/21.
 //
 
-//#include "server.hpp"
-//#include <iostream>
-//#include <cstring>
 #include "../header.h"
 #include "server.hpp"
 
 
-server::server() : _server_names(), _error_pages(), _routs() {set_default_error_pages();}
+server::server() : _server_names(), _error_pages(), _routs() {set_default_pages();}
 
 server::~server( void ) { }
 
@@ -60,7 +57,7 @@ void server::add_server_name(const std::string &server_name)
 server::server( const std::string  &host, unsigned int port,
      const std::map<int, std::string >& error_pages, std::list<route> const & routs, long int client_body_size) :
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
-    set_default_error_pages();
+    set_default_pages();
 }
 
 int server::get_path_to_request( const std::string &request, Header & head ) {
@@ -69,6 +66,11 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
     {
         if (!(*it).check_name(dirs(request)))
         {
+//            if (!check_methods(head.getMethod(), it->get_http_methods()))
+//            {
+//                head.setAllow(get_allow(it->get_http_methods()));
+//                return exception_processing(405, head);
+//            }
             return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
         }
         it++;
@@ -189,7 +191,6 @@ int server::exception_processing( int except, Header &head ) {
             to_head = get_error(except, _default_error_pages);
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
-            std::cout << arg[1]  << std::endl;
             arg[2] = strdup("content/error_template.html");
             close(fds[0]);
             dup2(fds[1], 1);
@@ -213,6 +214,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     stat;
     char    **arg;
 
+    head.setContent_Location(request);
     if (is_сgi(request, route))
     {
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 655)) < 0)
@@ -257,17 +259,51 @@ bool server::is_сgi( const std::string& request, route  const & route ) const {
     return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
 }
 
-void server::set_default_error_pages( ) {
+void server::set_default_pages( ) {
+    _default_error_pages[100] = "Continue";
+    _default_error_pages[101] = "Switching Protocols";
+
+    _default_error_pages[200] = "OK";
+    _default_error_pages[201] = "Created";
+    _default_error_pages[202] = "Accepted";
+    _default_error_pages[203] = "Non-Authoritative Information";
+    _default_error_pages[204] = "No Content";
+    _default_error_pages[205] = "Reset Content";
+    _default_error_pages[206] = "Partial Content";
+
+    _default_error_pages[300] = "Multiple Choices";
+    _default_error_pages[301] = "Moved Permanently";
+    _default_error_pages[302] = "Found";
+    _default_error_pages[303] = "See Other";
+    _default_error_pages[304] = "Not Modified";
+    _default_error_pages[305] = "Use Proxy";
+    _default_error_pages[307] = "Temporary Redirect";
+
     _default_error_pages[400] = "Bad Request";
+    _default_error_pages[401] = "Unauthorized";
+    _default_error_pages[401] = "Payment Required";
     _default_error_pages[403] = "Forbidden";
     _default_error_pages[404] = "Not Found";
     _default_error_pages[405] = "Method Not Allowed";
+    _default_error_pages[406] = "Not Acceptable";
+    _default_error_pages[407] = "Proxy Authentication Required";
+    _default_error_pages[408] = "Request Time-out";
+    _default_error_pages[409] = "Conflict";
+    _default_error_pages[410] = "Gone";
+    _default_error_pages[411] = "Length Required";
+    _default_error_pages[412] = "Precondition Failed";
     _default_error_pages[413] = "Request Entity Too Large";
     _default_error_pages[414] = "Request-URL Too Long";
+    _default_error_pages[415] = "Unsupported Media Type";
+    _default_error_pages[416] = "Requested range not satisfiable";
+    _default_error_pages[417] = "Expectation Failed";
+
     _default_error_pages[500] = "Internal Server Error";
+    _default_error_pages[501] = "Not Implemented";
     _default_error_pages[502] = "Bad Gateway";
     _default_error_pages[503] = "Service Unavailable";
     _default_error_pages[504] = "Gateway Timeout";
+    _default_error_pages[505] = "HTTP Version not supported";
 }
 
 std::map<int, std::string> server::get_def_error_pages( ) const {

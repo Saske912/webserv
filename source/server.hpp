@@ -48,7 +48,7 @@ protected:
     int                         targeting(Header &head, std::string request, route const & route);
     bool                        is_сgi(const std::string& request, route  const & route) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
-    void                        set_default_error_pages();
+    void                        set_default_pages();
 private:
     std::string                 _host;
     unsigned int                _port;

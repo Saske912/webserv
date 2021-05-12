@@ -17,13 +17,14 @@ int main(int ac, char *av[], char *env[])
     if (ac == 2) {
 		config_class = parse(av[1]);
 		conf = config_class.servers;
-//		std::cout << "root: " << conf.begin()->get_routes().begin()->get_root()  << std::endl;
 //		std::cout << "parse complete" << std::endl;
 //		std::cout << config_class << std::endl;
 	}
     else if (ac == 1)
     {
-        conf.push_back(default_config());
+        config_class = parse("cfg/ConfigExample.ws");
+        conf = config_class.servers;
+//        conf.push_back(default_config());
     }
     else {
 		// fixme error_usage();
