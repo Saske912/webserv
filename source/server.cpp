@@ -68,8 +68,8 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
         {
             if (!check_methods(head.getMethod(), it->get_http_methods()))
             {
-//                head.setAllow(get_allow(it->get_http_methods()));
-//                return exception_processing(405, head);
+                head.setAllow(get_allow(it->get_http_methods()));
+                return exception_processing(405, head);
             }
             return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
         }
@@ -325,7 +325,16 @@ bool server::check_methods( std::string str, std::list<std::string> arr ) const 
 }
 
 std::string server::get_allow( std::list<std::string> arr ) {
-    return std::string( );
+    std::string ret = "Allow: ";
+    std::list<std::string>::iterator it = arr.begin();
+    while (it != arr.end())
+    {
+        ret += *it;
+        if (*it != *arr.rbegin())
+            ret += ", ";
+        it++;
+    }
+    return ret;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {
