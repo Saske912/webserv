@@ -14,7 +14,7 @@
 
 class server {
 public:
-	server();
+    server();
     server(std::string  const & host, unsigned int port, const std::map<int, std::string>& error_pages,
              std::list<route> const & routs, long int client_body_size = 1);
     ~server();
@@ -35,11 +35,9 @@ public:
 	void                        set_client_body_size(long int size);
     const std::list<route>&            get_routes() const;
     void						add_route(const route &route_);
-	char                        *get_error(int);
 
     int                        responce( Header & head );
 protected:
-
 	int                         request_processing(std::string const & request, \
     std::string const & def_file, route const & route, Header & head );
     bool                        is_file(std::string request);
@@ -48,11 +46,14 @@ protected:
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
     bool                        is_сgi(const std::string& request, route  const & route) const;
+    std::string                 get_error(int, std::map<int, std::string> ers);
+    void                        set_default_error_pages();
 private:
     std::string                 _host;
     unsigned int                _port;
     std::list<std::string>      _server_names;
     std::map<int, std::string>  _error_pages;
+    std::map<int, std::string>  _default_error_pages;
     std::list<route>            _routs;
     long int                    _client_body_size;
 };
