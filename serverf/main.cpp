@@ -22,7 +22,8 @@ int main(int ac, char *av[], char *env[])
 	}
     else if (ac == 1)
     {
-        config_class = parse("cfg/ConfigExample.ws");
+        char str[] = "cfg/ConfigExample.ws";
+        config_class = parse(str);
         conf = config_class.servers;
 //        conf.push_back(default_config());
     }
