@@ -66,11 +66,11 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
     {
         if (!(*it).check_name(dirs(request)))
         {
-//            if (!check_methods(head.getMethod(), it->get_http_methods()))
-//            {
+            if (!check_methods(head.getMethod(), it->get_http_methods()))
+            {
 //                head.setAllow(get_allow(it->get_http_methods()));
 //                return exception_processing(405, head);
-//            }
+            }
             return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
         }
         it++;
@@ -114,7 +114,11 @@ std::string const & def_file, route const & route, Header & head ) {
 	if (is_file(request))
 		return targeting(head, request, route);
 	else
-		return targeting(head, request + def_file, route);
+    {
+	    if (*request.rbegin() != '/' and *def_file.begin() != '/')
+            return targeting(head, request + '/' + def_file, route);
+        return targeting(head, request + def_file, route);
+    }
 }
 
 bool server::is_file( std::string request ) {
@@ -308,6 +312,20 @@ void server::set_default_pages( ) {
 
 std::map<int, std::string> server::get_def_error_pages( ) const {
     return _default_error_pages;
+}
+
+bool server::check_methods( std::string str, std::list<std::string> arr ) const {
+    std::list<std::string>::iterator it = arr.begin();
+    while (it != arr.end())
+    {
+        if (str == *it++)
+            return true;
+    }
+    return false;
+}
+
+std::string server::get_allow( std::list<std::string> arr ) {
+    return std::string( );
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

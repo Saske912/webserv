@@ -43,8 +43,10 @@ std::string route::swap_path( const std::string &request ) {
         tmp = std::string(request, _name.length(), request.length() - _name.length());
     else
         tmp = "/";
-//    std::cout << tmp  << std::endl;
+//    std::cout << _root+ tmp  << std::endl;
 //    std::cout << "root: " << _root  << std::endl;
+    if (*_root.rbegin() != '/' and *tmp.begin() != '/')
+        _root += '/';
     return _root += tmp;
 }
 

@@ -49,6 +49,8 @@ protected:
     bool                        is_сgi(const std::string& request, route  const & route) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
+    bool                        check_methods(std::string str, std::list<std::string> arr) const;
+    std::string                 get_allow(std::list<std::string> arr);
 private:
     std::string                 _host;
     unsigned int                _port;
