@@ -8,7 +8,7 @@ ParseResult::ParseResult(const ParseResult &other) : error(other.error), node(ot
 {
 }
 
-Node* ParseResult::checkIn(const ParseResult &parseResult)
+ANode* ParseResult::checkIn(const ParseResult &parseResult)
 {
 	if (parseResult.error) {
 		error = parseResult.error;
@@ -16,7 +16,7 @@ Node* ParseResult::checkIn(const ParseResult &parseResult)
 	return parseResult.node;
 }
 
-ParseResult& ParseResult::success(Node* node_)
+ParseResult& ParseResult::success(ANode* node_)
 {
 	node = node_;
 	return *this;

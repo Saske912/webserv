@@ -4,7 +4,12 @@
 #include <iostream>
 #include <exception>
 #include <list>
-#include "Node.hpp"
+#include "node/ANode.hpp"
+#include "node/IdentifierNode.hpp"
+#include "node/ParamNode.hpp"
+#include "node/RouteNode.hpp"
+#include "node/ServerNode.hpp"
+#include "node/ConfigNode.hpp"
 #include "Token.hpp"
 #include "server.hpp"
 #include "config.hpp"
@@ -24,7 +29,7 @@ public:
 	Interpreter(const Interpreter &other);
 	~Interpreter();
 
-	void visit(Node *node);
+	void visit(ANode *node);
 	void visit(IdentifierNode *node);
 	void visit(ParamNode *node);
 	route visit(RouteNode *node);
