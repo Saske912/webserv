@@ -257,7 +257,8 @@ char **Header::addEnv(char *str, char c)
 	char **split = ft_split(str, c);
 	int i = 0;
 	int j = 0;
-	
+
+	printf("INCOMIG STRING = %s\n", str);	
 	while (Env[i])
 		++i;
 	while (split[j])
