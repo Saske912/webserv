@@ -19,6 +19,7 @@ static void parse_first_line(char *line, Header &head)
 	head.setRequest(std::string(tmp, 1, line - tmp - 2));
 	tmp = strchr(line + 1, '\0');
 	head.setHttp(std::string(line, 0, tmp - line - 1));
+	head.addEnv((char *)("QUERY_STRING=" + head.getRequest()).c_str());
 }
 
 static void parse_request(char *line, Header &head)

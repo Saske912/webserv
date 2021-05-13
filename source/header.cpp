@@ -252,52 +252,18 @@ std::string &Header::getWWW_Authenticate()
 }
 
 
-char **Header::addEnv(char *str, char c)
+void Header::addEnv(char *str)
 {
-	/*
-	char **split = ft_split(str, c);
-	int i = 0;
-	int j = 0;
-
-	ft_putstr_fd((char *)"INCOMIG STRING = ", 2);
-	ft_putstr_fd(str, 2);
-	while (Env[i])
-		++i;
-	while (split[j])
-		++j;
-	char **nu = (char **)malloc(sizeof(char *) * (i + j + 1));
-	i = -1;
-	while (Env[++i])
-		nu[i] = strdup(Env[i]);
-	j = -1;
-	while (split[++j])
-		nu[i + j] = strdup(split[j]);
-	nu[i + j] = 0;
-	ft_doublefree(Env);
-	ft_doublefree(split);
-	Env = nu;
-	i = -1;
-	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
-	while (Env[++i])
-	{
-		ft_putstr_fd(Env[i], 2);
-		ft_putstr_fd((char *)"\n", 2);
-	}
-	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
-	return (Env);
-	*/
 	int i = 0;
 
-	(void)c;
 	while (Env[i])
 		++i;
 	char **nu = (char **)malloc(sizeof(char *) * (i + 2));
 	i = -1;
 	while (Env[++i])
 		nu[i] = strdup(Env[i]);
-	nu[i++] = ft_strjoin((char *)"_GET=", str);
+	nu[i++] = strdup(str);
 	nu[i] = 0;
 	ft_doublefree(Env);
 	Env = nu;
-	return (Env);
 }

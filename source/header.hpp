@@ -27,7 +27,7 @@ class Header
 		std::string &getUser_Agent();
 		std::string &getWWW_Authenticate();
 		char **getEnv();
-		char **addEnv(char *, char);
+		void addEnv(char *);
 		unsigned int getPort();
 		void setEnv(char **env);
 		void setPort(unsigned int const &);
