@@ -130,7 +130,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 			
 			
 ////////////////////////////////////
-            std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
+          //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 			fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 			fstat(fd, &stat);
 			str = (char *)(*it).head.getHttp().c_str();
