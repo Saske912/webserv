@@ -19,8 +19,6 @@ static void parse_first_line(char *line, Header &head)
 	head.setRequest(std::string(tmp, 1, line - tmp - 2));
 	tmp = strchr(line + 1, '\0');
 	head.setHttp(std::string(line, 0, tmp - line - 1));
-
-//	std::cout << "\n\n\nMethod =" << head.getMethod() << "\n\n\nRequest =" << head.getRequest() << "\n\n\nHttp =" << head.getHttp() << "\n\n\n" << std::endl;
 }
 
 static void parse_request(char *line, Header &head)
@@ -31,16 +29,59 @@ static void parse_request(char *line, Header &head)
 	if ((tmp = strstr(line, "Accept-Language: ")))
 	{
 		tmp += strlen("Accept-Language: ");
-		head.setContent_Language("Content-Language: " + std::string(tmp));
+		head.setContent_Language("Content-Language: " + std::string(tmp) + "\n");
 	}
 	else if ((tmp = strstr(line, "Host: ")))
 	{
 		tmp += strlen("Host: ");
 		tmp2 = strchr(tmp, ':');
-		head.setHost(std::string(tmp, 0, tmp2 - tmp));
+		if (head.getHost().empty())
+			head.setHost(std::string(tmp, 0, tmp2 - tmp));
+		else
+			(head.setHost("400"));
 		head.setPort(std::stoi(tmp2 + 1));
 	}
+}
 
+std::string get_current_date()
+{
+	const static std::string daysOfWeek[] = {
+		"Sun",
+		"Mon",
+		"Tue",
+		"Wed",
+		"Thu",
+		"Fri",
+		"Sat"
+	};
+	const static std::string monthsOfYear[] = {
+		"January",
+		"Fubruary",
+		"March",
+		"April",
+		"May",
+		"June",
+		"August"
+		"September"
+		"October"
+		"November"
+		"December"
+	};
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer[80];
+  std::string date;
+  std::string month;
+  time (&rawtime);
+  timeinfo = localtime(&rawtime);
+  date = daysOfWeek[timeinfo->tm_wday] + ", ";
+  strftime(buffer,sizeof(buffer),"%d",timeinfo);
+  date += std::string(buffer) + " ";
+  strftime(buffer,sizeof(buffer),"%m",timeinfo);
+  date += monthsOfYear[atoi(buffer) - 1] + " ";
+  strftime(buffer,sizeof(buffer),"%Y %H:%M:%S",timeinfo);
+  date += std::string(buffer) + "\n";
+  return date;
 }
 
 static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
@@ -100,10 +141,21 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 			str = (char *)(*it).head.getMethod().c_str();
 			send( (*it).fd, str, strlen(str), 0);
 			send( (*it).fd, "\n", 1, 0);
-			
-			str = (char *)(*it).head.getContent_Language().c_str();
+			if (!((*it).head.getContent_Language().empty()))	
+			{
+				str = (char *)(*it).head.getContent_Language().c_str();
+				send( (*it).fd, str, strlen(str), 0);
+			}
+			if (!((*it).head.getAllow().empty()))
+			{
+				str = (char *)(*it).head.getAllow().c_str();
+				send( (*it).fd, str, strlen(str), 0);	
+			}
+			(*it).head.setDate("Date: " + get_current_date());
+			str = (char *)(*it).head.getDate().c_str();
 			send( (*it).fd, str, strlen(str), 0);
-			
+			str = (char *)(*it).head.getLast_Modified().c_str();
+			send( (*it).fd, str, strlen(str), 0);
 			string = "Content-Length: ";
 		   	string += std::to_string(stat.st_size + 1);
 		  	str = (char *)string.c_str();

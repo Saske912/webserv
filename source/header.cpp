@@ -1,6 +1,8 @@
 #include "../wpersimm.h"
 #include "header.hpp"
 
+std::string const Header::Last_Modified = "Last_Modified: " + get_current_date();
+
 Header::Header()
 {
 	Env = 0;
@@ -70,6 +72,11 @@ void Header::setContent_Location(std::string const &str)
 void Header::setContent_Type(std::string const &str)
 {
 	Content_Type = str;
+}
+
+void Header::setDate(std::string const &str)
+{
+	Date = str;
 }
 
 void Header::setHttp(std::string const &str)
@@ -184,6 +191,11 @@ std::string &Header::getContent_Type()
 	return Content_Type;
 }
 
+std::string &Header::getDate()
+{
+	return Date;
+}
+
 std::string &Header::getHttp()
 {
 	return Http;
@@ -192,6 +204,11 @@ std::string &Header::getHttp()
 std::string &Header::getHost()
 {
 	return Host;
+}
+
+std::string const &Header::getLast_Modified()
+{
+	return Last_Modified;
 }
 
 std::string &Header::getMethod()
@@ -232,4 +249,29 @@ std::string &Header::getUser_Agent()
 std::string &Header::getWWW_Authenticate()
 {
 	return WWW_Authenticate;
+}
+
+
+char **Header::addEnv(char *str, char c)
+{
+	char **split = ft_split(str, c);
+	int i = 0;
+	int j = 0;
+	
+	while (Env[i])
+		++i;
+	while (split[j])
+		++j;
+	char **nu = (char **)malloc(sizeof(char *) * (i + j + 1));
+	i = -1;
+	while (Env[++i])
+		nu[i] = strdup(Env[i]);
+	j = -1;
+	while (split[++j])
+		nu[i + j] = split[j];
+	nu[i + j] = 0;
+	ft_doublefree(Env);
+	ft_doublefree(split);
+	Env = nu;
+	return (Env);
 }

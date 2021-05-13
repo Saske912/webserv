@@ -18,6 +18,8 @@ config parse(int fd) {
     }
     config result;
     Interpreter(result).visit(ast.node);
+    delete ast.node;
+    delete ast.error;
     return result;
 }
 
