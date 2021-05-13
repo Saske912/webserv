@@ -4,7 +4,9 @@
 #include <iostream>
 #include <vector>
 #include "Token.hpp"
-#include "Node.hpp"
+#include "node/InvalidSyntaxErrorNode.hpp"
+#include "node/ConfigNode.hpp"
+#include "node/ServerNode.hpp"
 #include "ParseResult.hpp"
 
 class Parser
