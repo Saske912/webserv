@@ -84,99 +84,109 @@ std::string get_current_date()
   return date;
 }
 
-static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
+int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 {
 	char *line;
-	int	 ct = 0;
+	int ct = 0;
 
-	std::list<t_write>::iterator it = set.begin();
-	while (it != set.end())
+	(*it).head.setEnv(t.env);
+	if ( FD_ISSET((*it).fd, &t.read))
 	{
-	    ct = 0;
-		(*it).head.setEnv(t.env);
-		if ( FD_ISSET((*it).fd, &t.read))
+		(*it).flag = 1;
+		while ((t.rd = recive_next_line((*it).fd, &line)) > 0)
 		{
-			(*it).flag = 1;
-			while ((t.rd = recive_next_line((*it).fd, &line)) > 0)
+			if (ct == 0)
 			{
-				if (ct == 0)
-				{
-					parse_first_line(line, (*it).head);
-					++ct;
-				}
-				else
-					parse_request(line, (*it).head);
+				parse_first_line(line, (*it).head);
+				++ct;
+			}
+			else
+				parse_request(line, (*it).head);
 
-			//	std::cout << line << std::endl;
-				free(line);
-				line = 0;
-			}
-			if (t.rd == 0)
-			{
-				set.erase(it);
-				break;
-			}
+		//	std::cout << line << std::endl;
 			free(line);
 			line = 0;
 		}
-		if ( FD_ISSET((*it).fd, &t.write))
+		if (t.rd == 0)
 		{
-			int fd;
-			std::string string;
-			std::string string2;
-			struct stat stat;
-			char *str;
-			
-			
-			
+			set.erase(it);
+			return 1;
+		}
+		free(line);
+		line = 0;
+	}
+	return 0;
+}
+
+void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
+{
+	int fd;
+	std::string string;
+	std::string string2;
+	struct stat stat;
+	char *str;
+
+	if ( FD_ISSET((*it).fd, &t.write))
+	{
 ////////////////////////////////////
-          //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
-			fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
-			fstat(fd, &stat);
-			str = (char *)(*it).head.getHttp().c_str();
+	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
+		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
+		fstat(fd, &stat);
+		str = (char *)(*it).head.getHttp().c_str();
+		send( (*it).fd, str, strlen(str), 0);
+		str = (char *)(*it).head.getRequest().c_str();
+		send( (*it).fd, str, strlen(str), 0);
+		send( (*it).fd, " ", 1, 0);
+		str = (char *)(*it).head.getMethod().c_str();
+		send( (*it).fd, str, strlen(str), 0);
+		send( (*it).fd, "\n", 1, 0);
+		if (!((*it).head.getContent_Language().empty()))	
+		{
+			str = (char *)(*it).head.getContent_Language().c_str();
 			send( (*it).fd, str, strlen(str), 0);
-			str = (char *)(*it).head.getRequest().c_str();
-			send( (*it).fd, str, strlen(str), 0);
-			send( (*it).fd, " ", 1, 0);
-			str = (char *)(*it).head.getMethod().c_str();
-			send( (*it).fd, str, strlen(str), 0);
-			send( (*it).fd, "\n", 1, 0);
-			if (!((*it).head.getContent_Language().empty()))	
-			{
-				str = (char *)(*it).head.getContent_Language().c_str();
-				send( (*it).fd, str, strlen(str), 0);
-			}
-			if (!((*it).head.getAllow().empty()))
-			{
-				str = (char *)(*it).head.getAllow().c_str();
-				send( (*it).fd, str, strlen(str), 0);	
-			}
-			(*it).head.setDate("Date: " + get_current_date());
-			str = (char *)(*it).head.getDate().c_str();
-			send( (*it).fd, str, strlen(str), 0);
-			str = (char *)(*it).head.getLast_Modified().c_str();
-			send( (*it).fd, str, strlen(str), 0);
-			string = "Content-Length: ";
-		   	string += std::to_string(stat.st_size + 1);
-		  	str = (char *)string.c_str();
-			send( (*it).fd, str, strlen(str), 0);
-			send((*it).fd, "\r\n\r\n", 4, 0);
+		}
+		if (!((*it).head.getAllow().empty()))
+		{
+			str = (char *)(*it).head.getAllow().c_str();
+			send( (*it).fd, str, strlen(str), 0);	
+		}
+		(*it).head.setDate("Date: " + get_current_date());
+		str = (char *)(*it).head.getDate().c_str();
+		send( (*it).fd, str, strlen(str), 0);
+		str = (char *)(*it).head.getLast_Modified().c_str();
+		send( (*it).fd, str, strlen(str), 0);
+		string = "Content-Length: ";
+		string += std::to_string(stat.st_size + 1);
+		str = (char *)string.c_str();
+		send( (*it).fd, str, strlen(str), 0);
+		send((*it).fd, "\r\n\r\n", 4, 0);
 
 ///////////////////////////////////			
-			while (get_next_line(fd, &str))
-			{
-				send( (*it).fd, str, strlen(str), 0);
-				send( (*it).fd, "\n", 1, 0);
-				free(str);
-				str = 0;
-			}
+		while (get_next_line(fd, &str))
+		{
 			send( (*it).fd, str, strlen(str), 0);
 			send( (*it).fd, "\n", 1, 0);
 			free(str);
 			str = 0;
-			close(fd);
-			(*it).head.eraseStruct();
 		}
+		send( (*it).fd, str, strlen(str), 0);
+		send( (*it).fd, "\n", 1, 0);
+		free(str);
+		str = 0;
+		close(fd);
+		(*it).head.eraseStruct();
+	}
+
+}
+
+static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
+{
+	std::list<t_write>::iterator it = set.begin();
+	while (it != set.end())
+	{
+		if (recive(set, it, t))
+			break ;
+		response(it, t, conf);
 		it++;
 	}
 }
