@@ -51,6 +51,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
+	    ct = 0;
 		(*it).head.setEnv(t.env);
 		if ( FD_ISSET((*it).fd, &t.read))
 		{
@@ -88,6 +89,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 			
 			
 ////////////////////////////////////
+            std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 			fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 			fstat(fd, &stat);
 			str = (char *)(*it).head.getHttp().c_str();

@@ -73,10 +73,11 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
         {
             if (!check_methods(head.getMethod(), it->get_http_methods()))
             {
-                head.setAllow(get_allow(it->get_http_methods()));
-                return exception_processing(405, head);
+                std::cout << "ERROR: " << head.getRequest() << "|" << head.getMethod()  << std::endl;
+//                head.setAllow(get_allow(it->get_http_methods()));
+//                return exception_processing(405, head);
             }
-            else if (head.getMethod() == "GET")
+//            else if (head.getMethod() == "GET")
                 return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
 //            else if (head.getMethod() == "POST")
 //
@@ -154,9 +155,9 @@ int    server::responce( Header & head ) {
 
     request = head.getRequest();
     if (head.getHost() == "400" || head.getHost().empty())
-        exception_processing(400, head);
-    if (*(std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod())) != head.getMethod())
-        exception_processing(501, head);
+        return exception_processing(400, head);
+//    if (*(std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod())) != head.getMethod())
+//        return exception_processing(501, head);
     head.setHost("Host: " + _host + ":" + ft_itoa(static_cast<int>(_port)) + '\n');
     int n = (int)request.find('?');
     if (n > 0)
@@ -231,11 +232,11 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     stat;
     char    **arg;
 
-//    std::cout << "cgi: " << route.get_cgi().first<< std::endl;
+//    std::cout << "cgi: " << route.get_cgi().second<< std::endl;
     head.setContent_Location(request);
     if (is_сgi(request, route))
     {
-        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 777)) < 0)
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
         {
