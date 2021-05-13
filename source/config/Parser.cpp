@@ -25,12 +25,11 @@ ParseResult Parser::parse()
 
 ParseResult Parser::config() {
 	ParseResult result;
-	ConfigNode::ParamValuesType params;
 	ConfigNode::ServerValuesType servers;
 	while (current_token->type == Token::IDENTIFIER) {
 		if (current_token->value == "server") {
 			advance();
-			Node *serv = result.checkIn(server());
+			ANode *serv = result.checkIn(server());
 			if (result.error)
 			{
 				delete serv;
@@ -39,17 +38,11 @@ ParseResult Parser::config() {
 			servers.push_back(*dynamic_cast<ServerNode *>(serv));
 			delete serv;
 		} else {
-			Node *param_ = result.checkIn(param());
-			if (result.error) {
-				delete param_;
-				return result;
-			}
-			params.push_back(*dynamic_cast<ParamNode*>(param_));
-			delete param_;
+		    return result.failure(getSyntaxError("Wrong Identifier name"));
 		}
 		skip_end_of_line_tokens();
 	}
-	return result.success(new ConfigNode(params, servers));
+	return result.success(new ConfigNode(servers));
 }
 
 ParseResult Parser::server()
@@ -62,7 +55,7 @@ ParseResult Parser::server()
 	while (current_token->type == Token::IDENTIFIER) {
 		if (current_token->value == "route") {
 			advance();
-			Node *route_ = result.checkIn(route());
+			ANode *route_ = result.checkIn(route());
 			if (result.error)
 			{
 				delete route_;
@@ -71,7 +64,7 @@ ParseResult Parser::server()
 			routes.push_back(*dynamic_cast<RouteNode *>(route_));
 			delete route_;
 		} else {
-			Node *param_ = result.checkIn(param());
+			ANode *param_ = result.checkIn(param());
 			if (result.error) {
 				delete param_;
 				return result;
@@ -101,7 +94,7 @@ ParseResult Parser::route()
 	if (expect_lcurly(result))
 		return result;
 	while (current_token->type == Token::IDENTIFIER) {
-		Node *param_ = result.checkIn(param());
+		ANode *param_ = result.checkIn(param());
 		if (result.error) {
 			delete param_;
 			return result;

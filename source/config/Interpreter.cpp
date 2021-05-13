@@ -28,7 +28,7 @@ Interpreter::~Interpreter() {
 
 }
 
-void Interpreter::visit(Node *node)
+void Interpreter::visit(ANode *node)
 {
 	if (IdentifierNode *identifierNode = dynamic_cast<IdentifierNode*>(node)) {
 		return visit(identifierNode);
