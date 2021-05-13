@@ -270,7 +270,7 @@ char **Header::addEnv(char *str, char c)
 		nu[i] = strdup(Env[i]);
 	j = -1;
 	while (split[++j])
-		nu[i + j] = split[j];
+		nu[i + j] = strdup(split[j]);
 	nu[i + j] = 0;
 	ft_doublefree(Env);
 	ft_doublefree(split);
@@ -278,7 +278,10 @@ char **Header::addEnv(char *str, char c)
 	i = -1;
 	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
 	while (Env[++i])
+	{
 		ft_putstr_fd(Env[i], 2);
+		ft_putstr_fd((char *)"\n", 2);
+	}
 	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
 	return (Env);
 }
