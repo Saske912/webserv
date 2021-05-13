@@ -254,6 +254,7 @@ std::string &Header::getWWW_Authenticate()
 
 char **Header::addEnv(char *str, char c)
 {
+	/*
 	char **split = ft_split(str, c);
 	int i = 0;
 	int j = 0;
@@ -283,5 +284,20 @@ char **Header::addEnv(char *str, char c)
 		ft_putstr_fd((char *)"\n", 2);
 	}
 	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
+	return (Env);
+	*/
+	int i = 0;
+
+	(void)c;
+	while (Env[i])
+		++i;
+	char **nu = (char **)malloc(sizeof(char *) * (i + 2));
+	i = -1;
+	while (Env[++i])
+		nu[i] = strdup(Env[i]);
+	nu[i++] = ft_strjoin((char *)"_GET=", str);
+	nu[i] = 0;
+	ft_doublefree(Env);
+	Env = nu;
 	return (Env);
 }
