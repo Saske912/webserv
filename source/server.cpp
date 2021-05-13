@@ -65,7 +65,7 @@ server::server( const std::string  &host, unsigned int port,
     set_list_of_methods();
 }
 
-int server::get_path_to_request( const std::string &request, Header & head ) {
+int server::get_path_to_request( const std::string &request, Header & head) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
@@ -73,7 +73,7 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
         {
             if (!check_methods(head.getMethod(), it->get_http_methods()))
             {
-                std::cout << "ERROR: " << head.getRequest() << "|" << head.getMethod()  << std::endl;
+//                std::cout << "ERROR: " << head.getRequest() << "|" << head.getMethod()  << std::endl;
 //                head.setAllow(get_allow(it->get_http_methods()));
 //                return exception_processing(405, head);
             }
@@ -119,7 +119,8 @@ void server::add_route(const route &route_)
 }
 
 int     server::request_processing( const std::string &request, \
-std::string const & def_file, route const & route, Header & head ) {
+std::string const & def_file, route const & route, Header & head) {
+//                                    std::cout << "QUERY: " << query  << std::endl;
 	if (is_file(request))
 		return targeting(head, request, route);
 	else
@@ -148,7 +149,8 @@ bool server::is_file( std::string request ) {
     return false;
 }
 
-int    server::responce( Header & head ) {
+int    server::responce( Header & head )
+{
     std::pair<int, std::string> ret;
     std::string                 request;
     std::string                 tmp;
@@ -163,8 +165,8 @@ int    server::responce( Header & head ) {
     if (n > 0)
     {
         tmp = request.substr(0, n);
-        ret.first = get_path_to_request(tmp, head);
         ret.second = request.substr(n + 1, request.length());
+        ret.first = get_path_to_request(tmp, head);
     }
     else
         ret.first = get_path_to_request(request, head);
@@ -231,8 +233,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     pid;
     int     stat;
     char    **arg;
+    int     fd1 = 1;
 
-//    std::cout << "cgi: " << route.get_cgi().second<< std::endl;
     head.setContent_Location(request);
     if (is_сgi(request, route))
     {
@@ -244,14 +246,15 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             arg[0] = strdup("content/cgi.sh");
             arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
             arg[2] = strdup(const_cast<char *>(request.c_str()));
+//            std::cerr << "QUERY: " << query  << std::endl;
             dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
-            std::cout << "request: " << request  << std::endl;
             exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
         waitpid(pid, &stat, 0);
+        dup2(fd1, 1);
         lseek(fd, 0, 0);
         head.setHttp("HTTP/1.1 ");
         head.setRequest("200");

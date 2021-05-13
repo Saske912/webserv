@@ -40,9 +40,9 @@ public:
     int                        responce( Header & head );
 protected:
 	int                         request_processing(std::string const & request, \
-    std::string const & def_file, route const & route, Header & head );
+    std::string const & def_file, route const & route, Header & head);
     bool                        is_file(std::string request);
-    int                         get_path_to_request(std::string const & request, Header & head );
+    int                         get_path_to_request(std::string const & request, Header & head);
     std::string                 dirs(std::string request);
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
