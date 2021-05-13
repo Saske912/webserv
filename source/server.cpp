@@ -6,7 +6,10 @@
 #include "server.hpp"
 
 
-server::server() : _server_names(), _error_pages(), _routs() {set_default_pages();}
+server::server() : _server_names(), _error_pages(), _routs() {
+    set_default_pages();
+    set_list_of_methods();
+}
 
 server::~server( void ) { }
 
@@ -22,6 +25,7 @@ server &server::operator=( server const &src ) {
     this->_error_pages = src._error_pages;
     this->_server_names = src._server_names;
     this->_default_error_pages = src._default_error_pages;
+    this->_list_of_methods = src._list_of_methods;
     return *this;
 }
 
@@ -58,6 +62,7 @@ server::server( const std::string  &host, unsigned int port,
      const std::map<int, std::string >& error_pages, std::list<route> const & routs, long int client_body_size) :
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
     set_default_pages();
+    set_list_of_methods();
 }
 
 int server::get_path_to_request( const std::string &request, Header & head ) {
@@ -71,7 +76,10 @@ int server::get_path_to_request( const std::string &request, Header & head ) {
                 head.setAllow(get_allow(it->get_http_methods()));
                 return exception_processing(405, head);
             }
-            return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
+            else if (head.getMethod() == "GET")
+                return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
+//            else if (head.getMethod() == "POST")
+//
         }
         it++;
     }
@@ -145,6 +153,11 @@ int    server::responce( Header & head ) {
     std::string                 tmp;
 
     request = head.getRequest();
+    if (head.getHost() == "400" || head.getHost().empty())
+        exception_processing(400, head);
+    if (*(std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod())) != head.getMethod())
+        exception_processing(501, head);
+    head.setHost("Host: " + _host + ":" + ft_itoa(static_cast<int>(_port)) + '\n');
     int n = (int)request.find('?');
     if (n > 0)
     {
@@ -218,17 +231,22 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     stat;
     char    **arg;
 
+//    std::cout << "cgi: " << route.get_cgi().first<< std::endl;
     head.setContent_Location(request);
     if (is_сgi(request, route))
     {
-        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 655)) < 0)
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
         {
-            arg = (char **)ft_calloc(2, sizeof(char **));
-            arg[0] = const_cast<char *>(request.c_str());
+            arg = (char **)ft_calloc(4, sizeof(char **));
+            arg[0] = strdup("content/cgi.sh");
+            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
+            arg[2] = strdup(const_cast<char *>(request.c_str()));
             dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
+            std::cout << "request: " << request  << std::endl;
+            exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
@@ -336,6 +354,17 @@ std::string server::get_allow( std::list<std::string> arr ) {
     }
     ret += '\n';
     return ret;
+}
+
+void server::set_list_of_methods( ) {
+    _list_of_methods.push_back("OPTIONS");
+    _list_of_methods.push_back("GET");
+    _list_of_methods.push_back("HEAD");
+    _list_of_methods.push_back("POST");
+    _list_of_methods.push_back("PUT");
+    _list_of_methods.push_back("DELETE");
+    _list_of_methods.push_back("TRACE");
+    _list_of_methods.push_back("CONNECT");
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {
