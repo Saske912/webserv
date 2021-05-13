@@ -273,5 +273,10 @@ char **Header::addEnv(char *str, char c)
 	ft_doublefree(Env);
 	ft_doublefree(split);
 	Env = nu;
+	i = -1;
+	printf("------------------------------------------------\n");
+	while (Env[++i])
+		printf("%s\n", Env[i]);
+	printf("------------------------------------------------\n");
 	return (Env);
 }
