@@ -17,26 +17,21 @@ int main(int ac, char *av[], char *env[])
     if (ac == 2) {
 		config_class = parse(av[1]);
 		conf = config_class.servers;
-//		std::cout << "parse complete" << std::endl;
-//		std::cout << config_class << std::endl;
 	}
     else if (ac == 1)
     {
         char str[] = "cfg/ConfigExample.ws";
         config_class = parse(str);
         conf = config_class.servers;
-//        conf.push_back(default_config());
     }
     else {
 		// fixme error_usage();
 		std::cerr << "Config file expected!" << std::endl;
 		return 1;
 	}
-//    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
     serv = init_serv();
     if (!(t.env = ft_doublecpy(env)))
         error_exit("malloc error");
-//    tests(conf);
     loop(tv, serv, t, conf);
     return (0);
 }

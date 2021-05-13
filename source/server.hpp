@@ -51,6 +51,7 @@ protected:
     void                        set_default_pages();
     bool                        check_methods(std::string str, std::list<std::string> arr) const;
     std::string                 get_allow(std::list<std::string> arr);
+    void                        set_list_of_methods();
 private:
     std::string                 _host;
     unsigned int                _port;
@@ -59,6 +60,7 @@ private:
     std::map<int, std::string>  _default_error_pages;
     std::list<route>            _routs;
     long int                    _client_body_size;
+    std::list<std::string>      _list_of_methods;
 };
 
 std::ostream &operator<<(std::ostream &o, const server &serv);
