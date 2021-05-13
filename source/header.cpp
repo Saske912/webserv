@@ -258,7 +258,8 @@ char **Header::addEnv(char *str, char c)
 	int i = 0;
 	int j = 0;
 
-	printf("INCOMIG STRING = %s\n", str);	
+	ft_putstr_fd((char *)"INCOMIG STRING = ", 2);
+	ft_putstr_fd(str, 2);
 	while (Env[i])
 		++i;
 	while (split[j])
@@ -275,9 +276,9 @@ char **Header::addEnv(char *str, char c)
 	ft_doublefree(split);
 	Env = nu;
 	i = -1;
-	printf("------------------------------------------------\n");
+	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
 	while (Env[++i])
-		printf("%s\n", Env[i]);
-	printf("------------------------------------------------\n");
+		ft_putstr_fd(Env[i], 2);
+	ft_putstr_fd((char *)"------------------------------------------------\n", 2);
 	return (Env);
 }
