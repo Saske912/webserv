@@ -26,6 +26,7 @@ public:
 	bool expect_rcurly(ParseResult& result);
 	InvalidSyntaxErrorNode* getSyntaxError(const std::string &reason);
 	void skip_end_of_line_tokens();
+	void skip_param_or_group_tokens();
 
 	std::vector<Token>& tokens;
 	Token* current_token;

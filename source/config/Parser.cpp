@@ -18,7 +18,7 @@ ParseResult Parser::parse()
 {
 	ParseResult result = config();
 	if (!result.error && current_token->type != Token::TT_EOF) {
-		return result.failure(getSyntaxError("Unknown syntax error"));
+		return result.failure(getSyntaxError("Expected End Of File"));
 	}
 	return result;
 }
@@ -28,17 +28,15 @@ ParseResult Parser::config() {
 	ConfigNode::ServerValuesType servers;
 	while (current_token->type == Token::IDENTIFIER) {
 		if (current_token->value == "server") {
-			advance();
+            advance();
 			ANode *serv = result.checkIn(server());
-			if (result.error)
-			{
-				delete serv;
-				return result;
+			if (result.checkInSuccess) {
+                servers.push_back(*dynamic_cast<ServerNode *>(serv));
 			}
-			servers.push_back(*dynamic_cast<ServerNode *>(serv));
 			delete serv;
 		} else {
-		    return result.failure(getSyntaxError("Wrong Identifier name"));
+		    result.failure(getSyntaxError("Wrong Identifier name"));
+            skip_param_or_group_tokens();
 		}
 		skip_end_of_line_tokens();
 	}
@@ -175,4 +173,18 @@ void Parser::skip_end_of_line_tokens()
 		current_token->type == Token::SEMICOLON) {
 		advance();
 	}
+}
+
+void Parser::skip_param_or_group_tokens() {
+    while (current_token->type != Token::NEWLINE &&
+        current_token->type != Token::SEMICOLON &&
+        current_token->type != Token::LCURLY) {
+        advance();
+    }
+    if (current_token->type == Token::LCURLY) {
+        while (current_token->type != Token::RCURLY) {
+            advance();
+        }
+    }
+    advance();
 }

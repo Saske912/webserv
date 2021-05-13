@@ -5,7 +5,9 @@ set(CMAKE_CXX_STANDARD 98)
 
 include_directories(webserv source source/config .)
 
-add_link_options(-Llibft -lft -g)
+add_link_options(-Llibft -lft)
+
+add_compile_options(-g -Wall -Wextra)
 
 add_executable(webserv
         header.h

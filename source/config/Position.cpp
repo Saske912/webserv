@@ -1,22 +1,24 @@
 #include "Position.hpp"
 
-Position::Position() : idx(), line(1), col()
+Position::Position() : line(1), col(0), filename("<...>")
 {
 }
 
-Position::Position(const Position &other) : idx(other.idx), line(other.line), col(other.col)
+Position::Position(const Position &other)
+    : line(other.line), col(other.col), filename(other.filename)
 {
 }
 
-Position::Position(int idx, int line, int col) : idx(idx), line(line), col(col)
+Position::Position(const char *filename)
+    : line(1), col(0), filename(filename)
 {
 }
 
 Position &Position::operator=(const Position &other)
 {
-	idx = other.idx;
 	line = other.line;
 	col = other.col;
+	filename = other.filename;
 	return *this;
 }
 
@@ -26,10 +28,9 @@ Position::~Position()
 
 void Position::advance(char c)
 {
-	++idx;
 	++col;
 	if (c == '\n') {
 		++line;
-		col = 0;
+		col = 1;
 	}
 }

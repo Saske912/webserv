@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <list>
+#include <exception>
 #include "Token.hpp"
 #include "Position.hpp"
 

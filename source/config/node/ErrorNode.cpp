@@ -1,13 +1,14 @@
 #include "ErrorNode.hpp"
 
 ErrorNode::ErrorNode(const Position &start, const Position &end,
-                     const std::string &reason) : start(start), end(end), reason(reason)
+                     const std::string &reason, const char *type_)
+     : start(start), end(end), reason(reason), type(type_), next()
 {
 }
 
-std::string ErrorNode::getType() const
+const char* ErrorNode::getType() const
 {
-    return std::string("Unknown Error");
+    return type;
 }
 
 const Position &ErrorNode::getStart() const
@@ -25,10 +26,27 @@ const std::string &ErrorNode::getReason() const
     return reason;
 }
 
-std::ostream& operator<<(std::ostream& o, const ErrorNode& errorNode) {
-    o << errorNode.getType() << ": " << errorNode.getReason() << std::endl <<
-      "at " << errorNode.getStart().line << ":" << errorNode.getStart().col <<
-      " (probably) until " << errorNode.getEnd().line << ":" << errorNode.getEnd().col <<
+const ErrorNode *ErrorNode::getNext() const {
+    return next;
+}
+
+std::ostream& operator<<(std::ostream& o, const ErrorNode *errorNode) {
+    o << errorNode->getType() << ": " << std::endl << "\t " << errorNode->getReason() << std::endl <<
+      "\t at " << errorNode->getStart().filename << ":" <<
+      errorNode->getStart().line << ":" << errorNode->getStart().col <<
       std::endl;
+    if (errorNode->getNext() != NULL) {
+        o << errorNode->getNext();
+    }
     return o;
+}
+
+void ErrorNode::addNext(ErrorNode *node) {
+    ErrorNode *last;
+
+    last = this;
+    while (last->next != NULL) {
+        last = last->next;
+    }
+    last->next = node;
 }

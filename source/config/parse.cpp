@@ -9,12 +9,12 @@
 #include "ParseResult.hpp"
 #include "config.hpp"
 
-config parse(int fd) {
-    std::vector<Token> tokens = Lexer(fd).make_tokens();
+config parse(int fd, const char *filename) {
+    std::vector<Token> tokens = Lexer(fd, filename).make_tokens();
     ParseResult ast = Parser(tokens).config();
     if (ast.error) {
         std::cout << ast.error << std::endl;
-        error_exit(ast.error->getReason());
+        exit(1);
     }
     config result;
     Interpreter(result).visit(ast.node);
@@ -23,8 +23,8 @@ config parse(int fd) {
     return result;
 }
 
-config parse(char *filename) {
+config parse(const char *filename) {
     int fd = open(filename, O_RDONLY);
 
-    return parse(fd);
+    return parse(fd, filename);
 }

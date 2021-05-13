@@ -6,15 +6,15 @@ class Position
 public:
 	Position();
 	Position(const Position& other);
-	Position(int idx, int line, int col);
+	Position(const char *filename);
 	Position& operator=(const Position& other);
 	~Position();
 
 	void advance(char c = 0);
 
-	int idx;
 	int line;
 	int col;
+	const char *filename;
 };
 
 #endif

@@ -15,7 +15,7 @@ class Lexer
 	Lexer& operator=(Lexer const& other);
 public:
 
-	Lexer(int fd);
+	Lexer(int fd, const char *filename);
 	~Lexer();
 
 	void advance();
