@@ -16,7 +16,7 @@ class Header
 		std::string &getDate();
 		std::string &getHost();
 		std::string &getHttp();
-		std::string &getLast_Modified();
+		std::string const &getLast_Modified();
 		std::string &getLocation();
 		std::string &getMethod();
 		std::string &getReferer();
@@ -27,6 +27,7 @@ class Header
 		std::string &getUser_Agent();
 		std::string &getWWW_Authenticate();
 		char **getEnv();
+		char **addEnv(char *, char);
 		unsigned int getPort();
 		void setEnv(char **env);
 		void setPort(unsigned int const &);
@@ -41,7 +42,6 @@ class Header
 		void setDate(std::string const &);
 		void setHost(std::string const &);
 		void setHttp(std::string const &);
-		void setLast_Modified(std::string const &);
 		void setLocation(std::string const &);
 		void setMethod(std::string const &);
 		void setReferer(std::string const &);
@@ -68,7 +68,7 @@ class Header
 		std::string Content_Type;
 		std::string Date;
 		std::string Host;
-		std::string Last_Modified;
+		const static std::string Last_Modified;
 		std::string Location;
 		std::string Referer;
 		std::string Retry_after;
