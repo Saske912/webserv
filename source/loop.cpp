@@ -107,7 +107,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 				else
 					parse_request(line, (*it).head);
 
-				std::cout << line << std::endl;
+			//	std::cout << line << std::endl;
 				free(line);
 				line = 0;
 			}
