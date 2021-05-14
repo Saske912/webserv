@@ -22,6 +22,7 @@ static void parse_first_line(char *line, Header &head)
 	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
 	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
 	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
+	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getRequest()).c_str());
 }
 
 static void parse_request(char *line, Header &head)
@@ -67,9 +68,17 @@ static void parse_request(char *line, Header &head)
 			str.erase(0, i);
 		if ((i = str.find('/')) != std::string::npos)
 		{
+			char tmpp[150];
 			str.erase(0, i);
 			head.addEnv((char *)("PATH_INFO=" + str).c_str());
+			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
 		}
+	}
+	else if ((tmp = strstr(line, "Accept: ")))
+	{
+		tmp += strlen("Accept: ");
+		str = std::string(tmp);
+		head.addEnv((char *)("CONTENT_TYPE=" + std::string(str, 0, str.find(','))).c_str());
 	}
 }
 
@@ -158,6 +167,9 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
+		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
+		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
+		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
 ////////////////////////////////////
 	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
@@ -283,7 +295,8 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            t_write a = {Header(), std::to_string(cli.ad >> 24) + "." + std::to_string(cli.ad >> 16 & 255) + "." + std::to_string(cli.ad >> 8 & 255) + "." + std::to_string(cli.ad & 255), cli.client, 0};
+            t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0};
+			std::cout << a.addr << std::endl;
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
