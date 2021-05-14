@@ -104,6 +104,11 @@ void Header::setRequest(std::string const &str)
 	Request = str;
 }
 
+void Header::setResponse(std::string const &str)
+{
+	Response = str;
+}
+
 void Header::setRetry_after(std::string const &str)
 {
 	Retry_after = str;
@@ -224,6 +229,11 @@ std::string &Header::getReferer()
 std::string &Header::getRequest()
 {
 	return Request;
+}
+
+std::string &Header::getResponse()
+{
+	return Response;
 }
 
 std::string &Header::getRetry_after()

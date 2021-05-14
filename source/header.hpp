@@ -20,6 +20,7 @@ class Header
 		std::string &getLocation();
 		std::string &getMethod();
 		std::string &getReferer();
+		std::string &getResponse();
 		std::string &getRequest();
 		std::string &getRetry_after();
 		std::string &getServer();
@@ -47,6 +48,7 @@ class Header
 		void setMethod(std::string const &);
 		void setReferer(std::string const &);
 		void setRequest(std::string const &);
+		void setResponse(std::string const &);
 		void setRetry_after(std::string const &);
 		void setServer(std::string const &);
 		void setTransfer_Encoding(std::string const &);
@@ -57,6 +59,7 @@ class Header
 		char **Env;
 		unsigned int Port;
 		std::string Request;
+		std::string Response;
 		std::string Method;
 		std::string Http;
 		std::string Accept_Charsets;
