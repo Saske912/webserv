@@ -55,6 +55,7 @@ typedef struct  s_client
 typedef struct	s_write
 {
 		Header head;
+		std::string addr;
 		int fd;
 		bool flag;
 }				t_write;

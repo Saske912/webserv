@@ -51,7 +51,8 @@ static void parse_request(char *line, Header &head)
 	{
 		tmp += strlen("Referer: ");
 		head.setReferer(tmp);
-		head.addEnv((char *)("QUERY_STRING=" + head.getReferer()).c_str());
+		if (head.getReferer().find('?') != std::string::npos)
+			head.addEnv((char *)("QUERY_STRING=" + std::string(head.getReferer(), head.getReferer().find('?') + 1, head.getReferer().size() - head.getReferer().find('?'))).c_str());
 		while (line[++i])
 		{
 			if (line[i] == '/')
@@ -159,10 +160,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	{
 ////////////////////////////////////
 	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
-	    if (it->head.getReferer().empty())
-		{
-			it->head.addEnv((char *)("QUERY_STRING=" + it->head.getRequest()).c_str());
-		}
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 		fstat(fd, &stat);
 		str = (char *)(*it).head.getHttp().c_str();
@@ -286,7 +283,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            t_write a = {Header(), cli.client, 0};
+            t_write a = {Header(), std::to_string(cli.ad >> 24) + "." + std::to_string(cli.ad >> 16 & 255) + "." + std::to_string(cli.ad >> 8 & 255) + "." + std::to_string(cli.ad & 255), cli.client, 0};
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
