@@ -134,6 +134,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
 		(*it).head.setEnv(t.env);
+		it->head.initEnv();
 		(*it).flag = 1;
 		while ((t.rd = recive_next_line((*it).fd, &line)) > 0)
 		{
@@ -303,7 +304,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
             t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0};
-			a.head.initEnv();
 			std::cout << a.addr << std::endl;
 			set.push_back(a);
         }
