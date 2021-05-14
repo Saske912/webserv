@@ -8,16 +8,13 @@ $pages_dir='content/GeoCin/pages/';
 
 $select='active';
 
-echo "_SERVER: \n";
-foreach ($_SERVER as $k => $v) {
-    echo "$k => $v";
-    echo "\n";
-}
-echo "_GET: \n";
-foreach ($_GET as &$k) {
-    echo $k;
-    echo "\n";
-}
+// echo "_SERVER: \n";
+// var_dump ($_SERVER);
+// echo "_GET: \n";
+// foreach ($_GET as &$k) {
+//     echo $k;
+//     echo "\n";
+// }
 
 if(!isset($_GET['z']))
     $content=file_get_contents('content/GeoCin/pages/index.html');

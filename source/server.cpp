@@ -74,11 +74,16 @@ int server::get_path_to_request( const std::string &request, Header & head) {
             if (!check_methods(head.getMethod(), it->get_http_methods()))
             {
 //                std::cout << "405"  << std::endl;
+
                 head.setAllow(get_allow(it->get_http_methods()));
                 return exception_processing(405, head);
             }
             else if (head.getMethod() == "GET")
                 return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
+            else if (head.getMethod() == "PUT")
+            {
+                return -1;
+            }
 //            else if (head.getMethod() == "POST")
 //
         }
@@ -154,8 +159,14 @@ int    server::responce( Header & head )
     std::pair<int, std::string> ret;
     std::string                 request;
     std::string                 tmp;
+    std::string server_name = "SERVER_NAME=";
+    std::string server_port = "SERVER_PORT=";
 
     request = head.getRequest();
+    server_name += *_server_names.begin();
+    head.addEnv(const_cast<char *>(server_name.c_str()));
+    server_port += ft_itoa(static_cast<int>(_port));
+    head.addEnv(const_cast<char *>(server_port.c_str()));
     if (head.getHost() == "400" || head.getHost().empty())
         return exception_processing(400, head);
     if (*(std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod())) != head.getMethod())
@@ -194,19 +205,14 @@ int server::exception_processing( int except, Header &head ) {
     int     fds[2];
     std::string concat;
     std::string to_head;
-    std::string server_name = "SERVER_NAME=";
-    std::string server_port = "SERVER_PORT=";
 
     try
     {
         to_head = get_error(except, _error_pages);
-        head.setHttp("HTTP/1.1 ");
-        head.setRequest(ft_itoa(except));
-        head.setMethod(get_error(except, _default_error_pages));
-        server_name += *_server_names.begin();
-        head.addEnv(const_cast<char *>(server_name.c_str()));
-        server_port += ft_itoa(static_cast<int>(_port));
-        head.addEnv(const_cast<char *>(server_port.c_str()));
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(ft_itoa(except)) + " " + get_error(except, _default_error_pages) + "\n").c_str()));
+//        head.setHttp("HTTP/1.1 ");
+//        head.setRequest(ft_itoa(except));
+//        head.setMethod(get_error(except, _default_error_pages));
         return open(to_head.c_str(), O_RDONLY);
     }
     catch (std::exception &)
@@ -230,9 +236,10 @@ int server::exception_processing( int except, Header &head ) {
         waitpid(pid, &stat, 0);
         if (stat == 1)
             error_exit("system error in execve");
-        head.setHttp("HTTP/1.1 ");
-        head.setRequest(ft_itoa(except));
-        head.setMethod(to_head);
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(ft_itoa(except)) + " " + to_head).c_str()));
+//        head.setHttp("HTTP/1.1 ");
+//        head.setRequest(ft_itoa(except));
+//        head.setMethod(to_head);
         return fds[0];
     }
 }
@@ -245,6 +252,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     fd1 = 1;
 
     head.setContent_Location(request);
+    head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (is_сgi(request, route))
     {
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
@@ -252,11 +260,11 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((pid = fork()) == 0)
         {
             arg = (char **)ft_calloc(4, sizeof(char **));
-//            arg[0] = strdup("/usr/bin/php");
-//            arg[1] = strdup(const_cast<char *>(request.c_str()));
             arg[0] = strdup("content/cgi.sh");
             arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
             arg[2] = strdup(const_cast<char *>(request.c_str()));
+//            std::cout << "PFFFF"  << std::endl;
+//            arg[0] = strdup("cgi_tester");
             char **tmp = head.getEnv();
             for (int i = 0; tmp[i]; i++)
             {
@@ -271,9 +279,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         waitpid(pid, &stat, 0);
         dup2(fd1, 1);
         lseek(fd, 0, 0);
-        head.setHttp("HTTP/1.1 ");
-        head.setRequest("200");
-        head.setMethod("OK");
+        head.setResponse("HTTP/1.1 200 OK");
+//        head.setHttp("HTTP/1.1 ");
+//        head.setRequest("200");
+//        head.setMethod("OK");
         return fd;
     }
     else
@@ -288,9 +297,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         }
         else
         {
-            head.setHttp("HTTP/1.1 ");
-            head.setRequest("200");
-            head.setMethod("OK");
+            head.setResponse("HTTP/1.1 200 OK");
+//            head.setHttp("HTTP/1.1 ");
+//            head.setRequest("200");
+//            head.setMethod("OK");
         }
     }
     return fd;

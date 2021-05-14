@@ -146,7 +146,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 			else
 				parse_request(line, (*it).head);
 
-			std::cout << line << std::endl;
+//			std::cout << line << std::endl;
 			free(line);
 			line = 0;
 		}
@@ -304,7 +304,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
             t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0};
-			std::cout << a.addr << std::endl;
+//			std::cout << a.addr << std::endl;
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
