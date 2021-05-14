@@ -19,14 +19,19 @@ static void parse_first_line(char *line, Header &head)
 	head.setRequest(std::string(tmp, 1, line - tmp - 2));
 	tmp = strchr(line + 1, '\0');
 	head.setHttp(std::string(line, 0, tmp - line - 1));
-	head.addEnv((char *)("QUERY_STRING=" + head.getRequest()).c_str());
+	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
+	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
+	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
 }
 
 static void parse_request(char *line, Header &head)
 {
 	char *tmp;
 	char *tmp2;
-	
+	std::string str;
+	unsigned long int i = -1;
+	int count = 0;
+
 	if ((tmp = strstr(line, "Accept-Language: ")))
 	{
 		tmp += strlen("Accept-Language: ");
@@ -41,6 +46,29 @@ static void parse_request(char *line, Header &head)
 		else
 			(head.setHost("400"));
 		head.setPort(std::stoi(tmp2 + 1));
+	}
+	else if ((tmp = strstr(line, "Referer: ")))
+	{
+		tmp += strlen("Referer: ");
+		head.setReferer(tmp);
+		head.addEnv((char *)("QUERY_STRING=" + head.getReferer()).c_str());
+		while (line[++i])
+		{
+			if (line[i] == '/')
+				count++;
+			if (count == 3)
+				break ;
+		}
+		str = std::string(line + i);
+		if ((i = str.find('?')) != std::string::npos)
+			str.erase(i);
+		if ((i = str.rfind('.')) != std::string::npos)
+			str.erase(0, i);
+		if ((i = str.find('/')) != std::string::npos)
+			str.erase(0, i);
+		head.addEnv((char *)("PATH_INFO=" + str).c_str());
+		head.showEnv();
+		printf("\n\n\n\n");
 	}
 }
 
@@ -90,9 +118,9 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 	char *line;
 	int ct = 0;
 
-	(*it).head.setEnv(t.env);
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
+		(*it).head.setEnv(t.env);
 		(*it).flag = 1;
 		while ((t.rd = recive_next_line((*it).fd, &line)) > 0)
 		{
@@ -104,7 +132,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 			else
 				parse_request(line, (*it).head);
 
-		//	std::cout << line << std::endl;
+			std::cout << line << std::endl;
 			free(line);
 			line = 0;
 		}

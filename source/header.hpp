@@ -28,6 +28,7 @@ class Header
 		std::string &getWWW_Authenticate();
 		char **getEnv();
 		void addEnv(char *);
+		void showEnv();
 		unsigned int getPort();
 		void setEnv(char **env);
 		void setPort(unsigned int const &);

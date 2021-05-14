@@ -267,3 +267,12 @@ void Header::addEnv(char *str)
 	ft_doublefree(Env);
 	Env = nu;
 }
+
+
+void Header::showEnv()
+{
+	int i = -1;
+	while (Env[++i])
+		printf("%s\n", Env[i]);
+}
+
