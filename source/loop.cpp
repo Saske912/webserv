@@ -159,6 +159,10 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	{
 ////////////////////////////////////
 	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
+	    if (it->head.getReferer().empty())
+		{
+			it->head.addEnv((char *)("QUERY_STRING=" + it->head.getRequest()).c_str());
+		}
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 		fstat(fd, &stat);
 		str = (char *)(*it).head.getHttp().c_str();
