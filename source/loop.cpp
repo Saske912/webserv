@@ -65,10 +65,10 @@ static void parse_request(char *line, Header &head)
 		if ((i = str.rfind('.')) != std::string::npos)
 			str.erase(0, i);
 		if ((i = str.find('/')) != std::string::npos)
+		{
 			str.erase(0, i);
-		head.addEnv((char *)("PATH_INFO=" + str).c_str());
-		head.showEnv();
-		printf("\n\n\n\n");
+			head.addEnv((char *)("PATH_INFO=" + str).c_str());
+		}
 	}
 }
 
