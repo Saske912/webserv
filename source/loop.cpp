@@ -12,6 +12,7 @@ int		sorter(t_write a, t_write b)
 static void parse_first_line(char *line, Header &head)
 {
 	char *tmp;
+	std::string str;
 
 	tmp = strchr(line, ' ');
 	head.setMethod(std::string(line, 0, tmp - line));
@@ -22,7 +23,9 @@ static void parse_first_line(char *line, Header &head)
 	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
 	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
 	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
-	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getRequest()).c_str());
+	str = head.getRequest();
+	if (str.find('?') != std::string::npos)
+		head.addEnv((char *)("QUERY_STRING=" + str.erase(str.find('?'))).c_str());
 }
 
 static void parse_request(char *line, Header &head)
@@ -52,8 +55,8 @@ static void parse_request(char *line, Header &head)
 	{
 		tmp += strlen("Referer: ");
 		head.setReferer(tmp);
-		if (head.getReferer().find('?') != std::string::npos)
-			head.addEnv((char *)("QUERY_STRING=" + std::string(head.getReferer(), head.getReferer().find('?') + 1, head.getReferer().size() - head.getReferer().find('?'))).c_str());
+	//	if (head.getReferer().find('?') != std::string::npos)
+	//		head.addEnv((char *)("QUERY_STRING=" + std::string(head.getReferer(), head.getReferer().find('?') + 1, head.getReferer().size() - head.getReferer().find('?'))).c_str());
 		while (line[++i])
 		{
 			if (line[i] == '/')
