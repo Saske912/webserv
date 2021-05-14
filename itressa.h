@@ -4,6 +4,6 @@
 #include "config.hpp"
 
 config parse(int fd);
-config parse(char *filename);
+config parse(const char *filename);
 
 #endif

@@ -3,11 +3,6 @@
 InvalidSyntaxErrorNode::InvalidSyntaxErrorNode(const Position &start,
                                                const Position &end,
                                                const std::string &reason)
-    : ErrorNode(start, end, reason)
+    : ErrorNode(start, end, reason, "Invalid Syntax Error")
 {
-}
-
-std::string InvalidSyntaxErrorNode::get_type() const
-{
-    return "Invalid Syntax";
 }

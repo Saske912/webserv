@@ -16,6 +16,7 @@ public:
 
 	ErrorNode *error;
 	ANode     *node;
+	bool      checkInSuccess;
 };
 
 #endif

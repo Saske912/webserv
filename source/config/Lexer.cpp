@@ -14,7 +14,9 @@ Lexer &Lexer::operator=(const Lexer &other)
 	return *this;
 }
 
-Lexer::Lexer(int fd) : fd(fd), pos(-1, 1, -1), current_char(0), bufpos(), bufmax()
+Lexer::Lexer(int fd, const char *filename)
+    : fd(fd), pos(filename),
+        current_char(0), bufpos(), bufmax()
 {
 	advance();
 }
