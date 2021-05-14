@@ -132,7 +132,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 			else
 				parse_request(line, (*it).head);
 
-			std::cout << line << std::endl;
+		//	std::cout << line << std::endl;
 			free(line);
 			line = 0;
 		}
