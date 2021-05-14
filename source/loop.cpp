@@ -25,7 +25,7 @@ static void parse_first_line(char *line, Header &head)
 	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
 	str = head.getRequest();
 	if (str.find('?') != std::string::npos)
-		head.addEnv((char *)("QUERY_STRING=" + str.erase(str.find('?'))).c_str());
+		head.addEnv((char *)("QUERY_STRING=" + str.erase(0, str.find('?'))).c_str());
 }
 
 static void parse_request(char *line, Header &head)
