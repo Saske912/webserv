@@ -89,6 +89,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
         }
         it++;
     }
+    std::cerr << "ath not found "  << std::endl;
     return exception_processing(404, head);
 }
 
@@ -213,6 +214,7 @@ int server::exception_processing( int except, Header &head ) {
 //        head.setHttp("HTTP/1.1 ");
 //        head.setRequest(ft_itoa(except));
 //        head.setMethod(get_error(except, _default_error_pages));
+//        std::cout << to_head << std::endl;
         return open(to_head.c_str(), O_RDONLY);
     }
     catch (std::exception &)
@@ -233,13 +235,15 @@ int server::exception_processing( int except, Header &head ) {
             exit(1);
         }
         close(fds[1]);
-        waitpid(pid, &stat, 0);
+        if (pid > 0)
+            waitpid(pid, &stat, 0);
         if (stat == 1)
             error_exit("system error in execve");
         head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(ft_itoa(except)) + " " + to_head).c_str()));
 //        head.setHttp("HTTP/1.1 ");
 //        head.setRequest(ft_itoa(except));
 //        head.setMethod(to_head);
+//        std::cout << fds[0] << std::endl;
         return fds[0];
     }
 }
@@ -260,16 +264,16 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((pid = fork()) == 0)
         {
             arg = (char **)ft_calloc(4, sizeof(char **));
-            arg[0] = strdup("content/cgi.sh");
-            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
-            arg[2] = strdup(const_cast<char *>(request.c_str()));
+//            arg[0] = strdup("content/cgi.sh");
+//            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
+//            arg[2] = strdup(const_cast<char *>(request.c_str()));
 //            std::cout << "PFFFF"  << std::endl;
-//            arg[0] = strdup("cgi_tester");
-            char **tmp = head.getEnv();
-            for (int i = 0; tmp[i]; i++)
-            {
-                std::cerr << tmp[i]  << std::endl;
-            }
+            arg[0] = strdup("test/cgi_tester");
+//            char **tmp = head.getEnv();
+//            for (int i = 0; tmp[i]; i++)
+//            {
+//                std::cerr << tmp[i]  << std::endl;
+//            }
             dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
@@ -287,21 +291,20 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     }
     else
     {
+        struct ::stat st;
+        ::stat(request.c_str(), &st);
+        if (st.st_mode & S_IFDIR)
+            return exception_processing(404, head);
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
             if (errno == EACCES) {
-                fd = exception_processing(403, head);
+                return exception_processing(403, head);
             }
             else
-                fd = exception_processing(404, head);
+                return exception_processing(404, head);
         }
         else
-        {
             head.setResponse("HTTP/1.1 200 OK");
-//            head.setHttp("HTTP/1.1 ");
-//            head.setRequest("200");
-//            head.setMethod("OK");
-        }
     }
     return fd;
 }

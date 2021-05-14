@@ -9,14 +9,18 @@ int		sorter(t_write a, t_write b)
 }
 
 
-static void parse_first_line(char *line, Header &head)
+static int parse_first_line(char *line, Header &head)
 {
 	char *tmp;
 	std::string str;
 
 	tmp = strchr(line, ' ');
+	if (!tmp)
+	    return 1;
 	head.setMethod(std::string(line, 0, tmp - line));
 	line = strchr(tmp + 1, ' ') + 1;
+    if (!line || !line[0])
+        return 1;
 	head.setRequest(std::string(tmp, 1, line - tmp - 2));
 	tmp = strchr(line + 1, '\0');
 	head.setHttp(std::string(line, 0, tmp - line - 1));
@@ -26,6 +30,7 @@ static void parse_first_line(char *line, Header &head)
 	str = head.getRequest();
 	if (str.find('?') != std::string::npos)
 		head.addEnv((char *)("QUERY_STRING=" + str.erase(0, str.find('?') + 1)).c_str());
+	return 0;
 }
 
 static void parse_request(char *line, Header &head)
@@ -43,10 +48,14 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Host: ")))
 	{
+//	    std::cout << "CHTONIBUD" << std::endl;
 		tmp += strlen("Host: ");
 		tmp2 = strchr(tmp, ':');
 		if (head.getHost().empty())
-			head.setHost(std::string(tmp, 0, tmp2 - tmp));
+        {
+            head.setHost(std::string(tmp, 0, tmp2 - tmp));
+//            std::cout << head.getHost()  << std::endl;
+        }
 		else
 			(head.setHost("400"));
 		head.setPort(std::stoi(tmp2 + 1));
@@ -73,7 +82,7 @@ static void parse_request(char *line, Header &head)
 		{
 			char tmpp[150];
 			str.erase(0, i);
-			head.addEnv((char *)("PATH_INFO=" + str).c_str());
+//			head.addEnv((char *)("PATH_INFO=" + str).c_str());
 			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
 		}
 	}
@@ -140,13 +149,14 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 		{
 			if (ct == 0)
 			{
-				parse_first_line(line, (*it).head);
+				if (parse_first_line(line, (*it).head))
+				    --ct;
 				++ct;
 			}
 			else
 				parse_request(line, (*it).head);
 
-//			std::cout << line << std::endl;
+			std::cout << line << std::endl;
 			free(line);
 			line = 0;
 		}
@@ -171,12 +181,14 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
+
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
 ////////////////////////////////////
 	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
+		std::cout << "fd: " << fd << std::endl;
 /*		str = (char *)(*it).head.getHttp().c_str();
 		send( (*it).fd, str, strlen(str), 0);
 		str = (char *)(*it).head.getRequest().c_str();
@@ -211,9 +223,17 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		send((*it).fd, "\r\n\r\n", 4, 0);
 
-///////////////////////////////////			
-		while (get_next_line(fd, &str))
+///////////////////////////////////
+        str = 0;
+        int stat = 0;
+		while ((stat = get_next_line(fd, &str)))
 		{
+		    if (stat == -1)
+		    {
+		        std::cout << "NE VERISH?" << std::endl;
+		        close(fd);
+                return;
+            }
 			send( (*it).fd, str, strlen(str), 0);
 			send( (*it).fd, "\n", 1, 0);
 			free(str);

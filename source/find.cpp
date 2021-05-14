@@ -8,11 +8,13 @@ server  find_server(std::list<server> serv, std::string const & host, unsigned i
     std::list<server>::iterator it = serv.begin( );
     while (it != serv.end())
     {
+//        std::cout << it->get_host() << " " << it->get_port()  << std::endl;
         if (it->get_host() == host and it->get_port() == port)
         {
             return *it;
         }
         it++;
     }
-    throw std::exception();
+    return *serv.begin();
+//    throw std::exception();
 }
