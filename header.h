@@ -48,7 +48,7 @@ typedef struct  s_serv
 typedef struct  s_client
 {
         int                 client;
-        sockaddr            ad;
+        sockaddr_in            ad;
         socklen_t           adlen;
 }               t_client;
 
