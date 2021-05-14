@@ -132,7 +132,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 			else
 				parse_request(line, (*it).head);
 
-		//	std::cout << line << std::endl;
+			std::cout << line << std::endl;
 			free(line);
 			line = 0;
 		}
@@ -281,7 +281,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
 			continue ;
         if ( FD_ISSET(serv.host, &t.read))
         {
-            if (( cli.client = accept( serv.host, &cli.ad, &cli.adlen)) == -1)
+            if (( cli.client = accept( serv.host, reinterpret_cast<sockaddr *>(&cli.ad), &cli.adlen)) == -1)
                 error_exit("fail to accept Client");
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;

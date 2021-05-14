@@ -9,10 +9,7 @@
 std::string rtrim(std::string s, std::string t);
 std::string ltrim(std::string s, std::string t);
 std::string trim(std::string s, std::string t);
-
 std::string get_current_date();
-
-
 extern "C"
 {
 #include "libft/libft.h"
