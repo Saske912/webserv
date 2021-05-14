@@ -262,12 +262,29 @@ std::string &Header::getWWW_Authenticate()
 }
 
 
+void Header::initEnv()
+{
+	addEnv((char *)"PATH_INFO=/");
+}
+
 void Header::addEnv(char *str)
 {
 	int i = 0;
+	char *tmp;
 
+	tmp = ft_substr(str, 0, strchr(str, '=') - str);
 	while (Env[i])
+	{
+		if (strstr(Env[i], tmp))
+		{
+			free(Env[i]);
+			Env[i] = strdup(str);
+			free(tmp);
+			return ;
+		}
 		++i;
+	}
+	free(tmp);
 	char **nu = (char **)malloc(sizeof(char *) * (i + 2));
 	i = -1;
 	while (Env[++i])
