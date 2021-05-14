@@ -176,15 +176,16 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 ////////////////////////////////////
 	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
-		fstat(fd, &stat);
-		str = (char *)(*it).head.getHttp().c_str();
+/*		str = (char *)(*it).head.getHttp().c_str();
 		send( (*it).fd, str, strlen(str), 0);
 		str = (char *)(*it).head.getRequest().c_str();
 		send( (*it).fd, str, strlen(str), 0);
 		send( (*it).fd, " ", 1, 0);
 		str = (char *)(*it).head.getMethod().c_str();
 		send( (*it).fd, str, strlen(str), 0);
-		send( (*it).fd, "\n", 1, 0);
+		send( (*it).fd, "\n", 1, 0);*/
+		str = (char *)(*it).head.getResponse().c_str();
+		send( (*it).fd, str, strlen(str), 0);
 		if (!((*it).head.getContent_Language().empty()))	
 		{
 			str = (char *)(*it).head.getContent_Language().c_str();
@@ -200,6 +201,9 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		str = (char *)(*it).head.getLast_Modified().c_str();
 		send( (*it).fd, str, strlen(str), 0);
+		if (fd == -1)
+			return ;
+		fstat(fd, &stat);
 		string = "Content-Length: ";
 		string += std::to_string(stat.st_size + 1);
 		str = (char *)string.c_str();
