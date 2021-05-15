@@ -56,14 +56,10 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Host: ")))
 	{
-//	    std::cout << "CHTONIBUD" << std::endl;
 		tmp += strlen("Host: ");
 		tmp2 = strchr(tmp, ':');
 		if (head.getHost().empty())
-        {
             head.setHost(std::string(tmp, 0, tmp2 - tmp));
-//            std::cout << head.getHost()  << std::endl;
-        }
 		else
 			(head.setHost("400"));
 		head.setPort(std::stoi(tmp2 + 1));
@@ -72,8 +68,6 @@ static void parse_request(char *line, Header &head)
 	{
 		tmp += strlen("Referer: ");
 		head.setReferer(tmp);
-	//	if (head.getReferer().find('?') != std::string::npos)
-	//		head.addEnv((char *)("QUERY_STRING=" + std::string(head.getReferer(), head.getReferer().find('?') + 1, head.getReferer().size() - head.getReferer().find('?'))).c_str());
 		while (line[++i])
 		{
 			if (line[i] == '/')
@@ -99,6 +93,10 @@ static void parse_request(char *line, Header &head)
 		tmp += strlen("Accept: ");
 		str = std::string(tmp);
 		head.addEnv((char *)("CONTENT_TYPE=" + std::string(str, 0, str.find(','))).c_str());
+	}
+	else if (head.getMethod() == "POST" && strchr(line, '='))
+	{
+		head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
 	}
 }
 
