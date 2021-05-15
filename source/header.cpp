@@ -19,6 +19,7 @@ void Header::eraseStruct()
 	Content_Location.erase();
 	Content_Type.erase();
 	Http.erase();
+	Host.erase();
 	Method.erase();
 	Referer.erase();
 	Request.erase();
@@ -29,7 +30,6 @@ void Header::eraseStruct()
 	WWW_Authenticate.erase();
 	if (Env)
 		ft_doublefree(Env);
-	Host.erase();
 	Port = 0;
 	Env = 0;
 }

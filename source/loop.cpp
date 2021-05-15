@@ -11,19 +11,27 @@ int		sorter(t_write a, t_write b)
 
 static int parse_first_line(char *line, Header &head)
 {
-	char *tmp;
+	int i = -1;
+	int j;
 	std::string str;
 
-	tmp = strchr(line, ' ');
-	if (!tmp)
-	    return 1;
-	head.setMethod(std::string(line, 0, tmp - line));
-	line = strchr(tmp + 1, ' ') + 1;
-    if (!line || !line[0])
-        return 1;
-	head.setRequest(std::string(tmp, 1, line - tmp - 2));
-	tmp = strchr(line + 1, '\0');
-	head.setHttp(std::string(line, 0, tmp - line - 1));
+	while (line[++i])
+		if (line[i] == ' ')
+			break ;
+	if (!line[i])
+		return 1;
+	head.setMethod(std::string(line, 0, i));
+	j = i + 1;
+	while (line[++i])
+		if (line[i] == ' ')
+			break ;
+	if (!line[i])
+		return 1;
+	head.setRequest(std::string(line, j, i - j));
+	j = i + 1;
+	while (line[++i]);
+	head.setHttp(std::string(line, j, i - j));
+	std::cout << "Method: " << head.getMethod() << " Request: " << head.getRequest() << " Http: " << head.getHttp() << std::endl;
 	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
 	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
 	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
@@ -162,6 +170,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 		}
 		if (t.rd == 0)
 		{
+			it->head.eraseStruct();
 			set.erase(it);
 			return 1;
 		}
@@ -198,21 +207,26 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		send( (*it).fd, "\n", 1, 0);*/
 		str = (char *)(*it).head.getResponse().c_str();
+		std::cout << str << std::endl;
 		send( (*it).fd, str, strlen(str), 0);
 		if (!((*it).head.getContent_Language().empty()))	
 		{
 			str = (char *)(*it).head.getContent_Language().c_str();
+		std::cout << str << std::endl;
 			send( (*it).fd, str, strlen(str), 0);
 		}
 		if (!((*it).head.getAllow().empty()))
 		{
 			str = (char *)(*it).head.getAllow().c_str();
+		std::cout << str << std::endl;
 			send( (*it).fd, str, strlen(str), 0);	
 		}
 		(*it).head.setDate("Date: " + get_current_date());
 		str = (char *)(*it).head.getDate().c_str();
+		std::cout << str << std::endl;
 		send( (*it).fd, str, strlen(str), 0);
 		str = (char *)(*it).head.getLast_Modified().c_str();
+		std::cout << str << std::endl;
 		send( (*it).fd, str, strlen(str), 0);
 		if (fd == -1)
 			return ;
@@ -220,6 +234,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		string = "Content-Length: ";
 		string += std::to_string(stat.st_size + 1);
 		str = (char *)string.c_str();
+		std::cout << str << std::endl;
 		send( (*it).fd, str, strlen(str), 0);
 		send((*it).fd, "\r\n\r\n", 4, 0);
 
@@ -230,7 +245,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		{
 		    if (stat == -1)
 		    {
-		        std::cout << "NE VERISH?" << std::endl;
 		        close(fd);
                 return;
             }
