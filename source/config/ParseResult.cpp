@@ -11,11 +11,12 @@ ParseResult::ParseResult(const ParseResult &other)
 
 ANode* ParseResult::checkIn(const ParseResult &parseResult)
 {
-    checkInSuccess = true;
-	if (!parseResult.checkInSuccess) {
-		error = parseResult.error;
-		error->addNext(parseResult.error);
-        checkInSuccess = false;
+    checkInSuccess = parseResult.checkInSuccess;
+	if (!checkInSuccess) {
+	    if (!error)
+		    error = parseResult.error;
+	    else
+		    error->addNext(parseResult.error);
 	}
 	return parseResult.node;
 }

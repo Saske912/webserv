@@ -20,7 +20,7 @@ public:
 
 	void advance();
 	std::vector<Token> make_tokens();
-	void add_token(std::vector<Token>& tokens, Token::TokenType type);
+	void add_token(std::vector<Token>& tokens, Token::TokenType type, const std::string &text = "");
 
 	Token make_identifier();
 	void skip_comment();

@@ -1,4 +1,7 @@
 #include "Interpreter.hpp"
+#include <sys/stat.h>
+#include <cstring>
+#include <cerrno>
 
 int Interpreter::poor_atoi(const std::string &num) {
     int value = 0;
@@ -122,11 +125,7 @@ void Interpreter::visit(ServerNode *node)
         	serv.set_port(poor_atoi(it->values.front().value));
         }
         else if (name == "error_page") {
-            ParamNode::ValuesType::iterator erit = it->values.begin();
-            int code = poor_atoi(erit->value);
-            ++erit;
-            std::string filename = erit->value;
-            serv.add_error_page(code, filename);
+        	try_add_error_page(serv, it->values);
         }
         else if (name == "client_max_body_size") {
         	serv.set_client_body_size(poor_atoi(it->values.front().value));
@@ -157,4 +156,26 @@ void Interpreter::visit(ConfigNode *node)
         ServerNode server = *it;
         visit(&server);
     }
+}
+
+void Interpreter::try_add_error_page(server &serv, const std::list<Token> &values)
+{
+	ParamNode::ValuesType::const_iterator it = values.begin();
+	int code = poor_atoi(it->value);
+	++it;
+	std::string filename = it->value;
+	if (filename.empty()) {
+		std::cerr << "Warning: filename empty for error_page at " << it->start.line << ":" << it->start.col << std::endl;
+		return;
+	}
+	struct stat filestat;
+	if (-1 == stat(filename.c_str(), &filestat)) {
+		std::cerr << "Warning: Failed to open file for error_page at " << it->start.line << ":" << it->start.col << ": " << strerror(errno) << std::endl;
+		return;
+	}
+	if (!(filestat.st_mode & (S_IFREG))) {
+		std::cerr << "Warning: " << "invalid file for error_page at " << it->start.line << ":" << it->start.col << std::endl;
+		return;
+	}
+	serv.add_error_page(code, filename);
 }

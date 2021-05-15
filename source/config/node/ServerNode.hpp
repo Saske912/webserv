@@ -13,6 +13,8 @@ public:
     ServerNode(const ParamValuesType &params_, const RouteValuesType &routes_);
     virtual void display_to(std::ostream &o) const;
 
+    static const ContextInfo validParamNames[];
+
     ParamValuesType params;
     RouteValuesType routes;
 };

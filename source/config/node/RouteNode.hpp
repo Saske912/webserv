@@ -11,6 +11,8 @@ public:
     explicit RouteNode(const Token &endpoint, const ParamValuesType &values_);
     virtual void display_to(std::ostream &o) const;
 
+    static const ContextInfo validParamNames[];
+
     Token endpoint;
     ParamValuesType values;
 };

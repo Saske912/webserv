@@ -19,6 +19,8 @@ public:
 	Token& operator=(const Token &other);
 	~Token();
 
+	std::string text() const;
+
 	TokenType type;
 	std::string value;
 	Position start;

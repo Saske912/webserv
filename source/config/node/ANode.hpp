@@ -6,6 +6,7 @@
 #include <exception>
 #include "Token.hpp"
 #include "Position.hpp"
+#include "itressa.h"
 
 class ANode
 {

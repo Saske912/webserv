@@ -25,6 +25,10 @@ config parse(int fd, const char *filename) {
 
 config parse(const char *filename) {
     int fd = open(filename, O_RDONLY);
-
-    return parse(fd, filename);
+    if (-1 == fd) {
+        error_exit(std::string("Error opening config file '") + filename + "'");
+    }
+    config result = parse(fd, filename);
+    close(fd);
+    return result;
 }

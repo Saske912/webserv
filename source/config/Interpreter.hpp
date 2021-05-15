@@ -35,6 +35,9 @@ public:
 	route visit(RouteNode *node);
 	void visit(ServerNode *node);
 	void visit(ConfigNode *node);
+
+	void try_add_error_page(server &serv, const std::list<Token> &values);
+
 private:
 	config &conf;
 
