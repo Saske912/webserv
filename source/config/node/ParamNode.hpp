@@ -9,9 +9,10 @@ public:
     typedef std::list<Token> ValuesType;
 
     ParamNode(const Token &name_, const ValuesType &values_);
+
     virtual void displayTo(std::ostream &o) const;
 
-    Token name;
+    Token      name;
     ValuesType values;
 };
 

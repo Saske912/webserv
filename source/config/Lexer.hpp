@@ -8,36 +8,44 @@
 #include "Token.hpp"
 #include "Position.hpp"
 
-class Lexer
-{
-	Lexer();
-	Lexer(Lexer const& other);
-	Lexer& operator=(Lexer const& other);
+class Lexer {
+    Lexer();
+
+    Lexer(Lexer const &other);
+
+    Lexer &operator=(Lexer const &other);
+
 public:
 
-	Lexer(int fd, const char *filename);
-	~Lexer();
+    Lexer(int fd, const char *filename);
 
-	void advance();
-	std::vector<Token> make_tokens();
-	void add_token(std::vector<Token>& tokens, Token::TokenType type, const std::string &text = "");
+    ~Lexer();
 
-	Token make_identifier();
-	void skip_comment();
+    void advance();
 
-	static bool is_eof(char c);
-	static bool is_space(char c);
-	static bool is_identifier_char(char c);
+    std::vector<Token> make_tokens();
 
-	void read_next();
+    void add_token(std::vector<Token> &tokens, Token::TokenType type, const std::string &text = "");
 
-	int fd;
-	Position pos;
-	char current_char;
+    Token make_identifier();
 
-	char buf[1024];
-	long bufpos;
-	long bufmax;
+    void skip_comment();
+
+    static bool is_eof(char c);
+
+    static bool is_space(char c);
+
+    static bool is_identifier_char(char c);
+
+    void read_next();
+
+    int      fd;
+    Position pos;
+    char     current_char;
+
+    char buf[1024];
+    long bufpos;
+    long bufmax;
 };
 
 #endif

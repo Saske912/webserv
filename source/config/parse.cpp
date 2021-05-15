@@ -11,7 +11,7 @@
 
 config parse(int fd, const char *filename) {
     std::vector<Token> tokens = Lexer(fd, filename).make_tokens();
-    ParseResult ast = Parser(tokens).config();
+    ParseResult        ast    = Parser(tokens).parse();
     if (ast.error) {
         std::cout << ast.error << std::endl;
         exit(1);

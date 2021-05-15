@@ -19,7 +19,7 @@ bool Validator::isNumber(const std::string &value) {
 }
 
 bool Validator::isMemory(const std::string &value) {
-    IsNumberPredicate isDigit;
+    IsNumberPredicate      isDigit;
     std::string::size_type i = 0;
     while (i < value.size() && isDigit(value[i])) {
         ++i;
@@ -39,7 +39,8 @@ bool Validator::isIP(const std::string &) {
 
 unsigned int Validator::getMethodValue(const std::string &method) {
     static const char *methods[] = {"GET", "HEAD", "POST", "PUT",
-              "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH", NULL};
+                                    "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH", NULL};
+
     for (int i = 0; methods[i]; ++i) {
         if (method == methods[i])
             return i + 1;
@@ -66,7 +67,7 @@ const char *Validator::validatePort(const std::list<Token> &values) {
 
 const char *Validator::validateServerNames(const std::list<Token> &values) {
     for (std::list<Token>::const_iterator it = values.begin();
-        it != values.end(); ++it) {
+         it != values.end(); ++it) {
         if (!isHost(it->value)) {
             return "Invalid server name";
         }
@@ -101,9 +102,9 @@ const char *Validator::validateClientMaxBodySize(const std::list<Token> &values)
 
 const char *Validator::validateAllowedMethods(const std::list<Token> &values) {
     if (!values.empty()) {
-        unsigned int validated = 0;
-        for (std::list<Token>::const_iterator it = values.begin();
-            it != values.end(); ++it) {
+        unsigned int                          validated = 0;
+        for (std::list<Token>::const_iterator it        = values.begin();
+             it != values.end(); ++it) {
             int current = getMethodValue(it->value);
             if (current == -1) {
                 return "Unknown HTTP method";

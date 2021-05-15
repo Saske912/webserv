@@ -4,19 +4,21 @@
 #include <iostream>
 #include "node/ErrorNode.hpp"
 
-class ParseResult
-{
+class ParseResult {
 public:
-	ParseResult();
-	ParseResult(const ParseResult& other);
+    ParseResult();
 
-	ANode* checkIn(const ParseResult& parseResult);
-	ParseResult& success(ANode* node);
-	ParseResult& failure(ErrorNode *error);
+    ParseResult(const ParseResult &other);
 
-	ErrorNode *error;
-	ANode     *node;
-	bool      checkInSuccess;
+    ANode *checkIn(const ParseResult &parseResult);
+
+    ParseResult &success(ANode *node);
+
+    ParseResult &failure(ErrorNode *error);
+
+    ErrorNode *error;
+    ANode     *node;
+    bool      checkInSuccess;
 };
 
 #endif
