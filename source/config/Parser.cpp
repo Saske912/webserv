@@ -72,7 +72,12 @@ ParseResult Parser::server()
 		return result;
 	if (result.error)
 	    result.checkInSuccess = false;
-	return result.checkInSuccess ? result.success(new ServerNode(params, routes)) : result;
+	ServerNode *node = new ServerNode(params, routes);
+    if (!node->isValid()) {
+        delete node;
+        result.failure(getSyntaxError("'server' directive at least must have 'host', 'port' and 'client_max_body_size' and must not have duplicates for anything except `error_page` and at least 1 route"));
+    }
+	return result.checkInSuccess ? result.success(node) : result;
 }
 
 ParseResult Parser::route()

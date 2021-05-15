@@ -16,6 +16,31 @@ ServerNode::ServerNode(const ParamValuesType &params_,
 {
 }
 
+ServerNode::ServerParamValidation ServerNode::getParamValue(const std::string &param) {
+    for (int i = 0; validParamNames[i].paramName; ++i) {
+        if (param == validParamNames[i].paramName) {
+            return ServerParamValidation(1U << i);
+        }
+    }
+    return ServerParamValidation(-1);
+}
+
+bool ServerNode::isValid() const {
+    if (routes.empty())
+        return false;
+    unsigned int validated = 0;
+    for (ParamValuesType::const_iterator it = params.begin();
+         it != params.end(); ++it) {
+        ServerParamValidation current = getParamValue(it->name.value);
+        if (current == SP_UNKNOWN || validated & current) {
+            return false;
+        }
+        if (current != SP_ERROR_PAGE) // may be multiple times for different codes
+            validated |= current;
+    }
+    return (validated & SP_REQUIRED) == SP_REQUIRED;
+}
+
 void ServerNode::displayTo(std::ostream &o) const
 {
     o << "(Server: ";
