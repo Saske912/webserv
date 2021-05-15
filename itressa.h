@@ -4,7 +4,7 @@
 #include "config.hpp"
 #include "Token.hpp"
 
-typedef char* (*param_validator)(const std::list<Token> &values);
+typedef const char* (*param_validator)(const std::list<Token> &values);
 
 struct ContextInfo {
     const char *paramName;

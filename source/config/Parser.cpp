@@ -98,6 +98,8 @@ ParseResult Parser::route()
 	}
 	if (expect_rcurly(result))
 		return result;
+	if (result.error)
+	    result.checkInSuccess = false;
 	return result.checkInSuccess ? result.success(new RouteNode(endpoint, params)) : result;
 }
 
@@ -115,16 +117,17 @@ ParseResult Parser::param(const ContextInfo *paramsInfo)
                 values.push_back(*current_token);
                 advance();
             }
-            if (cinfo.numberOfParams >= 0 &&
-                static_cast<int>(values.size()) != cinfo.numberOfParams) {
+            if ((cinfo.numberOfParams >= 0 &&
+                static_cast<int>(values.size()) != cinfo.numberOfParams) ||
+                (cinfo.numberOfParams == -1 && values.empty())) {
                 result.failure(getSyntaxError("Wrong number of values for '" + name.value + "'"));
             }
-            char *error;
+            const char *error;
             if (cinfo.validate && (error = cinfo.validate(values))) {
                 result.failure(getSyntaxError(error, values.front()));
             }
             skip_end_of_line_tokens();
-            return result.success(new ParamNode(name, values));
+            return result.checkInSuccess ? result.success(new ParamNode(name, values)) : result;
 		}
 		else {
 		    result.failure(getSyntaxError("Undexpected param name '" + name.value + "'", name));
@@ -166,7 +169,6 @@ bool Parser::expect_rcurly(ParseResult& result)
 		skip_end_of_line_tokens();
 		return false;
 	}
-//	skip_param_or_group_tokens();
 	skip_end_of_line_tokens();
 	result.failure(getSyntaxError("Expected '}'"));
 	return true;

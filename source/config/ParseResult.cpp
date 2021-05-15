@@ -1,6 +1,6 @@
 #include "ParseResult.hpp"
 
-ParseResult::ParseResult() : error(), node(), checkInSuccess()
+ParseResult::ParseResult() : error(), node(), checkInSuccess(true)
 {
 }
 

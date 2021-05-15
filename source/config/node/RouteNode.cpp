@@ -5,7 +5,7 @@ const ContextInfo RouteNode::validParamNames[] = {
     {"allowed_methods", -1, Validator::validateAllowedMethods},
     {"root", 1, Validator::validateRoot},
     {"directory_listing", 1, Validator::validateDirectoryListing},
-    {"index", 1, Validator::validateIndex},
+    {"index", -1, Validator::validateIndex},
     {"cgi_extension", 2, Validator::validateCgiExtension},
     {"upload_location", 1, Validator::validateUploadLocation},
 
