@@ -45,4 +45,4 @@ add_executable(webserv
         source/header.cpp
         source/header.hpp
         source/trim.cpp
-        )
+        source/template.hpp)

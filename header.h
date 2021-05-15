@@ -58,6 +58,7 @@ typedef struct	s_write
 		std::string addr;
 		int fd;
 		bool flag;
+        bool ct;
 }				t_write;
 
 void        error_exit(const std::string& str);
