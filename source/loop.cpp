@@ -31,7 +31,6 @@ static int parse_first_line(char *line, Header &head)
 	j = i + 1;
 	while (line[++i]);
 	head.setHttp(std::string(line, j, i - j));
-	std::cout << "Method: " << head.getMethod() << " Request: " << head.getRequest() << " Http: " << head.getHttp() << std::endl;
 	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
 	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
 	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
@@ -148,6 +147,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
+		std::cout << "----------REQUEST----------" << std::endl;
 		(*it).head.setEnv(t.env);
 		it->head.initEnv();
 		(*it).flag = 1;
@@ -195,7 +195,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 ////////////////////////////////////
 	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
-		std::cout << "fd: " << fd << std::endl;
+		std::cout << "----------RESPONSE----------" << std::endl;
 /*		str = (char *)(*it).head.getHttp().c_str();
 		send( (*it).fd, str, strlen(str), 0);
 		str = (char *)(*it).head.getRequest().c_str();
@@ -205,26 +205,26 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		send( (*it).fd, "\n", 1, 0);*/
 		str = (char *)(*it).head.getResponse().c_str();
-		std::cout << str << std::endl;
+		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
 		if (!((*it).head.getContent_Language().empty()))	
 		{
 			str = (char *)(*it).head.getContent_Language().c_str();
-		std::cout << str << std::endl;
+		std::cout << str;
 			send( (*it).fd, str, strlen(str), 0);
 		}
 		if (!((*it).head.getAllow().empty()))
 		{
 			str = (char *)(*it).head.getAllow().c_str();
-		std::cout << str << std::endl;
+		std::cout << str;
 			send( (*it).fd, str, strlen(str), 0);	
 		}
 		(*it).head.setDate("Date: " + get_current_date());
 		str = (char *)(*it).head.getDate().c_str();
-		std::cout << str << std::endl;
+		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
 		str = (char *)(*it).head.getLast_Modified().c_str();
-		std::cout << str << std::endl;
+		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
 		if (fd == -1)
 			return ;
@@ -232,7 +232,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		string = "Content-Length: ";
 		string += std::to_string(stat.st_size + 1);
 		str = (char *)string.c_str();
-		std::cout << str << std::endl;
+		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
 		send((*it).fd, "\r\n\r\n", 4, 0);
 
