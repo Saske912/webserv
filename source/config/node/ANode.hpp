@@ -12,7 +12,7 @@ class ANode
 {
 public:
     virtual ~ANode();
-    virtual void display_to(std::ostream& o) const;
+    virtual void displayTo(std::ostream& o) const;
 };
 
 std::ostream& operator<<(std::ostream& o, ANode const& node);

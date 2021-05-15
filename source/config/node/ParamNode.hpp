@@ -9,7 +9,7 @@ public:
     typedef std::list<Token> ValuesType;
 
     ParamNode(const Token &name_, const ValuesType &values_);
-    virtual void display_to(std::ostream &o) const;
+    virtual void displayTo(std::ostream &o) const;
 
     Token name;
     ValuesType values;

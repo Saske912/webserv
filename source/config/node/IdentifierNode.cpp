@@ -4,7 +4,7 @@ IdentifierNode::IdentifierNode(const Token &value_) : value(value_)
 {
 }
 
-void IdentifierNode::display_to(std::ostream &o) const
+void IdentifierNode::displayTo(std::ostream &o) const
 {
     o << "(" << value << ")";
 }

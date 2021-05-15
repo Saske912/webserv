@@ -16,7 +16,7 @@ ServerNode::ServerNode(const ParamValuesType &params_,
 {
 }
 
-void ServerNode::display_to(std::ostream &o) const
+void ServerNode::displayTo(std::ostream &o) const
 {
     o << "(Server: ";
     if (!params.empty()) {

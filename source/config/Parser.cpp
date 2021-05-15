@@ -100,7 +100,12 @@ ParseResult Parser::route()
 		return result;
 	if (result.error)
 	    result.checkInSuccess = false;
-	return result.checkInSuccess ? result.success(new RouteNode(endpoint, params)) : result;
+	RouteNode *node = new RouteNode(endpoint, params);
+	if (!node->isValid()) {
+	    delete node;
+	    result.failure(getSyntaxError("'route' directive at least must have 'allowed_methods', 'root' and 'index' and must not have any duplicates"));
+	}
+	return result.checkInSuccess ? result.success(node) : result;
 }
 
 ParseResult Parser::param(const ContextInfo *paramsInfo)

@@ -11,7 +11,7 @@ public:
     typedef std::list<RouteNode> RouteValuesType;
 
     ServerNode(const ParamValuesType &params_, const RouteValuesType &routes_);
-    virtual void display_to(std::ostream &o) const;
+    virtual void displayTo(std::ostream &o) const;
 
     static const ContextInfo validParamNames[];
 

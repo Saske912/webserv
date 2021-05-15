@@ -16,7 +16,29 @@ RouteNode::RouteNode(const Token &endpoint_, const ParamValuesType &values_) : e
 {
 }
 
-void RouteNode::display_to(std::ostream &o) const
+RouteNode::RouteParamValidation RouteNode::getParamValue(const std::string &param) {
+    for (int i = 0; validParamNames[i].paramName; ++i) {
+        if (param == validParamNames[i].paramName) {
+            return RouteParamValidation(1U << i);
+        }
+    }
+    return RouteParamValidation(-1);
+}
+
+bool RouteNode::isValid() const {
+    unsigned int validated = 0;
+    for (ParamValuesType::const_iterator it = values.begin();
+        it != values.end(); ++it) {
+        RouteParamValidation current = getParamValue(it->name.value);
+        if (current == RP_UNKNOWN || validated & current) {
+            return false;
+        }
+        validated |= current;
+    }
+    return (validated & RP_REQUIRED) == RP_REQUIRED;
+}
+
+void RouteNode::displayTo(std::ostream &o) const
 {
     o << "(Route: " << endpoint << ": ";
     if (!values.empty()) {
