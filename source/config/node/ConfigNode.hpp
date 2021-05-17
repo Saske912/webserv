@@ -7,11 +7,12 @@
 
 class ConfigNode : virtual public ANode {
 public:
-    typedef std::list<ParamNode> ParamValuesType;
+    typedef std::list<ParamNode>  ParamValuesType;
     typedef std::list<ServerNode> ServerValuesType;
 
     ConfigNode(const ServerValuesType &servers_);
-    virtual void display_to(std::ostream &o) const;
+
+    virtual void displayTo(std::ostream &o) const;
 
     ServerValuesType servers;
 };

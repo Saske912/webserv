@@ -7,7 +7,8 @@
 class IdentifierNode : virtual public ANode {
 public:
     explicit IdentifierNode(const Token &value);
-    virtual void display_to(std::ostream &o) const;
+
+    virtual void displayTo(std::ostream &o) const;
 
     Token value;
 };

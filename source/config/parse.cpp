@@ -11,7 +11,7 @@
 
 config parse(int fd, const char *filename) {
     std::vector<Token> tokens = Lexer(fd, filename).make_tokens();
-    ParseResult ast = Parser(tokens).config();
+    ParseResult        ast    = Parser(tokens).parse();
     if (ast.error) {
         std::cout << ast.error << std::endl;
         exit(1);
@@ -25,6 +25,10 @@ config parse(int fd, const char *filename) {
 
 config parse(const char *filename) {
     int fd = open(filename, O_RDONLY);
-
-    return parse(fd, filename);
+    if (-1 == fd) {
+        error_exit(std::string("Error opening config file '") + filename + "'");
+    }
+    config result = parse(fd, filename);
+    close(fd);
+    return result;
 }

@@ -5,32 +5,44 @@
 #include <vector>
 #include "Token.hpp"
 #include "node/InvalidSyntaxErrorNode.hpp"
+#include "node/InvalidValueErrorNode.hpp"
 #include "node/ConfigNode.hpp"
 #include "node/ServerNode.hpp"
 #include "ParseResult.hpp"
 
-class Parser
-{
+class Parser {
 public:
-	Parser(std::vector<Token> &tokens_);
+    Parser(std::vector<Token> &tokens_);
 
-	Token& advance();
-	ParseResult parse();
+    Token &advance();
 
-	ParseResult config();
-	ParseResult server();
-	ParseResult route();
-	ParseResult param();
+    ParseResult parse();
 
-	bool expect_lcurly(ParseResult& result);
-	bool expect_rcurly(ParseResult& result);
-	InvalidSyntaxErrorNode* getSyntaxError(const std::string &reason);
-	void skip_end_of_line_tokens();
-	void skip_param_or_group_tokens();
+    ParseResult config();
 
-	std::vector<Token>& tokens;
-	Token* current_token;
-	int tok_idx;
+    ParseResult server();
+
+    ParseResult route();
+
+    ParseResult param(const ContextInfo *paramsInfo);
+
+    static const ContextInfo &getParamInfo(const ContextInfo *paramsInfo, const std::string &param);
+
+    bool expect_lcurly(ParseResult &result);
+
+    bool expect_rcurly(ParseResult &result);
+
+    InvalidSyntaxErrorNode *getSyntaxError(const std::string &reason) const;
+
+    static InvalidSyntaxErrorNode *getSyntaxError(const std::string &reason, const Token &token);
+
+    void skip_end_of_line_tokens();
+
+    void skip_param_or_group_tokens();
+
+    std::vector<Token> &tokens;
+    Token              *current_token;
+    int tok_idx;
 };
 
 #endif

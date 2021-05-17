@@ -1,11 +1,9 @@
 #include "ParamNode.hpp"
 
-ParamNode::ParamNode(const Token &name_, const ValuesType &values_) : name(name_), values(values_)
-{
+ParamNode::ParamNode(const Token &name_, const ValuesType &values_) : name(name_), values(values_) {
 }
 
-void ParamNode::display_to(std::ostream &o) const
-{
+void ParamNode::displayTo(std::ostream &o) const {
     o << "(Param: " << name << ": ";
     if (!values.empty()) {
         for (ValuesType::const_iterator it = values.begin();

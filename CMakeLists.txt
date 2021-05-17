@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 98)
 
 include_directories(webserv source source/config .)
 
-add_link_options(-Llibft -lft)
+add_link_options(-L../libft -Llibft -lft)
 
 add_compile_options(-g -Wall -Wextra)
 
@@ -34,6 +34,7 @@ add_executable(webserv
         source/config/Parser.cpp
         source/config/ParseResult.cpp
         source/config/Interpreter.cpp
+        source/config/Validator.cpp
         source/config/node/ANode.cpp
         source/config/node/ConfigNode.cpp
         source/config/node/IdentifierNode.cpp
@@ -42,6 +43,7 @@ add_executable(webserv
         source/config/node/ServerNode.cpp
         source/config/node/ErrorNode.cpp
         source/config/node/InvalidSyntaxErrorNode.cpp
+        source/config/node/InvalidValueErrorNode.cpp
         source/header.cpp
         source/header.hpp
         source/trim.cpp
