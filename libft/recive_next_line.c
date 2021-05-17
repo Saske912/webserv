@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <stdio.h>
 #define BUFFER_SIZE 1
 
 static int		ft_newline(char *buf, int a)

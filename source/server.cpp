@@ -170,7 +170,8 @@ int    server::responce( Header & head )
 //    std::cout << "responce:"  << std::endl;
 //    if (head.getHost() == "400" || head.getdHost().empty())
 //        return exception_processing(400, head);
-    if (*(std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod())) != head.getMethod())
+//    std::cout << "head method: " << head.getMethod()  << std::endl;
+    if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
     {
 //        std::cout << "501"  << std::endl;
         return exception_processing(501, head);
