@@ -9,7 +9,7 @@ int		sorter(t_write a, t_write b)
 }
 
 
-static int parse_first_line(char *line, Header &head)
+static void parse_first_line(char *line, Header &head)
 {
 	int i = -1;
 	int j;
@@ -18,15 +18,21 @@ static int parse_first_line(char *line, Header &head)
 	while (line[++i])
 		if (line[i] == ' ')
 			break ;
-	if (!line[i])
-		return 1;
+    if (!line[i])
+    {
+        head.setMethod(std::string("THIS SHIT NOT IMPLEMENTED", 0, i));
+        return ;
+    }
 	head.setMethod(std::string(line, 0, i));
 	j = i + 1;
 	while (line[++i])
 		if (line[i] == ' ')
 			break ;
 	if (!line[i])
-		return 1;
+	{
+        head.setMethod(std::string("THIS SHIT NOT IMPLEMENTED", 0, i));
+        return ;
+    }
 	head.setRequest(std::string(line, j, i - j));
 	j = i + 1;
 	while (line[++i]);
@@ -37,7 +43,6 @@ static int parse_first_line(char *line, Header &head)
 	str = head.getRequest();
 	if (str.find('?') != std::string::npos)
 		head.addEnv((char *)("QUERY_STRING=" + str.erase(0, str.find('?') + 1)).c_str());
-	return 0;
 }
 
 static void parse_request(char *line, Header &head)
@@ -97,6 +102,11 @@ static void parse_request(char *line, Header &head)
 	{
 		head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
 	}
+    else if ((tmp = strstr(line, "Transfer-Encoding: ")))
+    {
+        tmp += strlen("Transfer-Encoding: ");
+        head.setTransfer_Encoding(std::string(tmp));
+    }
 }
 
 std::string get_current_date()
@@ -142,38 +152,57 @@ std::string get_current_date()
 
 int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
 {
-	char *line;
-	int ct = 0;
+	char    *line;
+	char    buf[1024];
 
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
-		std::cout << "----------REQUEST----------" << std::endl;
 		(*it).head.setEnv(t.env);
 		it->head.initEnv();
-		(*it).flag = 1;
-		while ((t.rd = recive_next_line((*it).fd, &line)) > 0)
-		{
-			if (ct == 0)
-			{
-				if (parse_first_line(line, (*it).head))
-				    --ct;
-				++ct;
-			}
-			else
-				parse_request(line, (*it).head);
-
-			std::cout << line << std::endl;
-			free(line);
-			line = 0;
-		}
-		if (t.rd == 0)
-		{
-			it->head.eraseStruct();
-			set.erase(it);
-			return 1;
-		}
+        if (it->head.getTransfer_Encoding() == "chunked\r")
+        {
+            t.rd = recive_next_line((*it).fd, &line);
+            if (t.rd == 0)
+            {
+                it->head.eraseStruct();
+                set.erase(it);
+                return 1;
+            }
+            std::cout << line << std::endl;
+            int bytes = (int)strtol(line, 0, 16);
+            if (!bytes) {
+                it->flag = true;
+            }
+            t.rd = recv(it->fd, buf, bytes, 0);
+            if (t.rd == 0)
+            {
+                it->head.eraseStruct();
+                set.erase(it);
+                return 1;
+            }
+        }
+        else
+        {
+            t.rd = recive_next_line((*it).fd, &line);
+            if (t.rd == 0)
+            {
+                it->head.eraseStruct();
+                set.erase(it);
+                return 1;
+            }
+            if ( !it->ct )
+            {
+                it->ct = true;
+                parse_first_line(line, (*it).head);
+            }
+            else
+                parse_request(line, (*it).head);
+            std::cout << line  << std::endl;
+            if (std::string(line).empty())
+                (*it).flag = true;
+        }
 		free(line);
-		line = 0;
+        line = 0;
 	}
 	return 0;
 }
@@ -188,22 +217,13 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
-
+//	    std::cout << "fd: " << it->fd  << std::endl;
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
 ////////////////////////////////////
-	  //  std::cout << "method: " << it->head.getMethod() << " request: " << it->head.getRequest() << " http: " << it->head.getHttp()  << "|" << std::endl;
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 		std::cout << "----------RESPONSE----------" << std::endl;
-/*		str = (char *)(*it).head.getHttp().c_str();
-		send( (*it).fd, str, strlen(str), 0);
-		str = (char *)(*it).head.getRequest().c_str();
-		send( (*it).fd, str, strlen(str), 0);
-		send( (*it).fd, " ", 1, 0);
-		str = (char *)(*it).head.getMethod().c_str();
-		send( (*it).fd, str, strlen(str), 0);
-		send( (*it).fd, "\n", 1, 0);*/
 		str = (char *)(*it).head.getResponse().c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
@@ -257,8 +277,8 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		str = 0;
 		close(fd);
 		(*it).head.eraseStruct();
+		std::cout << std::endl << "----------REQUEST----------" << std::endl;
 	}
-
 }
 
 static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
@@ -266,8 +286,10 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
+//	    std::cout << "rec"  << std::endl;
 		if (recive(set, it, t))
 			break ;
+//        std::cout << "no break"  << std::endl;
 		response(it, t, conf);
 		it++;
 	}
@@ -335,7 +357,9 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0};
+            t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + \
+            std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255)\
+            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0, false};
 //			std::cout << a.addr << std::endl;
 			set.push_back(a);
         }
