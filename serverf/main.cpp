@@ -4,9 +4,17 @@
 #include "../header.h"
 #include "config.hpp"
 
+void print_usage() {
+    std::cerr << std::endl << "usage: webserv [file]" <<
+        std::endl << std::endl << "arguments:" << std::endl <<
+        "  file          Configuration file for webserver." <<
+        " If no file was provided," << std::endl <<
+        "                default config will be used." <<
+        std::endl;
+}
+
 int main(int ac, char *av[], char *env[])
 {
-    (void)av;
     t_data              t;
     t_serv              serv;
     timeval             tv = init_timevals();
@@ -15,9 +23,9 @@ int main(int ac, char *av[], char *env[])
 
 
     if (ac == 2) {
-		config_class = parse(av[1]);
-		conf = config_class.servers;
-	}
+        config_class = parse(av[1]);
+        conf = config_class.servers;
+    }
     else if (ac == 1)
     {
         char str[] = "cfg/ConfigExample.ws";
@@ -25,10 +33,11 @@ int main(int ac, char *av[], char *env[])
         conf = config_class.servers;
     }
     else {
-		// fixme error_usage();
-		std::cerr << "Config file expected!" << std::endl;
-		return 1;
-	}
+        std::cerr << "Wrong number of arguments. Expected 0 or 1, got " <<
+            (ac - 1) << "." << std::endl;
+        print_usage();
+        return 1;
+    }
     serv = init_serv();
     if (!(t.env = ft_doublecpy(env)))
         error_exit("malloc error");
