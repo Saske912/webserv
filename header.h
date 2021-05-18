@@ -56,6 +56,7 @@ typedef struct	s_write
 {
 		Header head;
 		std::string addr;
+		std::string reminder;
 		int fd;
 		int count;
 		int bytes;

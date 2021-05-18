@@ -53,6 +53,7 @@ static void parse_request(char *line, Header &head)
 	unsigned long int i = -1;
 	int count = 0;
 
+//	std::cout << "sega 1"  << std::endl;
 	if ((tmp = strstr(line, "Accept-Language: ")))
 	{
 		tmp += strlen("Accept-Language: ");
@@ -60,17 +61,26 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Host: ")))
 	{
-		tmp += strlen("Host: ");
-		tmp2 = strchr(tmp, ':');
-		if (head.getHost().empty())
+        std::cout << "sega 2 "<< std::string(tmp) << std::endl;
+        tmp += strlen("Host: ");
+        tmp2 = strchr(tmp, ':');
+        std::cout << "sega3 " << std::string(tmp2)  << std::endl;
+        if (head.getHost().empty() and tmp2 != nullptr )
+        {
             head.setHost(std::string(tmp, 0, tmp2 - tmp));
+        }
 		else
-			(head.setHost("400"));
+        {
+            head.setHost("400");
+        }
+        std::cout << "sega 5"  << std::endl;
 		head.setPort(std::stoi(tmp2 + 1));
+        std::cout << "sega 6"  << std::endl;
 	}
 	else if ((tmp = strstr(line, "Referer: ")))
 	{
-		tmp += strlen("Referer: ");
+
+        tmp += strlen("Referer: ");
 		head.setReferer(tmp);
 		while (line[++i])
 		{
@@ -94,16 +104,19 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Accept: ")))
 	{
-		tmp += strlen("Accept: ");
+
+        tmp += strlen("Accept: ");
 		str = std::string(tmp);
 		head.addEnv((char *)("CONTENT_TYPE=" + std::string(str, 0, str.find(','))).c_str());
 	}
 	else if (head.getMethod() == "POST" && strchr(line, '='))
 	{
-		head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
+
+        head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
 	}
     else if ((tmp = strstr(line, "Transfer-Encoding: ")))
     {
+
         tmp += strlen("Transfer-Encoding: ");
         head.setTransfer_Encoding(std::string(tmp));
     }
@@ -170,7 +183,6 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 	char    *line = 0;
 	char    *buf;
 
-
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
 		if (!it->first_line)
@@ -231,6 +243,20 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
         else
         {
             t.rd = recv_next_line((*it).fd, &line);
+            if (!it->reminder.empty())
+            {
+                buf = line;
+                line = ft_strjoin(it->reminder.c_str(), line);
+                free(buf);
+                buf = 0;
+                it->reminder.erase();
+            }
+            if (t.rd == -1 && line[0])
+            {
+                it->reminder = std::string(line);
+                std::cout << "Reminder: " << it->reminder << std::endl;
+                return 1;
+            }
             if (t.rd == 0)
             {
                 it->head.eraseStruct();
@@ -247,7 +273,8 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             }
             else
                 parse_request(line, (*it).head);
-            std::cout << line  << std::endl;
+            if (line)
+                std::cout << line  << std::endl;
             if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
 					&& it->head.getMethod() != "PUT")
                 (*it).flag = true;
@@ -426,7 +453,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
             t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + \
             std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255)\
-            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0, 0, false, false, false, false};
+            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), std::string(), cli.client, 0, 0, false, false, false, false};
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
