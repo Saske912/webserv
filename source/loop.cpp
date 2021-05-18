@@ -53,7 +53,6 @@ static void parse_request(char *line, Header &head)
 	unsigned long int i = -1;
 	int count = 0;
 
-//	std::cout << "sega 1"  << std::endl;
 	if ((tmp = strstr(line, "Accept-Language: ")))
 	{
 		tmp += strlen("Accept-Language: ");
@@ -61,10 +60,8 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Host: ")))
 	{
-        std::cout << "sega 2 "<< std::string(tmp) << std::endl;
         tmp += strlen("Host: ");
         tmp2 = strchr(tmp, ':');
-        std::cout << "sega3 " << std::string(tmp2)  << std::endl;
         if (head.getHost().empty() and tmp2 != nullptr )
         {
             head.setHost(std::string(tmp, 0, tmp2 - tmp));
@@ -73,9 +70,7 @@ static void parse_request(char *line, Header &head)
         {
             head.setHost("400");
         }
-        std::cout << "sega 5"  << std::endl;
 		head.setPort(std::stoi(tmp2 + 1));
-        std::cout << "sega 6"  << std::endl;
 	}
 	else if ((tmp = strstr(line, "Referer: ")))
 	{
@@ -205,6 +200,8 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 			if (line)
            	 std::cout << "line: " << line << std::endl;
             if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
+                if (it->head.getMethod() == "PUT" and it->head.getFd() != 1)
+                    close(it->head.getFd());
 				std::cout << "eshe_odin_ebychiy_flag" << std::endl;
                 it->flag = true;
             }
@@ -221,10 +218,10 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
                     t.rd = recv( it->fd, buf, it->bytes - it->count, 0 );
 					if (it->head.getFd() != 1)
 					{
-						it->count += t.rd;
 						std::cout << "it->count = " << it->count << std::endl;
 						buf[t.rd] = 0;
-						write(it->head.getFd(), buf, it->bytes);
+                        write(it->head.getFd(), buf, it->bytes - it->count);
+						it->count += t.rd;
 					}
 					free(buf);
 					if (it->count >= it->bytes)
@@ -243,6 +240,13 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
         else
         {
             t.rd = recv_next_line((*it).fd, &line);
+            if (t.rd != 0 and !line[0] and !it->first_line)
+            {
+                static int i = 0;
+                std::cout << "line: " << line << i++   << std::endl;
+                free(line);
+                return 1;
+            }
             if (!it->reminder.empty())
             {
                 buf = line;
@@ -296,8 +300,8 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
-		if (it->head.getFd() != 1)
-			close(it->head.getFd());
+//		if (it->head.getFd() != 1)
+//            close( it->head.getFd( ));
         it->first_line = false;
         it->head_readed = false;
 		it->eshe_odin_ebychiy_flag = false;
