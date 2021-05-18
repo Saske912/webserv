@@ -32,6 +32,8 @@ class Header
 		void initEnv();
 		void showEnv();
 		unsigned int getPort();
+		int getFd();
+		void setFd(int const &);
 		void setEnv(char **env);
 		void setPort(unsigned int const &);
 		void setAccept_Charsets(std::string const &);
@@ -57,6 +59,7 @@ class Header
 		void setWWW_Authenticate(std::string const &);
 		void eraseStruct();
 	private:
+		int Fd;
 		char **Env;
 		unsigned int Port;
 		std::string Request;

@@ -6,6 +6,7 @@ std::string const Header::Last_Modified = "Last_Modified: " + get_current_date()
 Header::Header()
 {
 	Env = 0;
+	Fd = 1;
 }
 
 void Header::eraseStruct()
@@ -32,6 +33,7 @@ void Header::eraseStruct()
 		ft_doublefree(Env);
 	Port = 0;
 	Env = 0;
+	Fd = 1;
 }
 
 void Header::setAccept_Charsets(std::string const &str)
@@ -141,6 +143,11 @@ void Header::setEnv(char **env)
 	Env = ft_doublecpy(env);
 }
 
+void Header::setFd(int const &fd)
+{
+	Fd = fd;
+}
+
 void Header::setPort(unsigned int  const &port)
 {
 	Port = port;
@@ -149,6 +156,11 @@ void Header::setPort(unsigned int  const &port)
 char **Header::getEnv()
 {
 	return Env;
+}
+
+int Header::getFd()
+{
+	return Fd;
 }
 
 unsigned int Header::getPort()
