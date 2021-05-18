@@ -173,8 +173,11 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
-		(*it).head.setEnv(t.env);
-		it->head.initEnv();
+		if (!it->first_line)
+		{
+			(*it).head.setEnv(t.env);
+			it->head.initEnv();
+		}
         if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
         {
 			if (it->head.getMethod() == "PUT" && it->head.getFd() == 1)
@@ -220,6 +223,8 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             {
                 it->head.eraseStruct();
                 it = set.erase(it);
+				if (line)
+					free(line);
                 return 1;
             }
         }
