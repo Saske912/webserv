@@ -45,3 +45,19 @@ void ErrorNode::addNext(ErrorNode *node) {
     }
     last->next = node;
 }
+
+ErrorNode *ErrorNode::getSyntaxError(const Token &token, const std::string &reason) {
+    return getSyntaxError(token.start, token.end, reason);
+}
+
+ErrorNode *ErrorNode::getSyntaxError(const Position &start, const Position &end, const std::string &reason) {
+    return new ErrorNode(start, end, reason, "Invalid Syntax Error");
+}
+
+ErrorNode *ErrorNode::getValueError(const Token &token, const std::string &reason) {
+    return getValueError(token.start, token.end, reason);
+}
+
+ErrorNode *ErrorNode::getValueError(const Position &start, const Position &end, const std::string &reason) {
+    return new ErrorNode(start, end, reason, "Invalid Value Error");
+}

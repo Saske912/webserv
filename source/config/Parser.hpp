@@ -4,8 +4,6 @@
 #include <iostream>
 #include <vector>
 #include "Token.hpp"
-#include "node/InvalidSyntaxErrorNode.hpp"
-#include "node/InvalidValueErrorNode.hpp"
 #include "node/ConfigNode.hpp"
 #include "node/ServerNode.hpp"
 #include "ParseResult.hpp"
@@ -31,10 +29,6 @@ public:
     bool expect_lcurly(ParseResult &result);
 
     bool expect_rcurly(ParseResult &result);
-
-    InvalidSyntaxErrorNode *getSyntaxError(const std::string &reason) const;
-
-    static InvalidSyntaxErrorNode *getSyntaxError(const std::string &reason, const Token &token);
 
     void skip_end_of_line_tokens();
 

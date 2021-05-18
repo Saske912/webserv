@@ -12,7 +12,8 @@ const ContextInfo RouteNode::validParamNames[] = {
     {NULL,                0, NULL}
 };
 
-RouteNode::RouteNode(const Token &endpoint_, const ParamValuesType &values_) : endpoint(endpoint_), values(values_) {
+RouteNode::RouteNode(const Token &name, const Token &endpoint_, const ParamValuesType &values_)
+    : name(name), endpoint(endpoint_), values(values_) {
 }
 
 RouteNode::RouteParamValidation RouteNode::getParamValue(const std::string &param) {
@@ -24,16 +25,24 @@ RouteNode::RouteParamValidation RouteNode::getParamValue(const std::string &para
     return RouteParamValidation(-1);
 }
 
-bool RouteNode::isValid() const {
+bool RouteNode::isValid(ParseResult &result) const {
     unsigned int validated = 0;
 
     for (ParamValuesType::const_iterator it = values.begin();
          it != values.end(); ++it) {
         RouteParamValidation current = getParamValue(it->name.value);
-        if (current == RP_UNKNOWN || validated & current) {
-            return false;
+        if (current == RP_UNKNOWN) {
+            result.failure(ErrorNode::getValueError(it->name, "Unknown Route Parameter."));
         }
-        validated |= current;
+        else if (validated & current) {
+            result.failure(ErrorNode::getValueError(it->name, "Route parameters must not duplicate."));
+        }
+        else {
+            validated |= current;
+        }
+    }
+    if ((validated & RP_REQUIRED) != RP_REQUIRED) {
+        result.failure(ErrorNode::getValueError(name, "'route' directive at least must have 'allowed_methods' and 'root' directives"));
     }
     return (validated & RP_REQUIRED) == RP_REQUIRED;
 }
