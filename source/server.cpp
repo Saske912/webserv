@@ -81,7 +81,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
             else if (head.getMethod() == "GET")
                 return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
             else if (head.getMethod() == "PUT")
-                return -1;
+                return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
             else if (head.getMethod() == "HEAD")
                 return -1;
             else if (head.getMethod() == "POST") {
@@ -127,7 +127,7 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
-	if (is_file(request))
+	if (is_file(request) or head.getMethod() == "PUT")
 		return targeting(head, request, route);
 	else
     {
@@ -261,7 +261,25 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 
     head.setContent_Location(request);
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
-    if (is_сgi(request, route))
+    if (head.getMethod() == "PUT")
+    {
+        struct ::stat st;
+        ::stat(request.c_str(), &st);
+        if (st.st_mode & S_IFDIR)
+            return exception_processing(404, head);
+        std::string part = "201 Created\n";
+        if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
+        {
+            if (errno == EACCES) {
+                return exception_processing(403, head);
+            }
+            else
+                return exception_processing(404, head);
+        }
+        else
+            head.setResponse("HTTP/1.1 " + part);
+    }
+    else if (is_сgi(request, route))
     {
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");

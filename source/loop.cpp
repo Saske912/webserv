@@ -60,17 +60,22 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Host: ")))
 	{
-		tmp += strlen("Host: ");
-		tmp2 = strchr(tmp, ':');
-		if (head.getHost().empty())
+        tmp += strlen("Host: ");
+        tmp2 = strchr(tmp, ':');
+        if (head.getHost().empty() and tmp2 != nullptr )
+        {
             head.setHost(std::string(tmp, 0, tmp2 - tmp));
+        }
 		else
-			(head.setHost("400"));
+        {
+            head.setHost("400");
+        }
 		head.setPort(std::stoi(tmp2 + 1));
 	}
 	else if ((tmp = strstr(line, "Referer: ")))
 	{
-		tmp += strlen("Referer: ");
+
+        tmp += strlen("Referer: ");
 		head.setReferer(tmp);
 		while (line[++i])
 		{
@@ -94,16 +99,19 @@ static void parse_request(char *line, Header &head)
 	}
 	else if ((tmp = strstr(line, "Accept: ")))
 	{
-		tmp += strlen("Accept: ");
+
+        tmp += strlen("Accept: ");
 		str = std::string(tmp);
 		head.addEnv((char *)("CONTENT_TYPE=" + std::string(str, 0, str.find(','))).c_str());
 	}
 	else if (head.getMethod() == "POST" && strchr(line, '='))
 	{
-		head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
+
+        head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
 	}
     else if ((tmp = strstr(line, "Transfer-Encoding: ")))
     {
+
         tmp += strlen("Transfer-Encoding: ");
         head.setTransfer_Encoding(std::string(tmp));
     }
@@ -165,62 +173,100 @@ int recv_next_line(int fd, char **line) {
     return z;
 }
 
-int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
+int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
-	char    *line;
-	char    buf[1024];
-
+	char    *line = 0;
+	char    *buf;
 
 	if ( FD_ISSET((*it).fd, &t.read))
 	{
-		(*it).head.setEnv(t.env);
-		it->head.initEnv();
-//		std::cout << it->head.getTransfer_Encoding()  << std::endl;
+		if (!it->first_line)
+		{
+			(*it).head.setEnv(t.env);
+			it->head.initEnv();
+		}
         if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
         {
-            std::cout << "HELLO" << std::endl;
-            t.rd = recv_next_line((*it).fd, &line);
+			if (it->head.getMethod() == "PUT" && it->head.getFd() == 1)
+				it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
+            if (it->count == 0)
+				t.rd = recv_next_line((*it).fd, &line);
             if (t.rd == 0)
             {
                 it->head.eraseStruct();
                 it = set.erase(it);
                 return 1;
             }
-            std::cout << "line: " << line << std::endl;
-//            std::cerr << "HELOOOOOO" << std::endl;
-            if (!line[0]) {
+			if (line)
+           	 std::cout << "line: " << line << std::endl;
+            if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
+                if (it->head.getMethod() == "PUT" and it->head.getFd() != 1)
+                    close(it->head.getFd());
+				std::cout << "eshe_odin_ebychiy_flag" << std::endl;
                 it->flag = true;
             }
             else {
-                int bytes = ( int ) strtol( line, 0, 16 );
-//            std::cerr << "bytes: " << bytes  << std::endl;
-                if ( !bytes ) {
-                    free( line );
-                    line = 0;
-//                std::cerr << "buf |" << buf << "|"  << std::endl;
-                } else
-                    t.rd = recv( it->fd, buf, bytes, 0 );
+				if (line && !line[0])
+					return 1;
+				if (line)
+			   		 it->bytes = ( int ) strtol( line, 0, 16 );
+                if (line && !it->bytes ) {
+					std::cout << "Bytes = " << it->bytes << std::endl;
+					it->eshe_odin_ebychiy_flag = true;
+                } else {
+					buf = (char *)malloc(sizeof(char) * (it->bytes - it->count + 1));
+                    t.rd = recv( it->fd, buf, it->bytes - it->count, 0 );
+					if (it->head.getFd() != 1)
+					{
+						std::cout << "it->count = " << it->count << std::endl;
+						buf[t.rd] = 0;
+                        write(it->head.getFd(), buf, it->bytes - it->count);
+						it->count += t.rd;
+					}
+					free(buf);
+					if (it->count >= it->bytes)
+						it->count = 0;
+				}
             }
             if (t.rd == 0)
             {
                 it->head.eraseStruct();
                 it = set.erase(it);
+				if (line)
+					free(line);
                 return 1;
             }
         }
         else
         {
             t.rd = recv_next_line((*it).fd, &line);
+            if (t.rd != 0 and !line[0] and !it->first_line)
+            {
+                static int i = 0;
+                std::cout << "line: " << line << i++   << std::endl;
+                free(line);
+                return 1;
+            }
+            if (!it->reminder.empty())
+            {
+                buf = line;
+                line = ft_strjoin(it->reminder.c_str(), line);
+                free(buf);
+                buf = 0;
+                it->reminder.erase();
+            }
+            if (t.rd == -1 && line[0])
+            {
+                it->reminder = std::string(line);
+                std::cout << "Reminder: " << it->reminder << std::endl;
+                return 1;
+            }
             if (t.rd == 0)
             {
                 it->head.eraseStruct();
                 it = set.erase(it);
                 return 1;
             }
-
-
-//            std::cout << "it->first_line: " << it->first_line   << std::endl;
-//            std::cout << "line: " << line  << std::endl;
             if (!line[0]) {
                 it->head_readed = true;
             }
@@ -228,15 +274,17 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t)
             {
                 it->first_line = true;
                 parse_first_line(line, (*it).head);
-//                std::cout << "head method after parse: " << it->head.getMethod()  << std::endl;
             }
             else
                 parse_request(line, (*it).head);
-            std::cout << line  << std::endl;
-            if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked")
+            if (line)
+                std::cout << line  << std::endl;
+            if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
+					&& it->head.getMethod() != "PUT")
                 (*it).flag = true;
         }
-		free(line);
+		if (line)
+			free(line);
         line = 0;
 	}
 	return 0;
@@ -252,9 +300,14 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
-//	    std::cout << "fd: " << it->fd  << std::endl;
+//		if (it->head.getFd() != 1)
+//            close( it->head.getFd( ));
         it->first_line = false;
         it->head_readed = false;
+		it->eshe_odin_ebychiy_flag = false;
+		it->flag = false;
+		it->bytes = 0;
+		it->count = 0;
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
@@ -283,8 +336,16 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		str = (char *)(*it).head.getLast_Modified().c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
-		if (fd == -1)
+		if (it->head.getMethod() == "PUT" || fd == -1)
+		{
+			std::cout << "BIL PUT MI VISHLY" << std::endl;
+			if (fd != -1)
+				close(fd);
+			send((*it).fd, "\r\n", 2, 0);
+			(*it).head.eraseStruct();
+			std::cout << std::endl << "----------REQUEST----------" << std::endl;
 			return ;
+		}
 		fstat(fd, &stat);
 		string = "Content-Length: ";
 		string += std::to_string(stat.st_size + 1);
@@ -324,7 +385,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 	while (it != set.end())
 	{
 //	    std::cout << "rec"  << std::endl;
-		if (recive(set, it, t))
+		if (recive(set, it, t, conf))
             continue ;
 //        std::cout << "no break"  << std::endl;
 		response(it, t, conf);
@@ -396,11 +457,9 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
             t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + \
             std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255)\
-            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, false, false, false};
-//			std::cout << "first_line after init: " << a.first_line << std::endl;
+            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), std::string(), cli.client, 0, 0, false, false, false, false};
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
-//    loop(tv, serv, t, cli, set);
     }
 }
