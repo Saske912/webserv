@@ -57,9 +57,12 @@ typedef struct	s_write
 		Header head;
 		std::string addr;
 		int fd;
+		int count;
+		int bytes;
 		bool flag;
         bool first_line;
         bool head_readed;
+		bool eshe_odin_ebychiy_flag;
 }				t_write;
 
 void        error_exit(const std::string& str);

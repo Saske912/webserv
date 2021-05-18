@@ -167,8 +167,8 @@ int recv_next_line(int fd, char **line) {
 
 int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
-	char    *line;
-	char    buf[1024];
+	char    *line = 0;
+	char    *buf;
 
 
 	if ( FD_ISSET((*it).fd, &t.read))
@@ -179,29 +179,41 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
         {
 			if (it->head.getMethod() == "PUT" && it->head.getFd() == 1)
 				it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
-            t.rd = recv_next_line((*it).fd, &line);
+            if (it->count == 0)
+				t.rd = recv_next_line((*it).fd, &line);
             if (t.rd == 0)
             {
                 it->head.eraseStruct();
                 it = set.erase(it);
                 return 1;
             }
-            std::cout << "line: " << line << std::endl;
-            if (!line[0]) {
+			if (line)
+           	 std::cout << "line: " << line << std::endl;
+            if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
+				std::cout << "eshe_odin_ebychiy_flag" << std::endl;
                 it->flag = true;
             }
             else {
-                int bytes = ( int ) strtol( line, 0, 16 );
-                if ( !bytes ) {
-                    free( line );
-                    line = 0;
+				if (line && !line[0])
+					return 1;
+				if (line)
+			   		 it->bytes = ( int ) strtol( line, 0, 16 );
+                if (line && !it->bytes ) {
+					std::cout << "Bytes = " << it->bytes << std::endl;
+					it->eshe_odin_ebychiy_flag = true;
                 } else {
-                    t.rd = recv( it->fd, buf, bytes, 0 );
+					buf = (char *)malloc(sizeof(char) * (it->bytes - it->count + 1));
+                    t.rd = recv( it->fd, buf, it->bytes - it->count, 0 );
 					if (it->head.getFd() != 1)
 					{
-						write(it->head.getFd(), buf, bytes);
-						write(it->head.getFd(), "\n", 1);
+						it->count += t.rd;
+						std::cout << "it->count = " << it->count << std::endl;
+						buf[t.rd] = 0;
+						write(it->head.getFd(), buf, it->bytes);
 					}
+					free(buf);
+					if (it->count >= it->bytes)
+						it->count = 0;
 				}
             }
             if (t.rd == 0)
@@ -235,7 +247,8 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 					&& it->head.getMethod() != "PUT")
                 (*it).flag = true;
         }
-		free(line);
+		if (line)
+			free(line);
         line = 0;
 	}
 	return 0;
@@ -251,11 +264,14 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
-//	    std::cout << "fd: " << it->fd  << std::endl;
 		if (it->head.getFd() != 1)
 			close(it->head.getFd());
         it->first_line = false;
         it->head_readed = false;
+		it->eshe_odin_ebychiy_flag = false;
+		it->flag = false;
+		it->bytes = 0;
+		it->count = 0;
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
@@ -286,8 +302,12 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		if (it->head.getMethod() == "PUT" || fd == -1)
 		{
+			std::cout << "BIL PUT MI VISHLY" << std::endl;
 			if (fd != -1)
 				close(fd);
+			send((*it).fd, "\r\n", 2, 0);
+			(*it).head.eraseStruct();
+			std::cout << std::endl << "----------REQUEST----------" << std::endl;
 			return ;
 		}
 		fstat(fd, &stat);
@@ -401,11 +421,9 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
             t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + \
             std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255)\
-            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, false, false, false};
-//			std::cout << "first_line after init: " << a.first_line << std::endl;
+            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), cli.client, 0, 0, false, false, false, false};
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
-//    loop(tv, serv, t, cli, set);
     }
 }
