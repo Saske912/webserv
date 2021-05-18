@@ -260,7 +260,24 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 
     head.setContent_Location(request);
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
-    if (is_сgi(request, route))
+    if (head.getMethod() == "PUT")
+    {
+//        struct ::stat st;
+//        ::stat(request.c_str(), &st);
+//        if (st.st_mode & S_IFDIR)
+//            return exception_processing(404, head);
+        if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
+        {
+            if (errno == EACCES) {
+                return exception_processing(403, head);
+            }
+            else
+                return exception_processing(404, head);
+        }
+        else
+            head.setResponse("HTTP/1.1 200 OK\n");
+    }
+    else if (is_сgi(request, route))
     {
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
