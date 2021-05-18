@@ -19,18 +19,13 @@ int main(int ac, char *av[], char *env[])
     t_serv              serv;
     timeval             tv = init_timevals();
     config              config_class;
-    std::list<server>   conf;
 
 
     if (ac == 2) {
         config_class = parse(av[1]);
-        conf = config_class.servers;
     }
-    else if (ac == 1)
-    {
-        char str[] = "cfg/ConfigExample.ws";
-        config_class = parse(str);
-        conf = config_class.servers;
+    else if (ac == 1) {
+        config_class = parse("cfg/ConfigExample.ws");
     }
     else {
         std::cerr << "Wrong number of arguments. Expected 0 or 1, got " <<
@@ -41,6 +36,7 @@ int main(int ac, char *av[], char *env[])
     serv = init_serv();
     if (!(t.env = ft_doublecpy(env)))
         error_exit("malloc error");
-    loop(tv, serv, t, conf);
+//    std::cout << config_class << std::endl;
+    loop(tv, serv, t, config_class.servers);
     return (0);
 }

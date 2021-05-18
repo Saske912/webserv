@@ -27,7 +27,7 @@ ParseResult Parser::config() {
         if (current_token->type == Token::IDENTIFIER &&
             current_token->value == "server") {
             ANode *serv = result.checkIn(server());
-            if (!result.error && serv != NULL) {
+            if (result.checkInSuccess) {
                 servers.push_back(*dynamic_cast<ServerNode *>(serv));
             }
             delete serv;
@@ -38,7 +38,13 @@ ParseResult Parser::config() {
         }
         skip_end_of_line_tokens();
     }
-    return result.checkInSuccess ? result.success(new ConfigNode(servers)) : result;
+    if (result.error)
+        result.checkInSuccess = false;
+    if (servers.empty())
+        result.failure(ErrorNode::getSyntaxError(*current_token, "Config must have at least 1 server."));
+    if (!result.checkInSuccess)
+        return result;
+    return result.success(new ConfigNode(servers));
 }
 
 ParseResult Parser::server() {
