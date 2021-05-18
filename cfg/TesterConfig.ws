@@ -10,10 +10,14 @@ server {
        	root /Users/pfile/web4/YoupiBanane/
        	index youpi.bad_extension
     }
+    route /put_test/ {
+        allowed_methods PUT
+        root /Users/pfile/web4/YoupiBanane/put_dir/
+        index /
+    }
 	route / {							    # route for file $(index)/public/index.html
 		allowed_methods GET		# allowed methods for route
 		root /Users/pfile/web4/content/
 		index index.html
 	}
-
 }
