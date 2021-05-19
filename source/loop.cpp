@@ -342,10 +342,18 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		if (it->head.getMethod() == "PUT" || (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n") ||  fd == -1)
 		{
+			if (it->head.getMethod() == "POST")
+			{
+				fstat(fd, &stat);
+				string = "Content-Length: ";
+				string += std::to_string(stat.st_size + 1) + "\r\n";
+				str = (char *)string.c_str();
+				send( (*it).fd, str, strlen(str), 0);
+				std::cout << str;
+			}
 			str = (char *)(*it).head.getContent_Location().c_str();
 			std::cout << str;
 			send( (*it).fd, str, strlen(str), 0);
-			std::cout << "BIL PUT MI VISHLY" << std::endl;
 			if (fd != -1)
 				close(fd);
 			send((*it).fd, "\r\n", 4, 0);
@@ -355,11 +363,11 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		}
 		fstat(fd, &stat);
 		string = "Content-Length: ";
-		string += std::to_string(stat.st_size + 1);
+		string += std::to_string(stat.st_size + 1) + "\r\n";
 		str = (char *)string.c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
-		send((*it).fd, "\r\n\r\n", 4, 0);
+		send((*it).fd, "\r\n", 2, 0);
 
 ///////////////////////////////////
         str = 0;
