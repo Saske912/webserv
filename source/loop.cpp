@@ -173,6 +173,68 @@ int recv_next_line(int fd, char **line) {
     return z;
 }
 
+
+int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
+{
+	char *line;
+	char *buf;
+
+	if (it->head.getFd() == 1)
+		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
+	if (it->count == 0)
+		t.rd = recv_next_line((*it).fd, &line);
+	if (t.rd == 0)
+	{
+		it->head.eraseStruct();
+		it = set.erase(it);
+		return 1;
+	}
+//			if (line)
+//           	 std::cout << "line: " << line << std::endl;
+	if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
+		if (it->head.getFd() != 1)
+			close(it->head.getFd());
+//                std::cout << "CHECK fILE" << std::endl;
+		sleep(5);
+		it->flag = true;
+	}
+	else {
+		if (line && !line[0])
+		{
+			free(line);
+			return 1;
+		}
+		if (line)
+			 it->bytes = ( int ) strtol( line, 0, 16 );
+		if (line && !it->bytes ) {
+			it->eshe_odin_ebychiy_flag = true;
+		} else {
+			int n = it->bytes - it->count + 1 < 0? 0 : it->bytes - it->count;
+//                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
+			buf = (char *)malloc(sizeof(char) * (n + 1));
+			t.rd = recv( it->fd, buf, n , 0 );
+			if (it->head.getFd() != 1)
+			{
+				buf[t.rd -1] = 0;
+				write(it->head.getFd(), buf, n);
+				it->count += t.rd;
+			}
+			free(buf);
+			if (it->count >= it->bytes)
+				it->count = 0;
+		}
+	}
+	if (t.rd == 0)
+	{
+		it->head.eraseStruct();
+		it = set.erase(it);
+		if (line)
+			free(line);
+		return 1;
+	}
+	return 0;
+}
+
 int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
 	char    *line = 0;
@@ -187,59 +249,8 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 		}
         if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
         {
-			if (it->head.getFd() == 1)
-				it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
-            if (it->count == 0)
-				t.rd = recv_next_line((*it).fd, &line);
-            if (t.rd == 0)
-            {
-                it->head.eraseStruct();
-                it = set.erase(it);
-                return 1;
-            }
-//			if (line)
-//           	 std::cout << "line: " << line << std::endl;
-            if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
-                if (it->head.getFd() != 1)
-                    close(it->head.getFd());
-//                std::cout << "CHECK fILE" << std::endl;
-                sleep(5);
-                it->flag = true;
-            }
-            else {
-				if (line && !line[0])
-				{
-					free(line);
-					return 1;
-				}
-				if (line)
-			   		 it->bytes = ( int ) strtol( line, 0, 16 );
-                if (line && !it->bytes ) {
-					it->eshe_odin_ebychiy_flag = true;
-                } else {
-                    int n = it->bytes - it->count + 1 < 0? 0 : it->bytes - it->count;
-//                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
-					buf = (char *)malloc(sizeof(char) * (n + 1));
-                    t.rd = recv( it->fd, buf, n , 0 );
-					if (it->head.getFd() != 1)
-					{
-						buf[t.rd -1] = 0;
-                        write(it->head.getFd(), buf, n);
-						it->count += t.rd;
-					}
-					free(buf);
-					if (it->count >= it->bytes)
-						it->count = 0;
-				}
-            }
-            if (t.rd == 0)
-            {
-                it->head.eraseStruct();
-                it = set.erase(it);
-				if (line)
-					free(line);
-                return 1;
-            }
+			if (chunked(set, it, t, conf))
+				return 1;
         }
         else
         {
@@ -294,6 +305,73 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 	return 0;
 }
 
+int sendFile(std::list<t_write>::iterator &it, int fd)
+{
+	char *str = 0;
+    int stats = 0;
+	
+	while ((stats = get_next_line(fd, &str)))
+	{
+		if (stats == -1)
+		{
+			close(fd);
+			return 1;
+		}
+		send( (*it).fd, str, strlen(str), 0);
+		send( (*it).fd, "\n", 1, 0);
+		free(str);
+		str = 0;
+	}
+	send( (*it).fd, str, strlen(str), 0);
+	send( (*it).fd, "\n", 1, 0);
+	free(str);
+	return 0;
+}
+
+void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write> &set)
+{
+	char *str = 0;
+
+	str = (char *)(*it).head.getContent_Location().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+	if (fd != -1)
+		close(fd);
+	send((*it).fd, "\r\n", 2, 0);
+	close(it->fd);
+	it->head.eraseStruct();
+	it = set.erase(it);
+	std::cout << std::endl << "----------REQUEST----------" << std::endl;
+}
+
+void sendHeader(std::list<t_write>::iterator &it)
+{
+	char *str = 0;
+
+	str = (char *)(*it).head.getResponse().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+	if (!((*it).head.getContent_Language().empty()))	
+	{
+		str = (char *)(*it).head.getContent_Language().c_str();
+		std::cout << str;
+		send( (*it).fd, str, strlen(str), 0);
+	}
+	if (!((*it).head.getAllow().empty()))
+	{
+		str = (char *)(*it).head.getAllow().c_str();
+		std::cout << str;
+		send( (*it).fd, str, strlen(str), 0);	
+	}
+	(*it).head.setDate("Date: " + get_current_date());
+	str = (char *)(*it).head.getDate().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+	str = (char *)(*it).head.getLast_Modified().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+}
+
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
 {
 	int fd;
@@ -301,7 +379,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	std::string string2;
 	struct stat stat;
 	char *str;
-    int stats = 0;
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
@@ -319,69 +396,10 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 ////////////////////////////////////
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 		std::cout << "----------RESPONSE----------" << std::endl;
-		if (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n") 
-		{
-			str = 0;
-			while ((stats = get_next_line(fd, &str)))
-			{
-				if (stats == -1)
-				{
-					close(fd);
-					return;
-				}
-				send( (*it).fd, str, strlen(str), 0);
-				send( (*it).fd, "\n", 1, 0);
-				free(str);
-				str = 0;
-			}
-			return ;
-		}
-		str = (char *)(*it).head.getResponse().c_str();
-		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);
-		if (!((*it).head.getContent_Language().empty()))	
-		{
-			str = (char *)(*it).head.getContent_Language().c_str();
-		std::cout << str;
-			send( (*it).fd, str, strlen(str), 0);
-		}
-		if (!((*it).head.getAllow().empty()))
-		{
-			str = (char *)(*it).head.getAllow().c_str();
-		std::cout << str;
-			send( (*it).fd, str, strlen(str), 0);	
-		}
-		(*it).head.setDate("Date: " + get_current_date());
-		str = (char *)(*it).head.getDate().c_str();
-		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);
-		str = (char *)(*it).head.getLast_Modified().c_str();
-		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);
-		//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
-		if (it->head.getMethod() == "PUT" ||  fd == -1)
-		{
-//			if (it->head.getMethod() == "POST")
-//			{
-//				fstat(fd, &stat);
-//				string = "Content-Length: ";
-//				string += std::to_string(stat.st_size + 1) + "\r\n";
-//				str = (char *)string.c_str();
-//				send( (*it).fd, str, strlen(str), 0);
-//				std::cout << str;
-//			}
-			str = (char *)(*it).head.getContent_Location().c_str();
-			std::cout << str;
-			send( (*it).fd, str, strlen(str), 0);
-			if (fd != -1)
-				close(fd);
-			send((*it).fd, "\r\n", 2, 0);
-			close(it->fd);
-			it->head.eraseStruct();
-			it = set.erase(it);
-			std::cout << std::endl << "----------REQUEST----------" << std::endl;
-			return ;
-		}
+		sendHeader(it);
+				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
+		if (it->head.getMethod() == "PUT" || fd == -1)
+			return noBodyResponse(it, fd, set);
         str = (char *)(*it).head.getContent_Location().c_str();
         std::cout << str;
         send( (*it).fd, str, strlen(str), 0);
@@ -394,23 +412,8 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send((*it).fd, "\r\n", 2, 0);
 
 ///////////////////////////////////
-        str = 0;
-		while ((stats = get_next_line(fd, &str)))
-		{
-		    if (stats == -1)
-		    {
-		        close(fd);
-                return;
-            }
-			send( (*it).fd, str, strlen(str), 0);
-			send( (*it).fd, "\n", 1, 0);
-			free(str);
-			str = 0;
-		}
-		send( (*it).fd, str, strlen(str), 0);
-		send( (*it).fd, "\n", 1, 0);
-		free(str);
-		str = 0;
+		if (sendFile(it, fd))
+			return ;
 		close(fd);
 		(*it).head.eraseStruct();
 		std::cout << std::endl << "----------REQUEST----------" << std::endl;
