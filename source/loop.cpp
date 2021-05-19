@@ -340,7 +340,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		str = (char *)(*it).head.getLast_Modified().c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
-		if (it->head.getMethod() == "PUT" || fd == -1)
+		if (it->head.getMethod() == "PUT" || (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n") ||  fd == -1)
 		{
 			str = (char *)(*it).head.getContent_Location().c_str();
 			std::cout << str;
