@@ -187,7 +187,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 		}
         if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
         {
-			if (it->head.getMethod() == "PUT" && it->head.getFd() == 1)
+			if (it->head.getFd() == 1)
 				it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
             if (it->count == 0)
 				t.rd = recv_next_line((*it).fd, &line);
@@ -197,11 +197,13 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
                 it = set.erase(it);
                 return 1;
             }
-			if (line)
-           	 std::cout << "line: " << line << std::endl;
+//			if (line)
+//           	 std::cout << "line: " << line << std::endl;
             if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
-                if (it->head.getMethod() == "PUT" and it->head.getFd() != 1)
+                if (it->head.getFd() != 1)
                     close(it->head.getFd());
+//                std::cout << "CHECK fILE" << std::endl;
+                sleep(5);
                 it->flag = true;
             }
             else {
@@ -215,7 +217,9 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
                 if (line && !it->bytes ) {
 					it->eshe_odin_ebychiy_flag = true;
                 } else {
-					buf = (char *)malloc(sizeof(char) * (it->bytes - it->count + 1));
+                    int n = it->bytes - it->count + 1 < 0? 0 : it->bytes - it->count + 1;
+//                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
+					buf = (char *)malloc(sizeof(char) * (n));
                     t.rd = recv( it->fd, buf, it->bytes - it->count, 0 );
 					if (it->head.getFd() != 1)
 					{
