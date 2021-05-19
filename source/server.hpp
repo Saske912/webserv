@@ -52,6 +52,7 @@ protected:
     bool                        check_methods(std::string str, std::list<std::string> arr) const;
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
+    std::string                 set_location(route &  route, Header &  head);
 private:
     std::string                 _host;
     unsigned int                _port;

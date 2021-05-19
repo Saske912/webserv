@@ -259,7 +259,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     char    **arg;
     int     fd1 = 1;
 
-    head.setContent_Location("Content-Location: " + head.getRequest() + route.get_default_page() + "\r\n");
+    head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
     {
@@ -422,6 +422,18 @@ void server::set_list_of_methods( ) {
     _list_of_methods.push_back("DELETE");
     _list_of_methods.push_back("TRACE");
     _list_of_methods.push_back("CONNECT");
+}
+
+std::string server::set_location(route & route, Header & head) {
+    if (route.get_default_page().empty())
+        return head.getRequest();
+    else
+    {
+        if (*(head.getRequest().rbegin()) != '/' and *(route.get_default_page().begin()) != '/')
+            return head.getRequest() + '/' + route.get_default_page();
+        else
+            return head.getRequest() + route.get_default_page();
+    }
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {
