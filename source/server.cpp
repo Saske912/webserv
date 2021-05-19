@@ -425,7 +425,7 @@ void server::set_list_of_methods( ) {
 }
 
 std::string server::set_location(route & route, Header & head) {
-    if (route.get_default_page().empty())
+    if (route.get_default_page().empty() or is_file(head.getRequest()))
         return head.getRequest();
     else
     {
