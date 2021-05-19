@@ -217,14 +217,14 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
                 if (line && !it->bytes ) {
 					it->eshe_odin_ebychiy_flag = true;
                 } else {
-                    int n = it->bytes - it->count + 1 < 0? 0 : it->bytes - it->count + 1;
+                    int n = it->bytes - it->count + 1 < 0? 0 : it->bytes - it->count;
 //                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
-					buf = (char *)malloc(sizeof(char) * (n));
-                    t.rd = recv( it->fd, buf, it->bytes - it->count, 0 );
+					buf = (char *)malloc(sizeof(char) * (n + 1));
+                    t.rd = recv( it->fd, buf, n , 0 );
 					if (it->head.getFd() != 1)
 					{
-						buf[t.rd] = 0;
-                        write(it->head.getFd(), buf, it->bytes - it->count);
+						buf[t.rd -1] = 0;
+                        write(it->head.getFd(), buf, n);
 						it->count += t.rd;
 					}
 					free(buf);
@@ -340,17 +340,18 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		str = (char *)(*it).head.getLast_Modified().c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
-		if (it->head.getMethod() == "PUT" || (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n") ||  fd == -1)
+		//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
+		if (it->head.getMethod() == "PUT" ||  fd == -1)
 		{
-		/*	if (it->head.getMethod() == "POST")
-			{
-				fstat(fd, &stat);
-				string = "Content-Length: ";
-				string += std::to_string(stat.st_size + 1) + "\r\n";
-				str = (char *)string.c_str();
-				send( (*it).fd, str, strlen(str), 0);
-				std::cout << str;
-			}*/
+//			if (it->head.getMethod() == "POST")
+//			{
+//				fstat(fd, &stat);
+//				string = "Content-Length: ";
+//				string += std::to_string(stat.st_size + 1) + "\r\n";
+//				str = (char *)string.c_str();
+//				send( (*it).fd, str, strlen(str), 0);
+//				std::cout << str;
+//			}
 			str = (char *)(*it).head.getContent_Location().c_str();
 			std::cout << str;
 			send( (*it).fd, str, strlen(str), 0);
@@ -363,6 +364,9 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 			std::cout << std::endl << "----------REQUEST----------" << std::endl;
 			return ;
 		}
+        str = (char *)(*it).head.getContent_Location().c_str();
+        std::cout << str;
+        send( (*it).fd, str, strlen(str), 0);
 		fstat(fd, &stat);
 		string = "Content-Length: ";
 		string += std::to_string(stat.st_size + 1) + "\r\n";

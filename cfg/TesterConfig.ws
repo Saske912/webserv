@@ -13,12 +13,12 @@ server {
     }
     route /put_test/ {
         allowed_methods PUT
-        root /Users/wpersimm/webserv/YoupiBanane/put_dir/
+        root /Users/pfile/web4/YoupiBanane/put_dir/
         index /
     }
 	route / {							    # route for file $(index)/public/index.html
 		allowed_methods GET					# allowed methods for route
-		root /Users/wpersimm/webserv/content/
+		root /Users/pfile/web4/content/
 		index index.html
 	}
 }

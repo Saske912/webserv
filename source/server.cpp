@@ -4,10 +4,9 @@
 
 #include "../header.h"
 #include "server.hpp"
-#include <limits>
-//~0 ^ long(1L << (sizeof(long) * 8 - 1
+
 server::server() : _server_names(), _error_pages(), _routs(),
-    _client_body_size(std::numeric_limits<long>::max()) {
+    _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))) {
     set_default_pages();
     set_list_of_methods();
 }
@@ -289,8 +288,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             arg[0] = strdup("test/cgi_tester");
 //            std::cout << "check file in cgi for PUT"  << std::endl;
 //            sleep(20);
-            std::cout << "CGI_EXT: " << route.get_cgi().first.c_str()  << std::endl;
-            std::cout << "REQUEST: " << request.c_str()  << std::endl;
+//            std::cout << "CGI_EXT: " << route.get_cgi().first.c_str()  << std::endl;
+//            std::cout << "REQUEST: " << request.c_str()  << std::endl;
 //            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
 //            char **tmp = head.getEnv();
@@ -299,6 +298,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //                std::cerr << tmp[i]  << std::endl;
 //            }
             dup2(fd, 1);
+//            std::cerr << "cgi: ";
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
