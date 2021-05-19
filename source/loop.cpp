@@ -338,10 +338,13 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		if (it->head.getMethod() == "PUT" || fd == -1)
 		{
+			str = (char *)(*it).head.getContent_Location().c_str();
+			std::cout << str;
+			send( (*it).fd, str, strlen(str), 0);
 			std::cout << "BIL PUT MI VISHLY" << std::endl;
 			if (fd != -1)
 				close(fd);
-			send((*it).fd, "\r\n", 2, 0);
+			send((*it).fd, "\r\n", 4, 0);
 			(*it).head.eraseStruct();
 			std::cout << std::endl << "----------REQUEST----------" << std::endl;
 			return ;

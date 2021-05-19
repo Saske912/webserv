@@ -7,17 +7,17 @@ server {
 	client_max_body_size 100M							# limit client max body size
 	route /directory/ {							    # route for file $(index)/public/index.html
        	allowed_methods GET		# allowed methods for route
-       	root /Users/pfile/web4/YoupiBanane/
+       	root /Users/wpersimm/webserv/YoupiBanane/
        	index youpi.bad_extension
     }
     route /put_test/ {
         allowed_methods PUT
-        root /Users/pfile/web4/YoupiBanane/put_dir/
+        root /Users/wpersimm/webserv/YoupiBanane/put_dir/
         index /
     }
 	route / {							    # route for file $(index)/public/index.html
-		allowed_methods GET		# allowed methods for route
-		root /Users/pfile/web4/content/
+		allowed_methods GET					# allowed methods for route
+		root /Users/wpersimm/webserv/content/
 		index index.html
 	}
 }
