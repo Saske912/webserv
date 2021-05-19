@@ -6,7 +6,8 @@
 #include "server.hpp"
 
 
-server::server() : _server_names(), _error_pages(), _routs() {
+server::server() : _server_names(), _error_pages(), _routs(),
+    _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))) {
     set_default_pages();
     set_list_of_methods();
 }

@@ -11,8 +11,8 @@ const ContextInfo ServerNode::validParamNames[] = {
     {NULL,                   0, NULL}
 };
 
-ServerNode::ServerNode(const ParamValuesType &params_,
-                       const RouteValuesType &routes_) : params(params_), routes(routes_) {
+ServerNode::ServerNode(const Token &name, const ParamValuesType &params_,
+                       const RouteValuesType &routes_) : name(name), params(params_), routes(routes_) {
 }
 
 ServerNode::ServerParamValidation ServerNode::getParamValue(const std::string &param) {
@@ -24,19 +24,36 @@ ServerNode::ServerParamValidation ServerNode::getParamValue(const std::string &p
     return ServerParamValidation(-1);
 }
 
-bool ServerNode::isValid() const {
-    if (routes.empty())
-        return false;
+bool ServerNode::isValid(ParseResult &result) {
+    if (routes.empty()) {
+        result.failure(ErrorNode::getValueError(name, "Server must have at least one route."));
+    }
     unsigned int validated = 0;
 
     for (ParamValuesType::const_iterator it = params.begin();
          it != params.end(); ++it) {
         ServerParamValidation current = getParamValue(it->name.value);
-        if (current == SP_UNKNOWN || validated & current) {
-            return false;
+        if (current == SP_UNKNOWN) {
+            result.failure(ErrorNode::getValueError(it->name, "Unknown Server Parameter."));
         }
-        if (current != SP_ERROR_PAGE) // may be multiple times for different codes
+        else if (validated & current) {
+            result.failure(ErrorNode::getValueError(it->name, "Server parameters must not duplicate."));
+        }
+        else if (current == SP_ERROR_PAGE) {
+            int value = ft_atoi(it->values.front().value.c_str());
+            if (errorPages.end() != std::find(errorPages.begin(), errorPages.end(), value)) {
+                result.failure(ErrorNode::getValueError(it->name, "Duplicate error page code"));
+            }
+            else {
+                errorPages.push_back(value);
+            }
+        }
+        else {
             validated |= current;
+        }
+    }
+    if ((validated & SP_REQUIRED) != SP_REQUIRED) {
+        result.failure(ErrorNode::getValueError(name, "'server' directive must have 'host' and 'port' directives"));
     }
     return (validated & SP_REQUIRED) == SP_REQUIRED;
 }

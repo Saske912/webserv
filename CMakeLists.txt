@@ -42,8 +42,6 @@ add_executable(webserv
         source/config/node/RouteNode.cpp
         source/config/node/ServerNode.cpp
         source/config/node/ErrorNode.cpp
-        source/config/node/InvalidSyntaxErrorNode.cpp
-        source/config/node/InvalidValueErrorNode.cpp
         source/header.cpp
         source/header.hpp
         source/trim.cpp

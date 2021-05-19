@@ -15,7 +15,7 @@ Token &Parser::advance() {
 ParseResult Parser::parse() {
     ParseResult result = config();
     if (!result.error && current_token->type != Token::TT_EOF) {
-        return result.failure(getSyntaxError("Expected End Of File"));
+        return result.failure(ErrorNode::getSyntaxError(*current_token, "Expected End Of File"));
     }
     return result;
 }
@@ -26,31 +26,38 @@ ParseResult Parser::config() {
     while (current_token->type != Token::TT_EOF) {
         if (current_token->type == Token::IDENTIFIER &&
             current_token->value == "server") {
-            advance();
             ANode *serv = result.checkIn(server());
-            if (!result.error && serv != NULL) {
+            if (result.checkInSuccess) {
                 servers.push_back(*dynamic_cast<ServerNode *>(serv));
             }
             delete serv;
         }
         else {
-            result.failure(getSyntaxError("Expected 'server', got '" + current_token->text() + "'"));
+            result.failure(ErrorNode::getSyntaxError(*current_token, "Expected 'server', got '" + current_token->text() + "'"));
             skip_param_or_group_tokens();
         }
         skip_end_of_line_tokens();
     }
-    return result.checkInSuccess ? result.success(new ConfigNode(servers)) : result;
+    if (result.error)
+        result.checkInSuccess = false;
+    if (servers.empty())
+        result.failure(ErrorNode::getSyntaxError(*current_token, "Config must have at least 1 server."));
+    if (!result.checkInSuccess)
+        return result;
+    return result.success(new ConfigNode(servers));
 }
 
 ParseResult Parser::server() {
     ParseResult                 result;
+    Token                       name = *current_token;
     ServerNode::ParamValuesType params;
     ServerNode::RouteValuesType routes;
+
+    advance();
     if (expect_lcurly(result))
         return result;
     while (current_token->type == Token::IDENTIFIER) {
         if (current_token->value == "route") {
-            advance();
             ANode *route_ = result.checkIn(route());
             if (result.checkInSuccess) {
                 routes.push_back(*dynamic_cast<RouteNode *>(route_));
@@ -70,17 +77,18 @@ ParseResult Parser::server() {
         return result;
     if (result.error)
         result.checkInSuccess = false;
-    ServerNode *node = new ServerNode(params, routes);
-    if (!node->isValid()) {
+    ServerNode *node = new ServerNode(name, params, routes);
+    if (!node->isValid(result) || !result.checkInSuccess) {
         delete node;
-        result.failure(getSyntaxError(
-            "'server' directive at least must have 'host', 'port' and 'client_max_body_size' and must not have duplicates for anything except `error_page` and at least 1 route"));
+        return result;
     }
-    return result.checkInSuccess ? result.success(node) : result;
+    return result.success(node);
 }
 
 ParseResult Parser::route() {
     ParseResult                result;
+    Token                      name = *current_token;
+    advance();
     Token                      endpoint = *current_token;
     RouteNode::ParamValuesType params;
     if (current_token->type == Token::IDENTIFIER) {
@@ -88,7 +96,7 @@ ParseResult Parser::route() {
     }
     else {
         skip_param_or_group_tokens();
-        return result.failure(getSyntaxError("Expected route path."));
+        return result.failure(ErrorNode::getSyntaxError(*current_token, "Expected route path."));
     }
     if (expect_lcurly(result))
         return result;
@@ -103,13 +111,12 @@ ParseResult Parser::route() {
         return result;
     if (result.error)
         result.checkInSuccess = false;
-    RouteNode *node = new RouteNode(endpoint, params);
-    if (!node->isValid()) {
+    RouteNode *node = new RouteNode(name, endpoint, params);
+    if (!node->isValid(result) || !result.checkInSuccess) {
         delete node;
-        result.failure(getSyntaxError(
-            "'route' directive at least must have 'allowed_methods', 'root' and 'index' and must not have any duplicates"));
+        return result;
     }
-    return result.checkInSuccess ? result.success(node) : result;
+    return result.success(node);
 }
 
 ParseResult Parser::param(const ContextInfo *paramsInfo) {
@@ -128,21 +135,21 @@ ParseResult Parser::param(const ContextInfo *paramsInfo) {
             if ((cinfo.numberOfParams >= 0 &&
                  static_cast<int>(values.size()) != cinfo.numberOfParams) ||
                 (cinfo.numberOfParams == -1 && values.empty())) {
-                result.failure(getSyntaxError("Wrong number of values for '" + name.value + "'"));
+                result.failure(ErrorNode::getSyntaxError(*current_token, "Wrong number of values for '" + name.value + "'"));
             }
             const char *error;
             if (cinfo.validate && (error = cinfo.validate(values))) {
-                result.failure(getSyntaxError(error, values.front()));
+                result.failure(ErrorNode::getSyntaxError(values.front(), error));
             }
             skip_end_of_line_tokens();
             return result.checkInSuccess ? result.success(new ParamNode(name, values)) : result;
         }
         else {
-            result.failure(getSyntaxError("Undexpected param name '" + name.value + "'", name));
+            result.failure(ErrorNode::getSyntaxError(name, "Undexpected param name '" + name.value + "'"));
         }
     }
     else {
-        result.failure(getSyntaxError("Expected param name identifier"));
+        result.failure(ErrorNode::getSyntaxError(*current_token, "Expected param name identifier"));
     }
     skip_param_or_group_tokens();
     return result;
@@ -163,7 +170,7 @@ bool Parser::expect_lcurly(ParseResult &result) {
         return false;
     }
     skip_end_of_line_tokens();
-    result.failure(getSyntaxError("Expected '{'"));
+    result.failure(ErrorNode::getSyntaxError(*current_token, "Expected '{'"));
     return true;
 }
 
@@ -175,16 +182,8 @@ bool Parser::expect_rcurly(ParseResult &result) {
         return false;
     }
     skip_end_of_line_tokens();
-    result.failure(getSyntaxError("Expected '}'"));
+    result.failure(ErrorNode::getSyntaxError(*current_token, "Expected '}'"));
     return true;
-}
-
-InvalidSyntaxErrorNode *Parser::getSyntaxError(const std::string &reason) const {
-    return getSyntaxError(reason, *current_token);
-}
-
-InvalidSyntaxErrorNode *Parser::getSyntaxError(const std::string &reason, const Token &token) {
-    return new InvalidSyntaxErrorNode(token.start, token.end, reason);
 }
 
 void Parser::skip_end_of_line_tokens() {
