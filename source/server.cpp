@@ -138,21 +138,20 @@ std::string const & def_file, route const & route, Header & head) {
 }
 
 bool server::is_file( std::string request ) {
-    int     ret;
-    std::string::iterator it = request.begin();
-    ret = static_cast<int>(request.rfind('/'));
+    int ret = static_cast<int>(request.rfind('/'));
     if (ret == -1)
         return false;
     else
     {
-        it += ret;
-        while (it != request.end())
+        std::string::reverse_iterator it = request.rbegin();
+        while(*it != '/')
         {
-            if (*it++ == '.')
+            if (*it == '.')
                 return true;
+            it++;
         }
+        return false;
     }
-    return false;
 }
 
 int    server::responce( Header & head )
