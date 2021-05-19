@@ -259,7 +259,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     char    **arg;
     int     fd1 = 1;
 
-    head.setContent_Location(head.getRequest() + route.get_default_page());
+    head.setContent_Location("Content-Location: " + head.getRequest() + route.get_default_page() + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
     {
