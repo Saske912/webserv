@@ -301,6 +301,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	std::string string2;
 	struct stat stat;
 	char *str;
+    int stats = 0;
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
@@ -318,6 +319,23 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 ////////////////////////////////////
 		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
 		std::cout << "----------RESPONSE----------" << std::endl;
+		if (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n") 
+		{
+			str = 0;
+			while ((stats = get_next_line(fd, &str)))
+			{
+				if (stats == -1)
+				{
+					close(fd);
+					return;
+				}
+				send( (*it).fd, str, strlen(str), 0);
+				send( (*it).fd, "\n", 1, 0);
+				free(str);
+				str = 0;
+			}
+			return ;
+		}
 		str = (char *)(*it).head.getResponse().c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
@@ -377,10 +395,9 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 ///////////////////////////////////
         str = 0;
-        int stat = 0;
-		while ((stat = get_next_line(fd, &str)))
+		while ((stats = get_next_line(fd, &str)))
 		{
-		    if (stat == -1)
+		    if (stats == -1)
 		    {
 		        close(fd);
                 return;
