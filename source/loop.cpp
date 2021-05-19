@@ -294,7 +294,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 	return 0;
 }
 
-void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
+void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
 {
 	int fd;
 	std::string string;
@@ -342,7 +342,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		send( (*it).fd, str, strlen(str), 0);
 		if (it->head.getMethod() == "PUT" || (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n") ||  fd == -1)
 		{
-			if (it->head.getMethod() == "POST")
+		/*	if (it->head.getMethod() == "POST")
 			{
 				fstat(fd, &stat);
 				string = "Content-Length: ";
@@ -350,14 +350,16 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 				str = (char *)string.c_str();
 				send( (*it).fd, str, strlen(str), 0);
 				std::cout << str;
-			}
+			}*/
 			str = (char *)(*it).head.getContent_Location().c_str();
 			std::cout << str;
 			send( (*it).fd, str, strlen(str), 0);
 			if (fd != -1)
 				close(fd);
-			send((*it).fd, "\r\n", 4, 0);
-			(*it).head.eraseStruct();
+			send((*it).fd, "\r\n", 2, 0);
+			close(it->fd);
+			it->head.eraseStruct();
+			it = set.erase(it);
 			std::cout << std::endl << "----------REQUEST----------" << std::endl;
 			return ;
 		}
@@ -403,7 +405,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 		if (recive(set, it, t, conf))
             continue ;
 //        std::cout << "no break"  << std::endl;
-		response(it, t, conf);
+		response(it, t, conf, set);
 		it++;
 	}
 }
