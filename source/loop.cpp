@@ -202,23 +202,23 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
                 if (it->head.getMethod() == "PUT" and it->head.getFd() != 1)
                     close(it->head.getFd());
-				std::cout << "eshe_odin_ebychiy_flag" << std::endl;
                 it->flag = true;
             }
             else {
 				if (line && !line[0])
+				{
+					free(line);
 					return 1;
+				}
 				if (line)
 			   		 it->bytes = ( int ) strtol( line, 0, 16 );
                 if (line && !it->bytes ) {
-					std::cout << "Bytes = " << it->bytes << std::endl;
 					it->eshe_odin_ebychiy_flag = true;
                 } else {
 					buf = (char *)malloc(sizeof(char) * (it->bytes - it->count + 1));
                     t.rd = recv( it->fd, buf, it->bytes - it->count, 0 );
 					if (it->head.getFd() != 1)
 					{
-						std::cout << "it->count = " << it->count << std::endl;
 						buf[t.rd] = 0;
                         write(it->head.getFd(), buf, it->bytes - it->count);
 						it->count += t.rd;
@@ -242,8 +242,6 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             t.rd = recv_next_line((*it).fd, &line);
             if (t.rd != 0 and !line[0] and !it->first_line)
             {
-                static int i = 0;
-                std::cout << "line: " << line << i++   << std::endl;
                 free(line);
                 return 1;
             }
@@ -258,13 +256,15 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             if (t.rd == -1 && line[0])
             {
                 it->reminder = std::string(line);
-                std::cout << "Reminder: " << it->reminder << std::endl;
+				free(line);
                 return 1;
             }
             if (t.rd == 0)
             {
                 it->head.eraseStruct();
                 it = set.erase(it);
+				if (line)
+					free(line);
                 return 1;
             }
             if (!line[0]) {
