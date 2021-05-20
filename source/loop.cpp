@@ -40,6 +40,7 @@ static void parse_first_line(char *line, Header &head)
 	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
 	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
 	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
+//	head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
 	str = head.getRequest();
 	if (str.find('?') != std::string::npos)
 		head.addEnv((char *)("QUERY_STRING=" + str.erase(0, str.find('?') + 1)).c_str());
@@ -195,7 +196,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		if (it->head.getFd() != 1)
 			close(it->head.getFd());
 //                std::cout << "CHECK fILE" << std::endl;
-		sleep(5);
 		it->flag = true;
 	}
 	else {
