@@ -179,6 +179,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 {
 	char *line = 0;
 	char *buf = 0;
+	struct stat stat;
 
 	if (it->head.getFd() == 1)
 		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -194,7 +195,14 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 //           	 std::cout << "line: " << line << std::endl;
 	if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
 		if (it->head.getFd() != 1)
+		{
+			fstat(it->head.getFd(), &stat);
+			buf = ft_itoa(stat.st_size + 1);
+			it->head.addEnv((char *)("CONTENT_LENGTH=" + std::string(buf)).c_str());
+			free(buf);
+			buf = 0;
 			close(it->head.getFd());
+		}
 //                std::cout << "CHECK fILE" << std::endl;
 		it->flag = true;
 	}
