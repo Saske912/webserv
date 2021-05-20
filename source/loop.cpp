@@ -213,9 +213,11 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 //                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
+			if (t.rd == -1)
+                return 1;
 			if (it->head.getFd() != 1)
 			{
-				buf[t.rd -1] = 0;
+				buf[t.rd] = 0;
 				write(it->head.getFd(), buf, n);
 				it->count += t.rd;
 			}

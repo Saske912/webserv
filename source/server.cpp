@@ -89,7 +89,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
         }
         it++;
     }
-    std::cerr << "ath not found "  << std::endl;
+    std::cerr << "Path not found "  << std::endl;
     return exception_processing(404, head);
 }
 
@@ -276,14 +276,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(fd, 1);
-//            std::cerr << "cgi: ";
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
         waitpid(pid, &stat, 0);
-        head.showEnv();
         std::cout << "|";
         dup2(fd1, 1);
         lseek(fd, 0, 0);
@@ -311,6 +309,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 }
 
 bool server::is_сgi( const std::string& request, route  const & route ) const {
+    std::cout << "route: " << route.get_name()  << std::endl;
+    std::cout << request.substr(request.rfind('.') + 1, request.length()) << "|" << route.get_cgi().second  << std::endl;
     return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
 }
 

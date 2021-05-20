@@ -36,7 +36,6 @@ int main(int ac, char *av[], char *env[])
     serv = init_serv();
     if (!(t.env = ft_doublecpy(env)))
         error_exit("malloc error");
-//    std::cout << config_class << std::endl;
     loop(tv, serv, t, config_class.servers);
     return (0);
 }
