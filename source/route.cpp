@@ -15,7 +15,13 @@ route::route( void ) { }
 route::~route( void ) { }
 
 route::route( route const &src ) {
-    *this = src;
+    this->_root = src._root;
+    this->_name = src._name;
+    this->_http_methods = src._http_methods;
+    this->_autoindex = src._autoindex;
+    this->_default_page = src._default_page;
+    this->_upload_location = src._upload_location;
+    this->_cgi = src._cgi;
 }
 
 route &route::operator=( route const &src ) {

@@ -276,7 +276,7 @@ std::string &Header::getWWW_Authenticate()
 
 void Header::initEnv()
 {
-	addEnv((char *)"PATH_INFO=.");
+//	addEnv((char *)"PATH_INFO=/content/GeoCin/index.php");
 //    addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
 }
 
