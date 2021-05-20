@@ -280,6 +280,24 @@ void Header::initEnv()
 	addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
 }
 
+char *Header::getEnvValue(char const *str)
+{
+	int i = 0;
+	char *tmp;
+
+	while (Env[i])
+	{
+		if (strstr(Env[i], str))
+		{
+			tmp = Env[i] + strlen(str);
+			tmp = strdup(tmp);
+			return tmp;
+		}
+		++i;
+	}
+	return 0;
+}
+
 void Header::addEnv(char *str)
 {
 	int i = 0;

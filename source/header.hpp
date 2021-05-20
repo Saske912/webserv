@@ -28,6 +28,7 @@ class Header
 		std::string &getUser_Agent();
 		std::string &getWWW_Authenticate();
 		char **getEnv();
+		char *getEnvValue(char const *);
 		void addEnv(char *);
 		void initEnv();
 		void showEnv();
