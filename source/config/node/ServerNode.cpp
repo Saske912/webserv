@@ -7,6 +7,8 @@ const ContextInfo ServerNode::validParamNames[] = {
     {"server_names",         -1, Validator::validateServerNames},
     {"error_page",           2,  Validator::validateErrorPage},
     {"client_max_body_size", 1,  Validator::validateClientMaxBodySize},
+    {"allow",                2,  Validator::validateAllow},
+    {"cgi_path",             1,  Validator::validateCgiPath},
 
     {NULL,                   0, NULL}
 };

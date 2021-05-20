@@ -6,7 +6,8 @@
 #include "server.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
-    _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))) {
+    _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
+    _allow(), _cgi_path() {
     set_default_pages();
     set_list_of_methods();
 }
@@ -26,6 +27,8 @@ server &server::operator=( server const &src ) {
     this->_server_names = src._server_names;
     this->_default_error_pages = src._default_error_pages;
     this->_list_of_methods = src._list_of_methods;
+    this->_allow = src._allow;
+    this->_cgi_path = src._cgi_path;
     return *this;
 }
 
@@ -412,6 +415,24 @@ std::string server::set_location(route & route, Header & head) {
     }
 }
 
+std::pair<std::string, std::string> server::getAllow( ) const {
+    return _allow;
+}
+
+void server::setAllow( const std::pair<std::string, std::string>& allow ) {
+    _allow = allow;
+}
+
+std::string server::getCgiPath() const
+{
+	return _cgi_path;
+}
+
+void server::setCgiPath(const std::string &cgi_path)
+{
+	_cgi_path = cgi_path;
+}
+
 std::ostream &operator<<(std::ostream &o, const server &serv) {
 	o << "\tserver:" << std::endl;
 	o << "\t\thost: " << serv.get_host() << std::endl;
@@ -432,5 +453,7 @@ std::ostream &operator<<(std::ostream &o, const server &serv) {
 		it != serv.get_routes().end(); ++it) {
 		o << *it;
 	}
+	o << "\t\tallow: " << serv.getAllow().first << " | " << serv.getAllow().second << std::endl;
+	o << "\t\tcgi_path: " << serv.getCgiPath() << std::endl;
 	return o;
 }

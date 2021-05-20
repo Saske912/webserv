@@ -102,8 +102,9 @@ route Interpreter::visit(RouteNode *node) {
             std::cerr << "Unknown Route param: " << *it << std::endl; // fixme ErrorNode?
         }
     }
-    route                                     route_ = route(name, root, methods, autoindex,
-                                                             index.empty() ? std::string() : index.front());
+
+    route route_ = route(name, root, methods, autoindex,
+                         index.empty() ? std::string() : index.front());
     route_.set_upload_location(upload_location);
     route_.set_cgi(cgi);
     return route_;
@@ -132,6 +133,16 @@ void Interpreter::visit(ServerNode *node) {
                  pit != it->values.end(); ++pit) {
                 serv.add_server_name(pit->value);
             }
+        }
+        else if (name == "allow") {
+            std::list<Token>::const_iterator pit = it->values.begin();
+            std::string ext = pit->value;
+            ++pit;
+            std::string method = pit->value;
+            serv.setAllow(std::pair<std::string, std::string>(ext, method));
+        }
+        else if (name == "cgi_path") {
+            serv.setCgiPath(it->values.front().value);
         }
         else {
             std::cerr << "Unknown Server param: " << *it << std::endl; // fixme ErrorNode?

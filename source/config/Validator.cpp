@@ -100,6 +100,24 @@ const char *Validator::validateClientMaxBodySize(const std::list<Token> &values)
     return NULL;
 }
 
+const char *Validator::validateAllow(const std::list<Token> &values) {
+	if (values.size() >= 2) {
+		std::list<Token>::const_iterator it = values.begin();
+		++it;
+		if (static_cast<unsigned int>(-1) == getMethodValue(it->value)) {
+			return "Allow: Invalid method name";
+		}
+	}
+	return NULL;
+}
+
+const char *Validator::validateCgiPath(const std::list<Token> &values) {
+	if (!values.empty() && !isPath(values.front().value)) {
+		return "Invalid cgi_path";
+	}
+	return NULL;
+}
+
 const char *Validator::validateAllowedMethods(const std::list<Token> &values) {
     if (!values.empty()) {
         unsigned int                          validated = 0;

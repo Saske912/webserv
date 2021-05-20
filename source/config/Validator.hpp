@@ -34,6 +34,10 @@ public:
 
     static const char *validateClientMaxBodySize(const std::list<Token> &values);
 
+	static const char *validateAllow(const std::list<Token> &values);
+
+	static const char *validateCgiPath(const std::list<Token> &values);
+
     static const char *validateAllowedMethods(const std::list<Token> &values);
 
     static const char *validateRoot(const std::list<Token> &values);
