@@ -38,6 +38,8 @@ public:
     std::map<int, std::string>  get_def_error_pages() const;
     std::pair<std::string, std::string> getAllow() const;
     void                        setAllow(const std::pair<std::string, std::string>& allow);
+    std::string                 getCgiPath() const;
+    void                        setCgiPath(const std::string &cgi_path);
 
     int                        responce( Header & head );
 protected:
@@ -65,6 +67,7 @@ private:
     long int                    _client_body_size;
     std::list<std::string>      _list_of_methods;
     std::pair<std::string, std::string> _allow;
+    std::string                 _cgi_path;
 };
 
 std::ostream &operator<<(std::ostream &o, const server &serv);

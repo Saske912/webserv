@@ -3,6 +3,7 @@
 //
 
 #ifndef HEADER_H
+#define HEADER_H
 
 #include <iostream>
 #include <sys/socket.h>
@@ -73,7 +74,5 @@ timeval     init_timevals(void);
 t_serv      init_serv(void);
 void        loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf);
 server    default_config(void);
-
-#define HEADER_H
 
 #endif //HEADER_H
