@@ -36,6 +36,8 @@ public:
     const std::list<route>&            get_routes() const;
     void						add_route(const route &route_);
     std::map<int, std::string>  get_def_error_pages() const;
+    std::pair<std::string, std::string> getAllow() const;
+    void                        setAllow(const std::pair<std::string, std::string>& allow);
 
     int                        responce( Header & head );
 protected:
@@ -62,6 +64,7 @@ private:
     std::list<route>            _routs;
     long int                    _client_body_size;
     std::list<std::string>      _list_of_methods;
+    std::pair<std::string, std::string> _allow;
 };
 
 std::ostream &operator<<(std::ostream &o, const server &serv);

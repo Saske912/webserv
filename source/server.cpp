@@ -412,6 +412,14 @@ std::string server::set_location(route & route, Header & head) {
     }
 }
 
+std::pair<std::string, std::string> server::getAllow( ) const {
+    return _allow;
+}
+
+void server::setAllow( const std::pair<std::string, std::string>& allow ) {
+    _allow = allow;
+}
+
 std::ostream &operator<<(std::ostream &o, const server &serv) {
 	o << "\tserver:" << std::endl;
 	o << "\t\thost: " << serv.get_host() << std::endl;
