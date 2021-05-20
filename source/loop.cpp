@@ -71,7 +71,7 @@ static void parse_request(char *line, Header &head)
         {
             head.setHost("400");
         }
-		head.setPort(std::stoi(tmp2 + 1));
+		head.setPort(atoi(tmp2 + 1));
 	}
 	else if ((tmp = strstr(line, "Referer: ")))
 	{
@@ -177,8 +177,8 @@ int recv_next_line(int fd, char **line) {
 
 int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
-	char *line;
-	char *buf;
+	char *line = 0;
+	char *buf = 0;
 
 	if (it->head.getFd() == 1)
 		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -214,7 +214,13 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
 			if (t.rd == -1)
+			{
+				if (buf)
+					free(buf);
+				if (line)
+					free(line);
                 return 1;
+			}
 			if (it->head.getFd() != 1)
 			{
 				buf[t.rd] = 0;
@@ -226,12 +232,12 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 				it->count = 0;
 		}
 	}
+	if (line)
+		free(line);
 	if (t.rd == 0)
 	{
 		it->head.eraseStruct();
 		it = set.erase(it);
-		if (line)
-			free(line);
 		return 1;
 	}
 	return 0;
@@ -381,6 +387,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	std::string string2;
 	struct stat stat;
 	char *str;
+	char *tmp;
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
@@ -407,7 +414,9 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
         send( (*it).fd, str, strlen(str), 0);
 		fstat(fd, &stat);
 		string = "Content-Length: ";
-		string += std::to_string(stat.st_size + 1) + "\r\n";
+		tmp = ft_itoa(stat.st_size + 1);
+		string += std::string(tmp) + "\r\n";
+		free(tmp);
 		str = (char *)string.c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
@@ -473,7 +482,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     t_client            cli;
     std::list<t_write>       set;
 	std::list<t_write>::iterator it;
-
+	char *tmp[4];
     (void)conf;
     while (true)
     {
@@ -498,9 +507,16 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            t_write a = {Header(), std::to_string(cli.ad.sin_addr.s_addr & 255) + "." + \
-            std::to_string(cli.ad.sin_addr.s_addr >> 8 & 255) + "." + std::to_string(cli.ad.sin_addr.s_addr >> 16 & 255)\
-            + "." + std::to_string(cli.ad.sin_addr.s_addr >> 24), std::string(), cli.client, 0, 0, false, false, false, false};
+			tmp[0] = ft_itoa(cli.ad.sin_addr.s_addr & 255);
+			tmp[1] = ft_itoa(cli.ad.sin_addr.s_addr >> 8 & 255);
+			tmp[2] = ft_itoa(cli.ad.sin_addr.s_addr >> 16 & 255);
+			tmp[3] = ft_itoa(cli.ad.sin_addr.s_addr >> 24);
+
+            t_write a = {Header(), std::string(tmp[0]) + "." \
+			+ std::string(tmp[1]) + "." + std::string(tmp[2]) + "." \
+			+ std::string(tmp[3]), std::string(), cli.client, 0, 0, false, false, false, false};
+			for (int i = 0 ; i < 4 ; i++)
+				free(tmp[i]);
 			set.push_back(a);
         }
 		communication_with_clients(set, t, conf);
