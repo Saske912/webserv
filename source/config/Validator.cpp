@@ -1,6 +1,7 @@
 #include "Validator.hpp"
 #include <algorithm>
 #include <sys/stat.h>
+#include "Number.hpp"
 
 bool Validator::IsNumberPredicate::operator()(const char &c) {
     return c >= '0' && c <= '9';
@@ -21,16 +22,32 @@ bool Validator::isNumber(const std::string &value) {
 bool Validator::isMemory(const std::string &value) {
     IsNumberPredicate      isDigit;
     std::string::size_type i = 0;
+    long cbs_value;
+    long letter_size;
     while (i < value.size() && isDigit(value[i])) {
         ++i;
     }
     if (i == 0 || value.size() > i + 1)
         return false;
-    if (i == value.size() ||
-        std::string("KMG").find(value[i]) != std::string::npos) {
-        return true;
+    if (i == value.size()) { // value is just a number
+        return strtot(value, cbs_value); // check for limits
     }
-    return false;
+    switch (value[i]) {
+        case 'K':
+            letter_size = 1024;       // 2 ** 10
+            break;
+        case 'M':
+            letter_size = 1048576;    // 2 ** 20
+            break;
+        case 'G':
+            letter_size = 1073741824; // 2 ** 30
+            break;
+        default:
+            return false;
+    }
+    bool ret = strtot(value, cbs_value) &&
+        cbs_value <= (NumericLimits<long>::max / letter_size);
+    return ret;
 }
 
 bool Validator::isIP(const std::string &) {
@@ -62,6 +79,10 @@ const char *Validator::validatePort(const std::list<Token> &values) {
     if (!values.empty() && !isNumber(values.front().value)) {
         return "Port must be number";
     }
+    int value;
+    if (!strtot(values.front().value, value) || value < 0) {
+        return "Port must have positive integer value";
+    }
     return NULL;
 }
 
@@ -81,10 +102,11 @@ const char *Validator::validateErrorPage(const std::list<Token> &values) {
         if (!isNumber(it->value)) {
             return "error_page must be followed by integer error code";
         }
-        ++it;
-        if (it->value.empty()) {
-            return "error_page filename is empty";
+        int error_code;
+        if (!strtot(it->value, error_code) || error_code < 0) {
+            return "error_page code must have positive integer value";
         }
+        ++it;
         struct stat filestat;
         if (-1 == stat(it->value.c_str(), &filestat) || !(filestat.st_mode & (S_IFREG))) {
             return "Invalid file for error_page";

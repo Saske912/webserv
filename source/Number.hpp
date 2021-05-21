@@ -15,11 +15,6 @@ public:
 };
 
 template<class Type>
-bool strtot(const std::string &str, Type &value) {
-    return strtot<Type>(str.c_str(), value);
-}
-
-template<class Type>
 bool strtot(const char *str, Type &value) {
     const Type remainderLimit = NumericLimits<Type>::max / 10;
     const Type limitLastDigit = NumericLimits<Type>::max % 10;
@@ -33,15 +28,20 @@ bool strtot(const char *str, Type &value) {
     while (*str) {
         if (*str < '0' || *str > '9')
             break ;
-        if (value >= remainderLimit ||
+        if (value > remainderLimit ||
             (value == remainderLimit && *str - (sign < 0) - '0' > limitLastDigit))
             return false;
-        else
-            value = value * 10 + (*str - '0');
+        value = value * 10 + (*str - '0');
         str++;
     }
     value *= sign;
     return true;
+}
+
+// might recursibely call itself until segv :cry:
+template<class Type>
+bool strtot(const std::string &str, Type &value) {
+    return strtot<Type>(str.c_str(), value);
 }
 
 #endif

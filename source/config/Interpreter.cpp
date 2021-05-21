@@ -115,9 +115,7 @@ void Interpreter::visit(ServerNode *node) {
             add_error_page(serv, it->values);
         }
         else if (name == "client_max_body_size") {
-            long client_body_size;
-            strtot(it->values.front().value, client_body_size);
-            serv.set_client_body_size(client_body_size);
+            set_client_max_body_size(serv, it->values.front().value);
         }
         else if (name == "server_names") {
             serv.set_server_names(std::list<std::string>()); // `.clear()`
@@ -164,4 +162,22 @@ void Interpreter::add_error_page(server &serv, const std::list<Token> &values) {
     ++it;
     std::string filename = it->value;
     serv.add_error_page(code, filename);
+}
+
+void Interpreter::set_client_max_body_size(server &serv, const std::string &value) {
+    long client_body_size;
+    strtot(value, client_body_size);
+    char last = value[value.length() - 1];
+    switch(last) {
+        case 'K':
+            client_body_size *= 1024;
+            break;
+        case 'M':
+            client_body_size *= 1048576;
+            break;
+        case 'G':
+            client_body_size *= 1073741824;
+            break;
+    }
+    serv.set_client_body_size(client_body_size);
 }

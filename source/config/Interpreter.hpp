@@ -43,6 +43,8 @@ public:
 
     void add_error_page(server &serv, const std::list<Token> &values);
 
+    void set_client_max_body_size(server &serv, const std::string &value);
+
 private:
     config &conf;
 
