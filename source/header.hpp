@@ -27,9 +27,10 @@ class Header
 		std::string &getTransfer_Encoding();
 		std::string &getUser_Agent();
 		std::string &getWWW_Authenticate();
+		bool &getIsCgi();
 		char **getEnv();
 		char *getEnvValue(char const *);
-		void addEnv(char *);
+		void addEnv(const char *);
 		void initEnv();
 		void showEnv();
 		unsigned int getPort();
@@ -58,6 +59,7 @@ class Header
 		void setTransfer_Encoding(std::string const &);
 		void setUser_Agent(std::string const &);
 		void setWWW_Authenticate(std::string const &);
+		void setIsCgi(bool status);
 		void eraseStruct();
 	private:
 		int Fd;
@@ -85,6 +87,7 @@ class Header
 		std::string Transfer_Encoding;
 		std::string User_Agent;
 		std::string WWW_Authenticate;
+		bool is_cgi;
 };
 
 #endif

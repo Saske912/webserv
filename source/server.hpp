@@ -50,7 +50,7 @@ protected:
     std::string                 dirs(std::string request);
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
-    bool                        is_сgi(const std::string& request, route  const & route) const;
+    bool                        is_cgi(const std::string& request, route  const & route, const std::string &method) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
     bool                        check_methods(std::string str, std::list<std::string> arr) const;
