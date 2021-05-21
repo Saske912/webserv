@@ -17,8 +17,6 @@
 class Interpreter {
     Interpreter &operator=(const Interpreter &other);
 
-    int poor_atoi(std::string const &num);
-
 public:
     class NoVisitMethodException : public std::exception {
     public:

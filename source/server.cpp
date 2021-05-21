@@ -4,9 +4,10 @@
 
 #include "../header.h"
 #include "server.hpp"
+#include "Number.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
-    _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
+    _client_body_size(NumericLimits<long>::max),
     _allow(), _cgi_path() {
     set_default_pages();
     set_list_of_methods();
