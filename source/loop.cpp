@@ -204,8 +204,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		it = set.erase(it);
 		return 1;
 	}
-//			if (line)
-//           	 std::cout << "line: " << line << std::endl;
+		//	if (line)
+        //   	 std::cout << "line: " << line << std::endl;
 	if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
 		if (it->head.getFd() != 1)
 		{
@@ -218,6 +218,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		}
 //                std::cout << "CHECK fILE" << std::endl;
 		it->flag = true;
+		std::cout << "exit" << std::endl;
 	}
 	else {
 		if (line && !line[0])
@@ -229,22 +230,24 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			 it->bytes = ( int ) strtol( line, 0, 16 );
 		if (line && !it->bytes ) {
 			it->eshe_odin_ebychiy_flag = true;
+			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
 			int n = it->bytes - it->count < 0 ? 0 : it->bytes - it->count;
-//                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
+                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
+               //     std::cout << "COUNT: " << it->count  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
-			if (t.rd == -1)
-			{
-				if (buf)
-					free(buf);
-				if (line)
-					free(line);
-                return 1;
-			}
+		//	if (t.rd == -1)
+		//	{
+		//		if (buf)
+		//			free(buf);
+		//		if (line)
+		//			free(line);
+       //         return 1;
+		//	}
 			if (it->head.getFd() != 1)
 			{
-				buf[t.rd] = 0;
+				buf[t.rd + 1] = 0;
 				write(it->head.getFd(), buf, n);
 				it->count += t.rd;
 			}
