@@ -28,6 +28,7 @@ add_executable(webserv
         source/config.cpp
         source/config.hpp
         source/Number.cpp
+        source/URI.cpp
         source/config/parse.cpp
         source/config/Token.cpp
         source/config/Lexer.cpp
