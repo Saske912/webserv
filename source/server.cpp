@@ -270,6 +270,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     }
     else if (is_cgi(request, route) and head.getMethod() != "GET")
     {
+		head.setIsCgi(true);
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
