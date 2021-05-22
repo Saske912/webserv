@@ -230,7 +230,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		if (line && !it->bytes ) {
 			it->eshe_odin_ebychiy_flag = true;
 		} else {
-			int n = it->bytes - it->count + 1 < 0? 0 : it->bytes - it->count;
+			int n = it->bytes - it->count < 0 ? 0 : it->bytes - it->count;
 //                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
@@ -424,8 +424,12 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
 ////////////////////////////////////
-		fd = find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head);
+        server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
+		fd = serv.responce((*it).head);
 		std::cout << "----------RESPONSE----------" << std::endl;
+		if (it->head.getIsCgi()) {
+		    // parse cgi header
+		}
 		sendHeader(it);
 				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
 		if (it->head.getMethod() == "PUT" || fd == -1)

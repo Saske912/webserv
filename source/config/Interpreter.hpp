@@ -17,8 +17,6 @@
 class Interpreter {
     Interpreter &operator=(const Interpreter &other);
 
-    int poor_atoi(std::string const &num);
-
 public:
     class NoVisitMethodException : public std::exception {
     public:
@@ -44,6 +42,8 @@ public:
     void visit(ConfigNode *node);
 
     void add_error_page(server &serv, const std::list<Token> &values);
+
+    void set_client_max_body_size(server &serv, const std::string &value);
 
 private:
     config &conf;

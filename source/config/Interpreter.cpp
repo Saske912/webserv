@@ -1,18 +1,5 @@
 #include "Interpreter.hpp"
-#include <sys/stat.h>
-#include <cstring>
-#include <cerrno>
-
-int Interpreter::poor_atoi(const std::string &num) {
-    int                              value = 0;
-    for (std::string::const_iterator it    = num.begin();
-         it != num.end(); ++it) {
-        if (*it < '0' || *it > '9')
-            break;
-        value = value * 10 + *it - '0';
-    }
-    return value;
-}
+#include "Number.hpp"
 
 Interpreter::Interpreter(config &config_) : conf(config_) {
 
@@ -67,7 +54,7 @@ route Interpreter::visit(RouteNode *node) {
     std::string            upload_location;
     route::CgiType         cgi;
 
-    for (RouteNode::ParamValuesType::iterator it     = node->values.begin();
+    for (RouteNode::ParamValuesType::iterator it = node->values.begin();
          it != node->values.end(); ++it) {
         if (it->name.value == "root") {
             root = it->values.front().value;
@@ -99,7 +86,8 @@ route Interpreter::visit(RouteNode *node) {
             cgi.second = pit->value;
         }
         else {
-            std::cerr << "Unknown Route param: " << *it << std::endl; // fixme ErrorNode?
+            // this error is handled by parser, should not be accessible.
+            std::cerr << "Unknown Route param: " << *it << std::endl;
         }
     }
 
@@ -119,13 +107,15 @@ void Interpreter::visit(ServerNode *node) {
             serv.set_host(it->values.front().value);
         }
         else if (name == "port") {
-            serv.set_port(poor_atoi(it->values.front().value));
+            int port;
+            strtot(it->values.front().value, port);
+            serv.set_port(port);
         }
         else if (name == "error_page") {
             add_error_page(serv, it->values);
         }
         else if (name == "client_max_body_size") {
-            serv.set_client_body_size(poor_atoi(it->values.front().value));
+            set_client_max_body_size(serv, it->values.front().value);
         }
         else if (name == "server_names") {
             serv.set_server_names(std::list<std::string>()); // `.clear()`
@@ -136,7 +126,7 @@ void Interpreter::visit(ServerNode *node) {
         }
         else if (name == "allow") {
             std::list<Token>::const_iterator pit = it->values.begin();
-            std::string ext = pit->value;
+            std::string                      ext = pit->value;
             ++pit;
             std::string method = pit->value;
             serv.setAllow(std::pair<std::string, std::string>(ext, method));
@@ -145,7 +135,8 @@ void Interpreter::visit(ServerNode *node) {
             serv.setCgiPath(it->values.front().value);
         }
         else {
-            std::cerr << "Unknown Server param: " << *it << std::endl; // fixme ErrorNode?
+            // this error is handled by parser, should not be accessible.
+            std::cerr << "Unknown Server param: " << *it << std::endl;
         }
     }
     for (ServerNode::RouteValuesType::iterator it = node->routes.begin();
@@ -165,9 +156,28 @@ void Interpreter::visit(ConfigNode *node) {
 }
 
 void Interpreter::add_error_page(server &serv, const std::list<Token> &values) {
-    ParamNode::ValuesType::const_iterator it   = values.begin();
-    int                                   code = poor_atoi(it->value);
+    ParamNode::ValuesType::const_iterator it = values.begin();
+    int                                   code;
+    strtot(it->value, code);
     ++it;
     std::string filename = it->value;
     serv.add_error_page(code, filename);
+}
+
+void Interpreter::set_client_max_body_size(server &serv, const std::string &value) {
+    long client_body_size;
+    strtot(value, client_body_size);
+    char last = value[value.length() - 1];
+    switch(last) {
+        case 'K':
+            client_body_size *= 1024;
+            break;
+        case 'M':
+            client_body_size *= 1048576;
+            break;
+        case 'G':
+            client_body_size *= 1073741824;
+            break;
+    }
+    serv.set_client_body_size(client_body_size);
 }

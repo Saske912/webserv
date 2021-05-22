@@ -34,6 +34,7 @@ void Header::eraseStruct()
 	Port = 0;
 	Env = 0;
 	Fd = 1;
+	is_cgi = false;
 }
 
 void Header::setAccept_Charsets(std::string const &str)
@@ -134,6 +135,10 @@ void Header::setUser_Agent(std::string const &str)
 void Header::setWWW_Authenticate(std::string const &str)
 {
 	WWW_Authenticate = str;
+}
+
+void Header::setIsCgi(bool status) {
+    is_cgi = status;
 }
 
 void Header::setEnv(char **env)
@@ -273,6 +278,9 @@ std::string &Header::getWWW_Authenticate()
 	return WWW_Authenticate;
 }
 
+bool &Header::getIsCgi() {
+    return is_cgi;
+}
 
 void Header::initEnv()
 {
@@ -298,7 +306,7 @@ char *Header::getEnvValue(char const *str)
 	return 0;
 }
 
-void Header::addEnv(char *str)
+void Header::addEnv(const char *str)
 {
 	int i = 0;
 	char *tmp;
@@ -333,4 +341,3 @@ void Header::showEnv()
 	while (Env[++i])
 		printf("%s\n", Env[i]);
 }
-

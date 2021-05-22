@@ -4,9 +4,10 @@
 
 #include "../header.h"
 #include "server.hpp"
+#include "Number.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
-    _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
+    _client_body_size(NumericLimits<long>::max),
     _allow(), _cgi_path() {
     set_default_pages();
     set_list_of_methods();
@@ -267,10 +268,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else
             head.setResponse("HTTP/1.1 " + part);
     }
-    else if (is_сgi(request, route))
+    else if (is_cgi(request, route, head.getMethod()))
     {
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
+        int fd0 = dup(0); // save to let cgi read post body
+//        int fdread = open("YoupiBanane/youpi.bla", O_RDONLY, 0777); // post body
         if ((pid = fork()) == 0)
         {
             arg = (char **)ft_calloc(4, sizeof(char **));
@@ -279,16 +282,30 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(fd, 1);
+//            dup2(fdread, 0); // cgi read post body
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
         waitpid(pid, &stat, 0);
-        std::cout << "|";
+//        if (WIFEXITED(stat)) {
+//            std::cerr << "Exit status: " << WEXITSTATUS(stat) << std::endl;
+//        }
+//        if (WIFSIGNALED(stat)) {
+//            std::cerr << "Signal status: " << WTERMSIG(stat) << std::endl;
+//        }
+//        if (WIFSTOPPED(stat)) {
+//            std::cerr << "Stop status: " << WSTOPSIG(stat) << std::endl;
+//        }
+        dup2(0, fd0);
+        close(fd0);
+//        close(fdread);
         dup2(fd1, 1);
+        std::cout << "|";
         lseek(fd, 0, 0);
         head.setResponse("HTTP/1.1 200 OK\r\n");
+        head.setIsCgi(true); // header parse cgi responce headers
         return fd;
     }
     else
@@ -311,10 +328,11 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     return fd;
 }
 
-bool server::is_сgi( const std::string& request, route  const & route ) const {
+bool server::is_cgi( const std::string& request, route  const & route, const std::string &method ) const {
     std::cout << "route: " << route.get_name()  << std::endl;
     std::cout << request.substr(request.rfind('.') + 1, request.length()) << "|" << route.get_cgi().second  << std::endl;
-    return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
+    return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first ||
+        (getAllow().second == method && request.substr(request.rfind('.') + 1, request.length()) == getAllow().first);
 }
 
 void server::set_default_pages( ) {
