@@ -45,18 +45,19 @@ public:
 protected:
 	int                         request_processing(std::string const & request, \
     std::string const & def_file, route const & route, Header & head);
-    bool                        is_file(std::string request);
+    static bool                        is_file_with_extension( std::string request) ;
     int                         get_path_to_request(std::string const & request, Header & head);
     std::string                 dirs(std::string request);
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
-    bool                        is_cgi(const std::string& request, route  const & route, const std::string &method) const;
+    bool                        is_cgi(const std::string& request, route  const & route) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
     bool                        check_methods(std::string str, std::list<std::string> arr) const;
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
+    bool                        is_allow(std::string const & request, std::string const & method, route r) const;
 private:
     std::string                 _host;
     unsigned int                _port;
