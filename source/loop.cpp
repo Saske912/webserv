@@ -347,7 +347,8 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 {
 	char *str = 0;
     int stats = 0;
-	
+	int	file_size = 0;
+
 	while ((stats = get_next_line(fd, &str)))
 	{
 		if (stats == -1)
@@ -357,12 +358,15 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 		}
 		send( (*it).fd, str, strlen(str), 0);
 		send( (*it).fd, "\n", 1, 0);
+		file_size += strlen(str) + 1;
 		free(str);
 		str = 0;
 	}
 	send( (*it).fd, str, strlen(str), 0);
 	send( (*it).fd, "\n", 1, 0);
+	file_size += strlen(str) + 1;
 	free(str);
+	std::cout << "file_size: " << file_size << std::endl;
 	return 0;
 }
 
@@ -410,6 +414,67 @@ void sendHeader(std::list<t_write>::iterator &it)
 	send( (*it).fd, str, strlen(str), 0);
 }
 
+void parse_cgi(std::list<t_write>::iterator &it, char *line)
+{
+	char *tmp;
+
+	if ((tmp = strstr(line, "Status: ")))
+	{
+		tmp += strlen("Status: ");
+		it->head.setResponse("HTTP/1.1 " + std::string(tmp) + "\r\n");
+	}
+	else if ((tmp = strstr(line, "Content-Type: ")))
+		it->head.setContent_Type(std::string(tmp) + "\r\n");
+}
+
+void cgiResponse(std::list<t_write>::iterator &it, int &fd)
+{
+	char *str;
+	char *line = 0;
+	int	 size = 0;
+	struct stat stat;
+	char *tmp;
+	std::string string;
+
+	while (get_next_line(fd, &line))
+	{
+		std::cout << "line: " << line << std::endl;
+		if (line && line[0] == '\r')
+			break ;
+		parse_cgi(it, line);
+		size += strlen(line) + 1;
+		free(line);
+		line = 0;
+	}
+	size += 4;
+	free(line);
+	line = 0;
+	str = (char *)it->head.getResponse().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+	str = (char *)it->head.getContent_Type().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+	(*it).head.setDate("Date: " + get_current_date());
+	str = (char *)(*it).head.getDate().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+	str = (char *)(*it).head.getLast_Modified().c_str();
+	std::cout << str;
+	send( (*it).fd, str, strlen(str), 0);
+		fstat(fd, &stat);
+		string = "Content-Length: ";
+		tmp = ft_itoa(stat.st_size - size);
+		string += std::string(tmp) + "\r\n";
+		free(tmp);
+		str = (char *)string.c_str();
+		std::cout << str;
+		send( (*it).fd, str, strlen(str), 0);
+		send((*it).fd, "\r\n", 2, 0);
+		send((*it).fd, "\r\n", 2, 0);
+	sendFile(it, fd);
+}
+
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
 {
 	int fd;
@@ -436,9 +501,13 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
         server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
 		fd = serv.responce((*it).head);
 		std::cout << "----------RESPONSE----------" << std::endl;
+
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
+			std::cout << "--------CGI--------" << std::endl;
+			return cgiResponse(it, fd);
 		}
+
 		sendHeader(it);
 				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
 		if (it->head.getMethod() == "PUT" || fd == -1)
