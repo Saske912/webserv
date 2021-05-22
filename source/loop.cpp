@@ -235,7 +235,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			it->eshe_odin_ebychiy_flag = true;
 //			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
-			int n = it->bytes - it->count < 0 ? 0 : it->bytes - it->count;
+			int n = it->bytes - it->count; // < 0 ? 0 : it->bytes - it->count;
 //                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
                //     std::cout << "COUNT: " << it->count  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
@@ -439,6 +439,10 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	char *tmp;
 	std::string string;
 
+    char *ttta = (char *)malloc(1000000100);
+    int tta = read(fd, ttta, 1000000100);
+    std::cerr << "tt in cgiResponce: " << tta  << std::endl;
+    lseek(fd, 0, 0);
 	while (get_next_line(fd, &line))
 	{
 		std::cout << "line: " << line << std::endl;
@@ -449,7 +453,12 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 		free(line);
 		line = 0;
 	}
-	size += 4;
+    size += 2;
+//	std::cerr << "size : " << size  << std::endl;
+//    char *ttt = (char *)malloc(1000000100);
+//    int tt = read(fd, ttt, 1000000100);
+//    std::cerr << "tt in cgiResponce: " << tt  << std::endl;
+//    lseek(fd, 0, 0);
 	free(line);
 	line = 0;
 	str = (char *)it->head.getResponse().c_str();
@@ -476,8 +485,9 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 		send((*it).fd, "\r\n", 2, 0);
 		send((*it).fd, "\r\n", 2, 0);
 		char *t = (char *)malloc(sizeof(char) * stat.st_size - size + 1);
-		int ret = read(fd, t, stat.st_size - size);
-		std::cerr << "send size: " << stat.st_size - size << " strlen(t): " << strlen(t)  << std::endl;
+		int ret = read(fd, t, stat.st_size - size + 1);
+		t[ret] = 0;
+		std::cerr << "ret: " << ret << " strlen(t): " << strlen(t)  << std::endl;
 		send((*it).fd, t, stat.st_size - size, 0);
         send((*it).fd, "\r\n", 2, 0);
         send((*it).fd, "\r\n", 2, 0);
