@@ -195,13 +195,14 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	struct stat stat;
 	static int count = 0;
 
-//	std::cout << "count: " << count << std::endl;
+	std::cout << "count: " << count << std::endl;
 	if (it->head.getFd() == 1)
 		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 	if (it->count == 0)
 		t.rd = recv_next_line((*it).fd, &line);
 	if (t.rd == 0)
 	{
+				std::cout << "Minus svyaz'" << std::endl;
 		it->head.eraseStruct();
 		it = set.erase(it);
 		return 1;
@@ -240,6 +241,11 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                //     std::cout << "COUNT: " << it->count  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
+			if (t.rd == -1 && !buf[0])
+			{
+				free(buf);
+				return 1;
+			}
 //			if (t.rd == -1)
 //			{
 //				perror("error: ");
@@ -256,7 +262,12 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                     buf[t.rd] = 0;
                     write(it->head.getFd(), buf, t.rd);
                 }
-                count += t.rd;
+				if (count == 100000000)
+				{
+				std::cout << "Buf1000000: " << buf << std::endl;
+				}
+				if (t.rd != -1)
+              	  count += t.rd;
                 it->count += t.rd;
 			}
 			free(buf);
