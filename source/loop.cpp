@@ -93,10 +93,10 @@ static void parse_request(char *line, Header &head)
 			str.erase(0, i);
 		if ((i = str.find('/')) != std::string::npos)
 		{
-			char tmp[150];
+			char tmpp[150];
 			str.erase(0, i);
-//			head.addEnv((char *)("PATH_INFO=" + str).c_str());
-//			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
+			head.addEnv((char *)("PATH_INFO=" + str).c_str());
+			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
 		}
 	}
 	else if ((tmp = strstr(line, "Accept: ")))
@@ -193,7 +193,9 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *line = 0;
 	char *buf = 0;
 	struct stat stat;
+	static int count = 0;
 
+	std::cout << "count: " << count << std::endl;
 	if (it->head.getFd() == 1)
 		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 	if (it->count == 0)
@@ -215,6 +217,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			free(buf);
 			buf = 0;
 			close(it->head.getFd());
+			count = 0;
 		}
 //                std::cout << "CHECK fILE" << std::endl;
 		it->flag = true;
@@ -237,19 +240,21 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                //     std::cout << "COUNT: " << it->count  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
-		//	if (t.rd == -1)
-		//	{
-		//		if (buf)
-		//			free(buf);
-		//		if (line)
-		//			free(line);
-       //         return 1;
-		//	}
+			if (t.rd == -1)
+			{
+				perror("error: ");
+				if (buf)
+					free(buf);
+				if (line)
+					free(line);
+                return 1;
+			}
 			if (it->head.getFd() != 1)
 			{
-				buf[t.rd + 1] = 0;
-				write(it->head.getFd(), buf, n);
+				buf[t.rd] = 0;
+				write(it->head.getFd(), buf, t.rd);
 				it->count += t.rd;
+				count += t.rd;
 			}
 			free(buf);
 			if (it->count >= it->bytes)
