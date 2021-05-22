@@ -245,8 +245,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     pid;
     int     stat;
     char    **arg;
-    int     fd1 = 1;
-    int     fd0 = 0;
+    int tmp;
 
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
@@ -268,8 +267,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else
             head.setResponse("HTTP/1.1 " + part);
     }
-    else if (is_cgi(request, route) and head.getMethod() != "GET")
+    else if ((is_cgi(request, route)) and head.getMethod() != "GET")
     {
+        int     fd1 = dup(1);
+        int     fd0 = dup(0);
+
+        head.setIsCgi(true);
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
@@ -280,27 +283,30 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
-//            int fdset[2];
-//            pipe(fdset);
-            int tmp = open(request.c_str(), O_RDONLY);
-//            std::cerr << "opened fd " << tmp  << std::endl;
-//            head.showEnv();
+            tmp = open(request.c_str(), O_RDONLY);
             dup2(tmp, 0);
-//            arg[3] = head.getEnvValue("QUERY_STRING=");
             dup2(fd, 1);
-//            dup2(fdset[0], 0);
-            std::cerr << "cgi_content: "  << std::endl;
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
         waitpid(pid, &stat, 0);
+        close(tmp);
         dup2(fd0, 0);
 //        std::cout << "exec_after:"  << std::endl;
         dup2(fd1, 1);
-        lseek(fd, 0, 0);
+        close(fd0);
+        close(fd1);
+//        lseek(fd, 0, 0);
+        close(fd);
+        if ((fd = open("tmp", O_RDONLY)) < 0)
+            error_exit("open error");
         head.setResponse("HTTP/1.1 200 OK\r\n");
+        char *ttt = (char *)malloc(1000000100);
+        int tt = read(fd, ttt, 1000000100);
+        std::cerr << "tt after cgi: " << tt  << std::endl;
+        lseek(fd, 0, 0);
         return fd;
     }
     else

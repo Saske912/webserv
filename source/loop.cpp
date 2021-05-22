@@ -195,7 +195,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	struct stat stat;
 	static int count = 0;
 
-	std::cout << "count: " << count << std::endl;
+//	std::cout << "count: " << count << std::endl;
 	if (it->head.getFd() == 1)
 		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 	if (it->count == 0)
@@ -221,7 +221,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		}
 //                std::cout << "CHECK fILE" << std::endl;
 		it->flag = true;
-		std::cout << "exit" << std::endl;
+//		std::cout << "exit" << std::endl;
 	}
 	else {
 		if (line && !line[0])
@@ -233,29 +233,31 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			 it->bytes = ( int ) strtol( line, 0, 16 );
 		if (line && !it->bytes ) {
 			it->eshe_odin_ebychiy_flag = true;
-			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
+//			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
 			int n = it->bytes - it->count < 0 ? 0 : it->bytes - it->count;
-                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
+//                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
                //     std::cout << "COUNT: " << it->count  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
-			if (t.rd == -1 and it->count >= it->bytes)
-			{
-				perror("error: ");
-				if (buf)
-					free(buf);
-				if (line)
-					free(line);
-                return 1;
-			}
+//			if (t.rd == -1)
+//			{
+//				perror("error: ");
+//				if (buf)
+//					free(buf);
+//				if (line)
+//					free(line);
+//                return 1;
+//			}
 			if (it->head.getFd() != 1)
 			{
 			    if (t.rd != -1)
+                {
                     buf[t.rd] = 0;
-                write(it->head.getFd(), buf, t.rd);
-                it->count += t.rd;
+                    write(it->head.getFd(), buf, t.rd);
+                }
                 count += t.rd;
+                it->count += t.rd;
 			}
 			free(buf);
 			if (it->count >= it->bytes)
@@ -351,6 +353,7 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 
 	while ((stats = get_next_line(fd, &str)))
 	{
+        std::cout << "file_size: " << file_size << std::endl;
 		if (stats == -1)
 		{
 			close(fd);
@@ -472,7 +475,14 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 		send( (*it).fd, str, strlen(str), 0);
 		send((*it).fd, "\r\n", 2, 0);
 		send((*it).fd, "\r\n", 2, 0);
-	sendFile(it, fd);
+		char *t = (char *)malloc(sizeof(char) * stat.st_size - size + 1);
+		int ret = read(fd, t, stat.st_size - size);
+		std::cerr << "send size: " << stat.st_size - size << " strlen(t): " << strlen(t)  << std::endl;
+		send((*it).fd, t, stat.st_size - size, 0);
+        send((*it).fd, "\r\n", 2, 0);
+        send((*it).fd, "\r\n", 2, 0);
+//	    sendFile(it, fd, stat.st_size - size);
+	it->head.eraseStruct();
 }
 
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
@@ -519,6 +529,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		string = "Content-Length: ";
 		tmp = ft_itoa(stat.st_size + 1);
 		string += std::string(tmp) + "\r\n";
+		std::cerr << "CONT LENTH" << string  << std::endl;
 		free(tmp);
 		str = (char *)string.c_str();
 		std::cout << str;

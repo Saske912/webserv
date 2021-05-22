@@ -7,6 +7,7 @@ Header::Header()
 {
 	Env = 0;
 	Fd = 1;
+	is_cgi = false;
 }
 
 void Header::eraseStruct()
