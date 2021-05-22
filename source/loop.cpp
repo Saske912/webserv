@@ -93,10 +93,10 @@ static void parse_request(char *line, Header &head)
 			str.erase(0, i);
 		if ((i = str.find('/')) != std::string::npos)
 		{
-			char tmpp[150];
+			char tmp[150];
 			str.erase(0, i);
 //			head.addEnv((char *)("PATH_INFO=" + str).c_str());
-			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
+//			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
 		}
 	}
 	else if ((tmp = strstr(line, "Accept: ")))
@@ -514,7 +514,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     (void)conf;
     while (true)
     {
-//		std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();
