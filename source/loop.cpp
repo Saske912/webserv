@@ -240,7 +240,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                //     std::cout << "COUNT: " << it->count  << std::endl;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
-			if (t.rd == -1)
+			if (t.rd == -1 and it->count >= it->bytes)
 			{
 				perror("error: ");
 				if (buf)
@@ -251,10 +251,11 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			}
 			if (it->head.getFd() != 1)
 			{
-				buf[t.rd] = 0;
-				write(it->head.getFd(), buf, t.rd);
-				it->count += t.rd;
-				count += t.rd;
+			    if (t.rd != -1)
+                    buf[t.rd] = 0;
+                write(it->head.getFd(), buf, t.rd);
+                it->count += t.rd;
+                count += t.rd;
 			}
 			free(buf);
 			if (it->count >= it->bytes)
