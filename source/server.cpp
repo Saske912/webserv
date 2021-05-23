@@ -275,6 +275,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         head.setIsCgi(true);
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
+        tmp = open(request.c_str(), O_RDONLY);
         if ((pid = fork()) == 0)
         {
             arg = (char **)ft_calloc(4, sizeof(char **));
@@ -283,7 +284,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
-            tmp = open(request.c_str(), O_RDONLY);
             dup2(tmp, 0);
             dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
@@ -303,10 +303,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((fd = open("tmp", O_RDONLY)) < 0)
             error_exit("open error");
         head.setResponse("HTTP/1.1 200 OK\r\n");
-        char *ttt = (char *)malloc(1000000100);
-        int tt = read(fd, ttt, 1000000100);
-        std::cerr << "tt after cgi: " << tt  << std::endl;
-        lseek(fd, 0, 0);
         return fd;
     }
     else

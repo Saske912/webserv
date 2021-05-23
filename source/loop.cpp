@@ -441,19 +441,61 @@ void parse_cgi(std::list<t_write>::iterator &it, char *line)
 		it->head.setContent_Type(std::string(tmp) + "\r\n");
 }
 
+std::string getBaseSixteen(unsigned int n)
+{
+	std::string str("");
+	unsigned int num = n;
+	int c = 1;
+
+	while (num / 16)
+	{
+		num /= 16;
+		c *= 16;
+	}
+	while (c != 0)
+	{
+		str += n / c < 10 ? n / c + 48 : n / c + 22 + 'A';
+		n %= c;
+		c /= 16;
+	}
+	return str;
+}
+
+void sendFileChunked(std::list<t_write>::iterator &it, int &fd)
+{
+	char line[32769];
+	char *str;
+	int z;
+	int count = 0;
+
+	while (true)
+	{
+		z = read(fd, line, 32768);
+		count += z;
+		if (z == 0)
+		{
+			send(it->fd, "0\r\n\r\n", 5, 0);
+			break ;
+		}
+		line[z] = 0;
+		str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
+	//	std::cout << str;
+		send(it->fd, str, strlen(str), 0);
+		send(it->fd, line, z, 0);
+		send(it->fd, "\r\n", 2, 0);
+		//send(it->fd, "\r\n", 2, 0);
+	}
+}
+
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 {
 	char *str;
 	char *line = 0;
 	int	 size = 0;
 	struct stat stat;
-	char *tmp;
+//	char *tmp;
 	std::string string;
 
-    char *ttta = (char *)malloc(1000000100);
-    int tta = read(fd, ttta, 1000000100);
-    std::cerr << "tt in cgiResponce: " << tta  << std::endl;
-    lseek(fd, 0, 0);
 	while (get_next_line(fd, &line))
 	{
 		std::cout << "line: " << line << std::endl;
@@ -485,25 +527,28 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	str = (char *)(*it).head.getLast_Modified().c_str();
 	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
-		fstat(fd, &stat);
-		string = "Content-Length: ";
-		tmp = ft_itoa(stat.st_size - size);
-		string += std::string(tmp) + "\r\n";
-		free(tmp);
-		str = (char *)string.c_str();
-		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);
+//		fstat(fd, &stat);
+//		string = "Content-Length: ";
+//		tmp = ft_itoa(stat.st_size - size);
+//		string += std::string(tmp) + "\r\n";
+//		free(tmp);
+//		str = (char *)string.c_str();
+//		std::cout << str;
+//		send( (*it).fd, str, strlen(str), 0);
+//		send((*it).fd, "\r\n", 2, 0);
+		send(it->fd, "Transfer-Encoding: chunked\r\n", strlen("Transfer-Encoding: chunked\r\n"), 0);
+		std::cout << "Transfer-Encoding: chunked\r\n";
 		send((*it).fd, "\r\n", 2, 0);
-		send((*it).fd, "\r\n", 2, 0);
-		char *t = (char *)malloc(sizeof(char) * stat.st_size - size + 1);
-		int ret = read(fd, t, stat.st_size - size + 1);
-		t[ret] = 0;
-		std::cerr << "ret: " << ret << " strlen(t): " << strlen(t)  << std::endl;
-		send((*it).fd, t, stat.st_size - size, 0);
-        send((*it).fd, "\r\n", 2, 0);
-        send((*it).fd, "\r\n", 2, 0);
-//	    sendFile(it, fd, stat.st_size - size);
+		sendFileChunked(it, fd);
+
+//		char *t = (char *)malloc(sizeof(char) * stat.st_size - size + 1);
+//		int ret = read(fd, t, stat.st_size - size + 1);
+//		t[ret] = 0;
+//		std::cerr << "ret: " << ret << " strlen(t): " << strlen(t)  << std::endl;
+//		send((*it).fd, t, stat.st_size - size, 0);
+//		free(t);
 	it->head.eraseStruct();
+	std::cout << std::endl << "----------REQUEST----------" << std::endl;
 }
 
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
@@ -550,7 +595,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		string = "Content-Length: ";
 		tmp = ft_itoa(stat.st_size + 1);
 		string += std::string(tmp) + "\r\n";
-		std::cerr << "CONT LENTH" << string  << std::endl;
 		free(tmp);
 		str = (char *)string.c_str();
 		std::cout << str;
