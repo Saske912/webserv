@@ -461,30 +461,45 @@ std::string getBaseSixteen(unsigned int n)
 	return str;
 }
 
-void sendFileChunked(std::list<t_write>::iterator &it, int &fd)
+void resetIt(std::list<t_write>::iterator &it)
+{
+	it->first_line = false;
+	it->head_readed = false;
+	it->eshe_odin_ebychiy_flag = false;
+	it->flag = false;
+	it->bytes = 0;
+	it->count = 0;
+}
+
+void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 {
 	char line[32769];
 	char *str;
 	int z;
 	int count = 0;
 
-	while (true)
-	{
+//	while (true)
+//	{
 		z = read(fd, line, 32768);
 		count += z;
 		if (z == 0)
 		{
+			std::cout << "z: " << z << std::endl;
 			send(it->fd, "0\r\n\r\n", 5, 0);
-			break ;
+			close(fd);
+			it->head.eraseStruct();
+			resetIt(it);
+			std::cout << std::endl << "----------REQUEST----------" << std::endl;
+			return ;
 		}
 		line[z] = 0;
 		str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
-	//	std::cout << str;
+		std::cout << "z: " << z << std::endl;
 		send(it->fd, str, strlen(str), 0);
 		send(it->fd, line, z, 0);
 		send(it->fd, "\r\n", 2, 0);
 		//send(it->fd, "\r\n", 2, 0);
-	}
+//	}
 }
 
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
@@ -540,16 +555,14 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 		std::cout << "Transfer-Encoding: chunked\r\n";
 		send((*it).fd, "\r\n", 2, 0);
 		sendFileChunked(it, fd);
-
 //		char *t = (char *)malloc(sizeof(char) * stat.st_size - size + 1);
 //		int ret = read(fd, t, stat.st_size - size + 1);
 //		t[ret] = 0;
 //		std::cerr << "ret: " << ret << " strlen(t): " << strlen(t)  << std::endl;
 //		send((*it).fd, t, stat.st_size - size, 0);
 //		free(t);
-	it->head.eraseStruct();
-	std::cout << std::endl << "----------REQUEST----------" << std::endl;
-}
+	}
+
 
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
 {
@@ -564,18 +577,15 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	{
 //		if (it->head.getFd() != 1)
 //            close( it->head.getFd( ));
-        it->first_line = false;
-        it->head_readed = false;
-		it->eshe_odin_ebychiy_flag = false;
-		it->flag = false;
-		it->bytes = 0;
-		it->count = 0;
+		if (it->head.getFdr())
+			return (sendFileChunked(it, it->head.getFdr()));
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
 ////////////////////////////////////
         server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
-		fd = serv.responce((*it).head);
+		it->head.setFdr(serv.responce((*it).head));
+		fd = it->head.getFdr(); 
 		std::cout << "----------RESPONSE----------" << std::endl;
 
 		if (it->head.getIsCgi()) {
@@ -583,7 +593,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 			std::cout << "--------CGI--------" << std::endl;
 			return cgiResponse(it, fd);
 		}
-
+		resetIt(it);
 		sendHeader(it);
 				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
 		if (it->head.getMethod() == "PUT" || fd == -1)
