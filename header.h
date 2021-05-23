@@ -21,6 +21,7 @@
 #include "pfile.h"
 #include "wpersimm.h"
 #include "itressa.h"
+#include <dirent.h>
 
 #define QUEUE 16
 #define TVS 320000
