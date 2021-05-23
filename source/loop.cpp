@@ -450,10 +450,6 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	char *tmp;
 	std::string string;
 
-    char *ttta = (char *)malloc(1000000100);
-    int tta = read(fd, ttta, 1000000100);
-    std::cerr << "tt in cgiResponce: " << tta  << std::endl;
-    lseek(fd, 0, 0);
 	while (get_next_line(fd, &line))
 	{
 		std::cout << "line: " << line << std::endl;
