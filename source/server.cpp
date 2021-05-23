@@ -72,7 +72,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        if (!(*it).check_name(dirs(request)))
+        if (!(*it).check_name(request))
         {
             if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
             {
@@ -132,6 +132,10 @@ std::string const & def_file, route const & route, Header & head) {
 		return targeting(head, request, route);
 	else
     {
+	    if (def_file.empty() and route.get_autoindex())
+        {
+            return autoindex(route.get_root());
+        }
 	    if (*request.rbegin() != '/' and *def_file.begin() != '/')
             return targeting(head, request + '/' + def_file, route);
         return targeting(head, request + def_file, route);
@@ -184,10 +188,6 @@ int    server::responce( Header & head )
     else
         ret.first = get_path_to_request(request, head);
     return ret.first;
-}
-
-std::string server::dirs( std::string request ) {
-    return request;
 }
 
 std::string server::get_error(int err, std::map<int, std::string> ers) {
@@ -252,10 +252,14 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
     {
         struct ::stat st;
+        std::string part;
         ::stat(request.c_str(), &st);
         if (st.st_mode & S_IFDIR)
             return exception_processing(404, head);
-        std::string part = "201 Created\r\n";
+        else if (errno == ENOENT)
+            part = "201 Created\r\n";
+        else
+            part = "204 No Content\r\n";
         if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
         {
             if (errno == EACCES) {
@@ -267,17 +271,23 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else
             head.setResponse("HTTP/1.1 " + part);
     }
-    else if ((is_cgi(request, route)) and head.getMethod() != "GET")
+    else if ((is_cgi(request, route)) and head.getMethod() == _allow.second)
     {
         int     fd1 = dup(1);
         int     fd0 = dup(0);
 
         head.setIsCgi(true);
-        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-            error_exit("open error");
-        tmp = open(request.c_str(), O_RDONLY);
+//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+//            error_exit("open error");
+        if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
+            error_exit("open_error");\
+///
+        int     fdset[2];
+        pipe(fdset);
+        ////
         if ((pid = fork()) == 0)
         {
+            close(fdset[0]);
             arg = (char **)ft_calloc(4, sizeof(char **));
 //            arg[0] = strdup("content/cgi.sh");
             arg[0] = strdup("cgi_tester");
@@ -285,13 +295,16 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);
-            dup2(fd, 1);
+//            dup2(fd, 1);
+            dup2(fdset[1], 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
-        waitpid(pid, &stat, 0);
+        close(fdset[1]);
+        return fdset[0];
+//        waitpid(pid, &stat, 0);
         close(tmp);
         dup2(fd0, 0);
 //        std::cout << "exec_after:"  << std::endl;
@@ -463,6 +476,10 @@ bool server::is_allow( const std::string & request, std::string const & method, 
         }
     }
     return false;
+}
+
+int server::autoindex( std::string const & root ) {
+    return 0;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

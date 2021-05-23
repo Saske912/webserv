@@ -36,21 +36,15 @@ route &route::operator=( route const &src ) {
 }
 
 bool route::check_name( std::string request ) {
-//    std::string n1 = trim(_name, "/");
-//    std::string n2 = trim(request, "/");
-//    std::cout << "|" << n1 << "| |" << n2 << "|"  << std::endl;
     return (strncmp(trim(_name, "/").c_str(), trim(request, "/").c_str(), std::strlen(trim(_name, "/").c_str())));
 }
 
 std::string route::swap_path( const std::string &request ) {
     std::string tmp;
-//    std::cout << "HERE " << _name << " " << request  << std::endl;
     if (_name.length() < request.length())
         tmp = std::string(request, _name.length(), request.length() - _name.length());
     else
         tmp = "/";
-//    std::cout << _root+ tmp  << std::endl;
-//    std::cout << "root: " << _root  << std::endl;
     if (*_root.rbegin() != '/' and *tmp.begin() != '/')
         _root += '/';
     return _root += tmp;
