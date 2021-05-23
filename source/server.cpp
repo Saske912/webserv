@@ -134,7 +134,7 @@ std::string const & def_file, route const & route, Header & head) {
     {
 	    if (def_file.empty() and route.get_autoindex())
         {
-            return autoindex(route.get_root());
+            return autoindex(route.get_root(), head);
         }
 	    if (*request.rbegin() != '/' and *def_file.begin() != '/')
             return targeting(head, request + '/' + def_file, route);
@@ -478,8 +478,35 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     return false;
 }
 
-int server::autoindex( std::string const & root ) {
-    return 0;
+int server::autoindex( std::string const & root, Header & head )
+{
+    DIR     *dir;
+    dirent  *dir_p;
+    int     fd;
+    std::string tmp;
+
+    fd = open("content/autoindex.html", O_RDWR | O_CREAT | O_TRUNC, 0777 );
+    if (!(dir = opendir(root.c_str())))
+        exception_processing(404, head);
+    std::string str = "<!DOCTYPE html>\n"
+                      "<html lang=\"en\">\n"
+                      "<head>\n"
+                      "    <meta charset=\"UTF-8\">\n"
+                      "    <title>Title</title>\n"
+                      "</head>\n"
+                      "<body>";
+    write(fd, str.c_str(), str.length());
+    while ((dir_p = readdir(dir)))
+    {
+        tmp = "<a href=\"" + std::string(root + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a>\n";
+        write(fd, tmp.c_str(), tmp.length());
+    }
+    closedir(dir);
+    str = "</body>\n"
+          "</html>";
+    write(fd, str.c_str(), str.length());
+    lseek(fd, 0, 0);
+    return fd;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

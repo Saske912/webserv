@@ -43,7 +43,7 @@ public:
 
     int                        responce( Header & head );
 protected:
-    int                         autoindex(std::string const & root);
+    int                         autoindex(std::string const & root, Header & head);
 	int                         request_processing(std::string const & request, \
     std::string const & def_file, route const & route, Header & head);
     static bool                        is_file_with_extension( std::string request) ;

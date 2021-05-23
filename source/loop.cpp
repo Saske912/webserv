@@ -364,7 +364,7 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 
 	while ((stats = get_next_line(fd, &str)))
 	{
-        std::cout << "file_size: " << file_size << std::endl;
+//        std::cout << "file_size: " << file_size << std::endl;
 		if (stats == -1)
 		{
 			close(fd);

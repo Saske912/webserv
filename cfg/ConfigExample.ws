@@ -13,17 +13,8 @@ server {
 	}
 	route /upload/ {									# route for folder
 		allowed_methods GET
-		directory_listing on							# directory listing aka autoindex
-		index index.jpg index.png index.html			# index files for route
+		directory_listing on							# directory listing aka autoindex			# index files for route
 		upload_location /tmp/							# enable uploads and set the save location
-		root /var/www/upload							# root folder for route
+		root /Users/pfile/web2							# root folder for route
 	}
-	route /special {
-		cgi_extension php /bin/fastcgi.app				# cgi file for specified extension
-	}
-}
-server {
-	host hostname; port 127  		; ;
-	;;	server_names hostname.local hostname.test;	error_page 404 error_404.html;
-	;error_page 401 error_401.html;	client_max_body_size 104857600;
 };
