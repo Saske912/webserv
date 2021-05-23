@@ -364,7 +364,7 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 
 	while ((stats = get_next_line(fd, &str)))
 	{
-//        std::cout << "file_size: " << file_size << std::endl;
+        std::cout << "file_size: " << file_size << std::endl;
 		if (stats == -1)
 		{
 			close(fd);
@@ -476,12 +476,8 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	char line[32769];
 	char *str;
 	int z;
-	int count = 0;
 
-//	while (true)
-//	{
 		z = read(fd, line, 32768);
-		count += z;
 		if (z == 0)
 		{
 			std::cout << "z: " << z << std::endl;
@@ -498,8 +494,6 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 		send(it->fd, str, strlen(str), 0);
 		send(it->fd, line, z, 0);
 		send(it->fd, "\r\n", 2, 0);
-		//send(it->fd, "\r\n", 2, 0);
-//	}
 }
 
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
@@ -683,13 +677,13 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             FD_SET((*it).fd, &t.read);
 			if ((*it).flag)
            		 FD_SET((*it).fd, &t.write);             //if we have data to send
-			(*it).flag = 0;
             it++;
         }
 		if (Select(set, t, tv, serv))
 			continue ;
         if ( FD_ISSET(serv.host, &t.read))
         {
+			std::cout << "WTF" << std::endl;
             if (( cli.client = accept( serv.host, reinterpret_cast<sockaddr *>(&cli.ad), &cli.adlen)) == -1)
                 error_exit("fail to accept Client");
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
