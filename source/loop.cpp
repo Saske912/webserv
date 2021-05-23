@@ -195,14 +195,14 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	struct stat stat;
 	static int count = 0;
 
-	std::cout << "count: " << count << std::endl;
+//	std::cout << "count: " << count << std::endl;
 	if (it->head.getFd() == 1)
 		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 	if (it->count == 0)
 		t.rd = recv_next_line((*it).fd, &line);
 	if (t.rd == 0)
 	{
-				std::cout << "Minus svyaz'" << std::endl;
+//				std::cout << "Minus svyaz'" << std::endl;
 		it->head.eraseStruct();
 		it = set.erase(it);
 		return 1;
@@ -480,7 +480,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 		z = read(fd, line, 32768);
 		if (z == 0)
 		{
-			std::cout << "z: " << z << std::endl;
+			std::cerr << "Z: " << z << std::endl;
 			send(it->fd, "0\r\n\r\n", 5, 0);
 			close(fd);
 			it->head.eraseStruct();
@@ -571,6 +571,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	{
 //		if (it->head.getFd() != 1)
 //            close( it->head.getFd( ));
+//        std::cout << "fdr " << it->head.getFdr()  << std::endl;
 		if (it->head.getFdr())
 			return (sendFileChunked(it, it->head.getFdr()));
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
@@ -675,6 +676,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
         while ( it != set.end())
         {
             FD_SET((*it).fd, &t.read);
+            std::cout << "FLAG: " << (*it).flag  << std::endl;
 			if ((*it).flag)
            		 FD_SET((*it).fd, &t.write);             //if we have data to send
             it++;
