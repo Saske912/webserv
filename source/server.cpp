@@ -134,7 +134,7 @@ std::string const & def_file, route const & route, Header & head) {
     {
 	    if (def_file.empty() and route.get_autoindex())
         {
-            return autoindex(route.get_root(), head);
+            return autoindex(route.get_root(), head, route.get_name());
         }
 	    if (*request.rbegin() != '/' and *def_file.begin() != '/')
             return targeting(head, request + '/' + def_file, route);
@@ -142,21 +142,28 @@ std::string const & def_file, route const & route, Header & head) {
     }
 }
 
-bool server::is_file_with_extension( std::string request ) {
-    int ret = static_cast<int>(request.rfind('/'));
-    if (ret == -1)
+bool server::is_file_with_extension( std::string request )
+{
+    struct ::stat st;
+    std::string part;
+    ::stat(request.c_str(), &st);
+    if (st.st_mode & S_IFDIR)
         return false;
-    else
-    {
-        std::string::reverse_iterator it = request.rbegin();
-        while(*it != '/')
-        {
-            if (*it == '.')
-                return true;
-            it++;
-        }
-        return false;
-    }
+    return true;
+//    int ret = static_cast<int>(request.rfind('/'));
+//    if (ret == -1)
+//        return false;
+//    else
+//    {
+//        std::string::reverse_iterator it = request.rbegin();
+//        while(*it != '/')
+//        {
+//            if (*it == '.')
+//                return true;
+//            it++;
+//        }
+//        return false;
+//    }
 }
 
 int    server::responce( Header & head )
@@ -247,6 +254,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     char    **arg;
     int tmp;
 
+    std::cerr << "REQUEST " << request  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
@@ -478,7 +486,7 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     return false;
 }
 
-int server::autoindex( std::string const & root, Header & head )
+int server::autoindex( std::string const & root, Header & head, std::string name )
 {
     DIR     *dir;
     dirent  *dir_p;
@@ -498,7 +506,7 @@ int server::autoindex( std::string const & root, Header & head )
     write(fd, str.c_str(), str.length());
     while ((dir_p = readdir(dir)))
     {
-        tmp = "<a href=\"" + std::string(root + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a>\n";
+        tmp = "<a href=\"" + std::string(name + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a>\n";
         write(fd, tmp.c_str(), tmp.length());
     }
     closedir(dir);
