@@ -7,6 +7,7 @@ Header::Header()
 {
 	Env = 0;
 	Fd = 1;
+	Fdr = 0;
 	is_cgi = false;
 }
 
@@ -35,6 +36,7 @@ void Header::eraseStruct()
 	Port = 0;
 	Env = 0;
 	Fd = 1;
+	Fdr = 0;
 	is_cgi = false;
 }
 
@@ -154,6 +156,11 @@ void Header::setFd(int const &fd)
 	Fd = fd;
 }
 
+void Header::setFdr(int const &fd)
+{
+	Fdr = fd;
+}
+
 void Header::setPort(unsigned int  const &port)
 {
 	Port = port;
@@ -167,6 +174,11 @@ char **Header::getEnv()
 int Header::getFd()
 {
 	return Fd;
+}
+
+int Header::getFdr()
+{
+	return Fdr;
 }
 
 unsigned int Header::getPort()
