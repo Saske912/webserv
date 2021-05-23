@@ -128,7 +128,7 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
-	if ( is_file_with_extension( request ) or head.getMethod() == "PUT")
+	if ( is_file( request ) or head.getMethod() == "PUT")
 		return targeting(head, request, route);
 	else
     {
@@ -144,26 +144,20 @@ std::string const & def_file, route const & route, Header & head) {
 
 bool server::is_file_with_extension( std::string request )
 {
-    struct ::stat st;
-    std::string part;
-    ::stat(request.c_str(), &st);
-    if (st.st_mode & S_IFDIR)
+    int ret = static_cast<int>(request.rfind('/'));
+    if (ret == -1)
         return false;
-    return true;
-//    int ret = static_cast<int>(request.rfind('/'));
-//    if (ret == -1)
-//        return false;
-//    else
-//    {
-//        std::string::reverse_iterator it = request.rbegin();
-//        while(*it != '/')
-//        {
-//            if (*it == '.')
-//                return true;
-//            it++;
-//        }
-//        return false;
-//    }
+    else
+    {
+        std::string::reverse_iterator it = request.rbegin();
+        while(*it != '/')
+        {
+            if (*it == '.')
+                return true;
+            it++;
+        }
+        return false;
+    }
 }
 
 int    server::responce( Header & head )
@@ -347,8 +341,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 }
 
 bool server::is_cgi( const std::string& request, route  const & route ) const {
-//    std::cout << "route: " << route.get_name()  << std::endl;
-//    std::cout << request.substr(request.rfind('.') + 1, request.length()) << "|" << route.get_cgi().second  << std::endl;
+    std::cout << "route: " << route.get_name()  << std::endl;
+    std::cout << request.substr(request.rfind('.') + 1, request.length()) << "|" << route.get_cgi().second  << std::endl;
     return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
 }
 
@@ -439,7 +433,7 @@ void server::set_list_of_methods( ) {
 }
 
 std::string server::set_location(route & route, Header & head) {
-    if ( route.get_default_page().empty() or is_file_with_extension( head.getRequest( )))
+    if ( route.get_default_page().empty() or is_file( head.getRequest( )))
         return head.getRequest();
     else
     {
@@ -472,6 +466,7 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     if (!_allow.first.empty() and !_allow.second.empty() and method == _allow.second)
     {
         std::string tmp = r.get_default_page();
+        std::cerr << "allowed "  << std::endl;
         if ( is_file_with_extension( request ))
         {
             if (std::string(request, request.rfind('.') + 1, request.length() - request.rfind('.')) == _allow.first)
@@ -515,6 +510,15 @@ int server::autoindex( std::string const & root, Header & head, std::string name
     write(fd, str.c_str(), str.length());
     lseek(fd, 0, 0);
     return fd;
+}
+
+bool server::is_file( std::string request ) {
+    struct ::stat st;
+    std::string part;
+    ::stat(request.c_str(), &st);
+    if (st.st_mode & S_IFDIR)
+        return false;
+    return true;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {
