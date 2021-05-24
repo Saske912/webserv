@@ -187,7 +187,6 @@ int recv_next_line(int fd, char **line) {
     return z;
 }
 
-
 int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
 	char *line = 0;
@@ -202,7 +201,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		t.rd = recv_next_line((*it).fd, &line);
 	if (t.rd == 0)
 	{
-//				std::cout << "Minus svyaz'" << std::endl;
+		std::cout << "Minus svyaz'" << std::endl;
 		it->head.eraseStruct();
 		it = set.erase(it);
 		return 1;
@@ -246,15 +245,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 				free(buf);
 				return 1;
 			}
-//			if (t.rd == -1)
-//			{
-//				perror("error: ");
-//				if (buf)
-//					free(buf);
-//				if (line)
-//					free(line);
-//                return 1;
-//			}
+			if (t.rd == -1)
+				t.rd = n;
 			if (it->head.getFd() != 1)
 			{
 			    if (t.rd != -1)
@@ -262,10 +254,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                     buf[t.rd] = 0;
                     write(it->head.getFd(), buf, t.rd);
                 }
-				if (count == 100000000)
-				{
-				std::cout << "Buf1000000: " << buf << std::endl;
-				}
 				if (t.rd != -1)
               	  count += t.rd;
                 it->count += t.rd;
@@ -435,10 +423,10 @@ void parse_cgi(std::list<t_write>::iterator &it, char *line)
 	if ((tmp = strstr(line, "Status: ")))
 	{
 		tmp += strlen("Status: ");
-		it->head.setResponse("HTTP/1.1 " + std::string(tmp) + "\r\n");
+		it->head.setResponse("HTTP/1.1 " + std::string(tmp) + "\n");
 	}
 	else if ((tmp = strstr(line, "Content-Type: ")))
-		it->head.setContent_Type(std::string(tmp) + "\r\n");
+		it->head.setContent_Type(std::string(tmp) + "\n");
 }
 
 std::string getBaseSixteen(unsigned int n)
@@ -476,8 +464,8 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	char line[32769];
 	char *str;
 	int z;
-
-		z = read(fd, line, 32768);
+	int ran = rand() % 32768;
+		z = read(fd, line, ran);
 		if (z == 0)
 		{
 			std::cerr << "Z: " << z << std::endl;
@@ -490,7 +478,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 		}
 		line[z] = 0;
 		str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
-		std::cout << "z: " << z << std::endl;
+	//	std::cout << "z: " << z << std::endl;
 		send(it->fd, str, strlen(str), 0);
 		send(it->fd, line, z, 0);
 		send(it->fd, "\r\n", 2, 0);
@@ -501,7 +489,6 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	char *str;
 	char *line = 0;
 	int	 size = 0;
-	struct stat stat;
 //	char *tmp;
 	std::string string;
 
@@ -536,27 +523,11 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	str = (char *)(*it).head.getLast_Modified().c_str();
 	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
-//		fstat(fd, &stat);
-//		string = "Content-Length: ";
-//		tmp = ft_itoa(stat.st_size - size);
-//		string += std::string(tmp) + "\r\n";
-//		free(tmp);
-//		str = (char *)string.c_str();
-//		std::cout << str;
-//		send( (*it).fd, str, strlen(str), 0);
-//		send((*it).fd, "\r\n", 2, 0);
 		send(it->fd, "Transfer-Encoding: chunked\r\n", strlen("Transfer-Encoding: chunked\r\n"), 0);
 		std::cout << "Transfer-Encoding: chunked\r\n";
 		send((*it).fd, "\r\n", 2, 0);
 		sendFileChunked(it, fd);
-//		char *t = (char *)malloc(sizeof(char) * stat.st_size - size + 1);
-//		int ret = read(fd, t, stat.st_size - size + 1);
-//		t[ret] = 0;
-//		std::cerr << "ret: " << ret << " strlen(t): " << strlen(t)  << std::endl;
-//		send((*it).fd, t, stat.st_size - size, 0);
-//		free(t);
-	}
-
+}
 
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
 {
@@ -675,8 +646,8 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
         it = set.begin();
         while ( it != set.end())
         {
-            FD_SET((*it).fd, &t.read);
-            std::cout << "FLAG: " << (*it).flag  << std::endl;
+			if (!it->head.getFdr())
+				FD_SET((*it).fd, &t.read);
 			if ((*it).flag)
            		 FD_SET((*it).fd, &t.write);             //if we have data to send
             it++;
@@ -685,7 +656,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
 			continue ;
         if ( FD_ISSET(serv.host, &t.read))
         {
-			std::cout << "WTF" << std::endl;
             if (( cli.client = accept( serv.host, reinterpret_cast<sockaddr *>(&cli.ad), &cli.adlen)) == -1)
                 error_exit("fail to accept Client");
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
