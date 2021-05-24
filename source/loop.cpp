@@ -347,6 +347,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 
 int sendFile(std::list<t_write>::iterator &it, int fd)
 {
+	/*
 	char *str = 0;
     int stats = 0;
 	int	file_size = 0;
@@ -370,6 +371,15 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 	file_size += strlen(str) + 1;
 	free(str);
 	std::cout << "file_size: " << file_size << std::endl;
+*/
+	char str[32769];
+	int z;
+
+	while ((z = read(fd, str, 32768)) > 0)
+	{
+		str[z] = 0;
+		send(it->fd, str, z, 0);
+	}
 	return 0;
 }
 
@@ -466,7 +476,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	char *str;
 	int z;
 	int ran = rand() % 32768;
-		z = read(fd, line, ran);
+		z = read(fd, line, 32768);
 		if (z == 0)
 		{
 			std::cerr << "Z: " << z << std::endl;
@@ -574,7 +584,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
         send( (*it).fd, str, strlen(str), 0);
 		fstat(fd, &stat);
 		string = "Content-Length: ";
-		tmp = ft_itoa(stat.st_size + 1);
+		tmp = ft_itoa(stat.st_size);
 		string += std::string(tmp) + "\r\n";
 		free(tmp);
 		str = (char *)string.c_str();
