@@ -242,6 +242,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			t.rd = recv( it->fd, buf, n , 0 );
 			if (t.rd == -1 && !buf[0])
 			{
+                std::cerr << "ER: " << buf  << std::endl;
 				free(buf);
 				return 1;
 			}
@@ -478,7 +479,6 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 		}
 		line[z] = 0;
 		str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
-	//	std::cout << "z: " << z << std::endl;
 		send(it->fd, str, strlen(str), 0);
 		send(it->fd, line, z, 0);
 		send(it->fd, "\r\n", 2, 0);
@@ -489,27 +489,32 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	char *str;
 	char *line = 0;
 	int	 size = 0;
-//	char *tmp;
+	int     gnl;
 	std::string string;
 
-	while (get_next_line(fd, &line))
+	while ((gnl = get_next_line(fd, &line)) > 0)
 	{
 		std::cout << "line: " << line << std::endl;
 		if (line && line[0] == '\r')
-			break ;
+        {
+            size += 2;
+            free(line);
+            line = nullptr;
+            break ;
+        }
 		parse_cgi(it, line);
 		size += strlen(line) + 1;
 		free(line);
-		line = 0;
+		line = nullptr;
 	}
-    size += 2;
-//	std::cerr << "size : " << size  << std::endl;
-//    char *ttt = (char *)malloc(1000000100);
-//    int tt = read(fd, ttt, 1000000100);
-//    std::cerr << "tt in cgiResponce: " << tt  << std::endl;
-//    lseek(fd, 0, 0);
-	free(line);
-	line = 0;
+	if (gnl == 0)
+    {
+	    std::cerr << "gnl = 0"  << std::endl;
+    }
+	else if (gnl == -1)
+    {
+	    std::cerr << "gnl error -1"  << std::endl;
+    }
 	str = (char *)it->head.getResponse().c_str();
 	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
@@ -523,10 +528,10 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	str = (char *)(*it).head.getLast_Modified().c_str();
 	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
-		send(it->fd, "Transfer-Encoding: chunked\r\n", strlen("Transfer-Encoding: chunked\r\n"), 0);
-		std::cout << "Transfer-Encoding: chunked\r\n";
-		send((*it).fd, "\r\n", 2, 0);
-		sendFileChunked(it, fd);
+    send(it->fd, "Transfer-Encoding: chunked\r\n", strlen("Transfer-Encoding: chunked\r\n"), 0);
+    std::cout << "Transfer-Encoding: chunked\r\n";
+    send((*it).fd, "\r\n", 2, 0);
+    sendFileChunked(it, fd);
 }
 
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)

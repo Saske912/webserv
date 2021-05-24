@@ -244,11 +244,10 @@ int server::exception_processing( int except, Header &head ) {
 int server::targeting( Header &head, std::string request, route const & route ) {
     int     fd;
     int     pid;
-    int     stat;
     char    **arg;
-    int tmp;
+    int     fdset[2];
+    int     tmp;
 
-    std::cerr << "REQUEST " << request  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
@@ -275,18 +274,13 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     }
     else if ((is_cgi(request, route)) and head.getMethod() == _allow.second)
     {
-        int     fd1 = dup(1);
-        int     fd0 = dup(0);
+//        int     fd1 = dup(1);
+//        int     fd0 = dup(0);
 
         head.setIsCgi(true);
-//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-//            error_exit("open error");
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
-            error_exit("open_error");\
-///
-        int     fdset[2];
+            error_exit("open_error");
         pipe(fdset);
-        ////
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
@@ -297,7 +291,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
             arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);
-//            dup2(fd, 1);
             dup2(fdset[1], 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
@@ -306,19 +299,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             error_exit("fork_error");
         close(fdset[1]);
         return fdset[0];
-//        waitpid(pid, &stat, 0);
-        close(tmp);
-        dup2(fd0, 0);
-//        std::cout << "exec_after:"  << std::endl;
-        dup2(fd1, 1);
-        close(fd0);
-        close(fd1);
-//        lseek(fd, 0, 0);
-        close(fd);
-        if ((fd = open("tmp", O_RDONLY)) < 0)
-            error_exit("open error");
-        head.setResponse("HTTP/1.1 200 OK\r\n");
-        return fd;
+//        dup2(fd1, 1);
+//        dup2(fd0, 0);
     }
     else
     {
@@ -328,9 +310,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             return exception_processing(404, head);
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
-            if (errno == EACCES) {
+            if (errno == EACCES)
                 return exception_processing(403, head);
-            }
             else
                 return exception_processing(404, head);
         }
@@ -341,8 +322,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 }
 
 bool server::is_cgi( const std::string& request, route  const & route ) const {
-    std::cout << "route: " << route.get_name()  << std::endl;
-    std::cout << request.substr(request.rfind('.') + 1, request.length()) << "|" << route.get_cgi().second  << std::endl;
     return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
 }
 
