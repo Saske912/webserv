@@ -292,14 +292,14 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(fdset[0]);
             arg = (char **)ft_calloc(4, sizeof(char **));
-            arg[0] = strdup("content/cgi.sh");
+            arg[0] = strdup("../cgi.sh");
 //            arg[0] = strdup("cgi_tester");
             arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
 //            arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);
 //            std::cout << "root: " << route.get_root()  << std::endl;
-//            chdir(route.get_root().c_str());
+            chdir(route.get_root().c_str());
 //            char  buf[150];
 //            getcwd(buf, 150);
 //            std::cout << "getcwd(): " << buf  << std::endl;
@@ -322,6 +322,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     {
         struct ::stat st;
         ::stat(request.c_str(), &st);
+        chdir(route.get_root().c_str());
         if (st.st_mode & S_IFDIR)
         {
             std::cout << "is_dir(GET file)"  << std::endl;
