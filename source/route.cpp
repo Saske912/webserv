@@ -36,10 +36,10 @@ route &route::operator=( route const &src ) {
 }
 
 bool route::check_name( std::string request ) {
-    std::string tmp = request.substr(0, request.find('/', 2));
-    tmp = tmp.empty() ? request : tmp;
-//    std::cerr << "tmp " << tmp << " _name " << _name  << std::endl;
-    return (strcmp(trim(_name, "/").c_str(), trim(tmp, "/").c_str()));
+//    std::string tmp = request.substr(0, request.find('/', 2));
+//    tmp = tmp.empty() ? request : tmp;
+//    return (strcmp(trim(_name, "/").c_str(), trim(tmp, "/").c_str()));
+    return (strncmp(trim(_name, "/").c_str(), trim(request, "/").c_str(),trim(_name, "/").length()));
 }
 
 std::string route::swap_path( const std::string &request ) {
