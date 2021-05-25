@@ -91,7 +91,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
         }
         it++;
     }
-    std::cerr << "Path not found "  << std::endl;
+    std::cerr << "Path not found: " << request << std::endl;
     return exception_processing(404, head);
 }
 
@@ -256,7 +256,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         std::string part;
         ::stat(request.c_str(), &st);
         if (st.st_mode & S_IFDIR)
+        {
+            std::cout << "is_dir"  << std::endl;
             return exception_processing(404, head);
+        }
         else if (errno == ENOENT)
             part = "201 Created\r\n";
         else
@@ -267,17 +270,21 @@ int server::targeting( Header &head, std::string request, route const & route ) 
                 return exception_processing(403, head);
             }
             else
+            {
+                std::cout << "bad request: " << request  << std::endl;
                 return exception_processing(404, head);
+            }
         }
         else
             head.setResponse("HTTP/1.1 " + part);
     }
-    else if ((is_cgi(request, route)) and head.getMethod() == _allow.second)
+    else if ((is_cgi(request, route)) and (_allow.first.empty() or head.getMethod() == _allow.second))
     {
 //        int     fd1 = dup(1);
 //        int     fd0 = dup(0);
 
         head.setIsCgi(true);
+        std::cout << "CGI start"  << std::endl;
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
             error_exit("open_error");
         pipe(fdset);
@@ -285,12 +292,17 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(fdset[0]);
             arg = (char **)ft_calloc(4, sizeof(char **));
-//            arg[0] = strdup("content/cgi.sh");
-            arg[0] = strdup("cgi_tester");
-//            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
+            arg[0] = strdup("content/cgi.sh");
+//            arg[0] = strdup("cgi_tester");
+            arg[1] = strdup(const_cast<char *>(route.get_cgi().first.c_str()));
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
-            arg[1] = strdup(const_cast<char *>(request.c_str()));
+//            arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);
+//            std::cout << "root: " << route.get_root()  << std::endl;
+//            chdir(route.get_root().c_str());
+//            char  buf[150];
+//            getcwd(buf, 150);
+//            std::cout << "getcwd(): " << buf  << std::endl;
             dup2(fdset[1], 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
@@ -298,6 +310,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else if (pid == -1)
             error_exit("fork_error");
         close(fdset[1]);
+        int stat = 1;
+//        waitpid(pid, &stat, 0);
+//        chdir(getenv("OLDPWD"));
+        std::cout << "CGI ret fd"  << std::endl;
         return fdset[0];
 //        dup2(fd1, 1);
 //        dup2(fd0, 0);
@@ -307,13 +323,19 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         struct ::stat st;
         ::stat(request.c_str(), &st);
         if (st.st_mode & S_IFDIR)
+        {
+            std::cout << "is_dir(GET file)"  << std::endl;
             return exception_processing(404, head);
+        }
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
             if (errno == EACCES)
                 return exception_processing(403, head);
             else
+            {
+                std::cout << "bad request:(GET) " << request  << std::endl;
                 return exception_processing(404, head);
+            }
         }
         else
             head.setResponse("HTTP/1.1 200 OK\r\n");

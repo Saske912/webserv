@@ -504,7 +504,7 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 
 	while ((gnl = get_next_line(fd, &line)) > 0)
 	{
-		std::cout << "line: " << line << std::endl;
+//		std::cout << "line: " << line << std::endl;
 		if (line && line[0] == '\r')
         {
             size += 2;
@@ -525,6 +525,8 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
     {
 	    std::cerr << "gnl error -1"  << std::endl;
     }
+	if (it->head.getResponse().empty())
+	    it->head.setResponse("HTTP/1.1 200 OK\r\n");
 	str = (char *)it->head.getResponse().c_str();
 	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
