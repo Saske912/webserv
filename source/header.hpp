@@ -35,6 +35,8 @@ class Header
 		void showEnv();
 		unsigned int getPort();
 		int getFd();
+		int getFdr();
+		void setFdr(int const &);
 		void setFd(int const &);
 		void setEnv(char **env);
 		void setPort(unsigned int const &);
@@ -63,6 +65,7 @@ class Header
 		void eraseStruct();
 	private:
 		int Fd;
+		int Fdr;
 		char **Env;
 		unsigned int Port;
 		std::string Request;

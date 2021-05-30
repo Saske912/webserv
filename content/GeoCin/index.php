@@ -4,7 +4,7 @@
 include ('basic.php');
 
 //здесь хранится контент
-$pages_dir='content/GeoCin/pages/';
+$pages_dir='pages/';
 
 $select='active';
 
@@ -17,7 +17,7 @@ $select='active';
 // }
 
 if(!isset($_GET['z']))
-    $content=file_get_contents('content/GeoCin/pages/index.html');
+    $content=file_get_contents($pages_dir.'index.html');
 else{
     $page=$_GET['z'];
     $file=$pages_dir.$page.'.html';
@@ -30,7 +30,7 @@ else{
 }
 
 //загружаем шаблон
-$tpl->get_tpl('content/GeoCin/basic.html');
+$tpl->get_tpl('basic.html');
 
 
 //устанавливаем переменные

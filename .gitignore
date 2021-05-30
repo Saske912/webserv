@@ -4,5 +4,7 @@ cmake-build-debug/
 *.dSYM
 webserv
 client
+.gitignore
+cfg/*
 libft/*.a
 libft/*.o

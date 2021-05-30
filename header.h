@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -21,6 +22,7 @@
 #include "pfile.h"
 #include "wpersimm.h"
 #include "itressa.h"
+#include <dirent.h>
 
 #define QUEUE 16
 #define TVS 320000

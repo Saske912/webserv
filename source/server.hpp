@@ -43,11 +43,12 @@ public:
 
     int                        responce( Header & head );
 protected:
+    int                         autoindex(std::string const & root, Header & head, std::string name);
 	int                         request_processing(std::string const & request, \
     std::string const & def_file, route const & route, Header & head);
-    static bool                        is_file_with_extension( std::string request) ;
+    static bool                 is_file_with_extension( std::string request) ;
+	bool                        is_file( std::string request);
     int                         get_path_to_request(std::string const & request, Header & head);
-    std::string                 dirs(std::string request);
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
     bool                        is_cgi(const std::string& request, route  const & route) const;
