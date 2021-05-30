@@ -9,9 +9,37 @@ class URI {
 
     char getNextChar();
 
+    char getNextCharIf(char c);
+
     char peekNextChar();
 
     bool scheme();
+
+    bool hier_part();
+
+    bool host();
+
+    bool ip_literal();
+
+    bool reg_name();
+
+    bool ipv4address();
+
+    bool dec_octet();
+
+    bool ipv6address();
+
+    bool ipvfuture();
+
+    bool authority();
+
+    bool path_abempty();
+
+    bool path_absolute();
+
+    bool path_rootless();
+
+    bool pct_encoded();
 
     void reset(std::string::size_type pos = 0);
 
@@ -22,6 +50,8 @@ class URI {
     static bool is_sub_delim(char c);
 
     static bool is_unreserved(char c);
+
+    static int get_unhexed(char c);
 
     static std::string get_encoded(char c);
 
