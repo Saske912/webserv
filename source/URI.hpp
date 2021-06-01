@@ -13,6 +13,8 @@ class URI {
 
     char peekNextChar();
 
+    bool pchar();
+
     bool scheme();
 
     bool hier_part();

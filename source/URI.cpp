@@ -8,17 +8,35 @@ const std::string &URI::getUri() const {
     return uri;
 }
 
-//URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
-
+//   URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
+//   query         = *( pchar / "/" / "?" )
+//   fragment      = *( pchar / "/" / "?" )
+//
+// example uri:
+//    "http://example.com/some/path/?arg=val&oarg=oval#main",
+//    "http://127.0.0.1/some/path/?arg=val&oarg=oval%9f#main",
+//    "http://[vf.ads]/some/path/?arg=val&oarg=oval#main"
 bool URI::validate() {
     std::string::size_type start_pos = position;
     bool valid = true;
-    if (!scheme())
+    if ((!scheme()) ||
+        (getNextChar() != ':') ||
+        (!hier_part())) {
         valid = false;
-    else if (getNextChar() != ':')
+    }
+    if (getNextCharIf('?')) {
+        while (peekNextChar() == '/' || peekNextChar() == '?' || pchar()) {
+            getNextChar();
+        }
+    }
+    if (getNextCharIf('#')) {
+        while (peekNextChar() == '/' || peekNextChar() == '?' || pchar()) {
+            getNextChar();
+        }
+    }
+    if (position != uri.size()) {
         valid = false;
-    else if (!hier_part())
-        valid = false;
+    }
     reset(start_pos);
     return valid;
 }
@@ -41,17 +59,22 @@ char URI::peekNextChar() {
     return uri[position];
 }
 
+//   pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+bool URI::pchar() {
+    char next = peekNextChar();
+    return is_unreserved(next) || pct_encoded() ||
+           is_sub_delim(next) || next == ':' || next == '@';
+}
+
 //   scheme        = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
 // accept: http https
 bool URI::scheme() {
     for (int i = 0; i < 4; ++i) {
-        if (getNextChar() != "http"[i]) {
+        if (!getNextCharIf("http"[i])) {
             return false;
         }
     }
-    if (peekNextChar() == 's') {
-        getNextChar();
-    }
+    getNextCharIf('s');
     return true;
 }
 
@@ -60,13 +83,12 @@ bool URI::scheme() {
 //                 / path-rootless
 //                 / path-empty
 bool URI::hier_part() {
-    if (peekNextChar() == '/') {
-        getNextChar();
-        if (peekNextChar() == '/') {
-            getNextChar();
-            if (!authority() || !path_abempty()) {
+    if (getNextCharIf('/')) {
+        if (getNextCharIf('/')) {
+            if (!authority()) {
                 return false;
             }
+            path_abempty();
         }
         else if (!path_absolute()) {
             return false;
@@ -75,39 +97,48 @@ bool URI::hier_part() {
     else if (!path_rootless()) {
         return false;
     }
-    return position == uri.size() || peekNextChar() == '?' || peekNextChar() == '#';
+    return true;
 }
 
 //   authority     = [ userinfo "@" ] host [ ":" port ]
+//   userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
 bool URI::authority() {
     std::string::size_type start_pos = position;
+    bool valid = true;
     char next = getNextChar();
-    while (next != -1 && next != '@') {
+    while (next > 0 && next != '@') {
         next = getNextChar();
     }
-    position = start_pos;
+    reset(start_pos);
     if (next == '@') {
-        // userinfo
+        while (is_unreserved(peekNextChar()) || pct_encoded() ||
+               is_sub_delim(peekNextChar()) || peekNextChar() == ':') {
+            getNextChar();
+        }
+        if (!getNextCharIf('@'))
+            valid = false;
     }
-    if (!host())
-        return false;
-    start_pos = position;
-    next = getNextChar();
-    while (next != -1 && next != ':') {
-        next = getNextChar();
-    }
-    position = start_pos;
-    if (next == ':') {
+    host();
+    if (getNextCharIf(':')) {
         next = peekNextChar();
         while ('0' <= next && next <= '9') {
+            getNextChar();
+            next = peekNextChar();
+        }
+    }
+    if (!valid)
+        reset(start_pos);
+    return valid;
+}
+
+//   path-abempty  = *( "/" segment )
+bool URI::path_abempty() {
+    while (getNextCharIf('/')) {
+        while (pchar()) {
             getNextChar();
         }
     }
     return true;
-}
-
-bool URI::path_abempty() {
-    return false;
 }
 
 bool URI::path_absolute() {
@@ -135,29 +166,19 @@ bool URI::pct_encoded() {
 
 //   host          = IP-literal / IPv4address / reg-name
 bool URI::host() {
-    std::string::size_type start = position;
-    bool valid = true;
-    if (!ip_literal() && !ipv4address() && !reg_name())
-        valid = false;
-    if (!valid)
-        reset(start);
-    return valid;
+    if (!ip_literal() && !ipv4address())
+        reg_name();
+    return true;
 }
 
 //   reg-name      = *( unreserved / pct-encoded / sub-delims )
 bool URI::reg_name() {
-    std::string::size_type start = position;
-    bool valid = true;
-
     char next = peekNextChar();
     while (is_unreserved(next) || is_sub_delim(next) || pct_encoded()) {
         getNextChar();
         next = peekNextChar();
     }
-
-    if (!valid)
-        reset(start);
-    return false;
+    return true;
 }
 
 //   IPv4address   = dec-octet "." dec-octet "." dec-octet "." dec-octet
@@ -241,11 +262,13 @@ bool URI::ipvfuture() {
     }
     if (!getNextCharIf('.'))
         valid = false;
-    char next = getNextChar();
+    char next = peekNextChar();
     if (!(is_unreserved(next) || is_sub_delim(next) || next == ':'))
         valid = false;
-    while (is_unreserved(next) || is_sub_delim(next) || next == ':')
-        next = getNextChar();
+    while (is_unreserved(next) || is_sub_delim(next) || next == ':') {
+        getNextChar();
+        next = peekNextChar();
+    }
     if (!valid)
         reset(start);
     return valid;
