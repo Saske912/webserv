@@ -281,20 +281,20 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     }
     else if ((is_cgi(request, route)) and (_allow.first.empty() or head.getMethod() == _allow.second))
     {
-//        int     fd1 = dup(1);
-//        int     fd0 = dup(0);
+        int     fd1 = dup(1);
+        int     fd0 = dup(0);
 
         head.setIsCgi(true);
         std::cout << "CGI start req:" << request << std::endl;
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
             error_exit("open_error");
-        pipe(fdset);
-//        int fd;
-//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-//            error_exit("open error");
+//        pipe(fdset);
+        int fd;
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+            error_exit("open error");
         if ((pid = fork()) == 0)
         {
-            close(fdset[0]);
+//            close(fdset[0]);
             arg = (char **)ft_calloc(4, sizeof(char **));
             arg[0] = strdup("../cgi.sh");
 //            arg[0] = strdup("cgi_tester");
@@ -307,20 +307,29 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            char  buf[150];
 //            getcwd(buf, 150);
 //            std::cout << "getcwd(): " << buf  << std::endl;
-            dup2(fdset[1], 1);
-//            dup2(fd, 1);
+//            dup2(fdset[1], 1);
+            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
         else if (pid == -1)
             error_exit("fork_error");
-        close(fdset[1]);
+//        close(fdset[1]);
         int stat = 1;
-//        waitpid(pid, &stat, 0);
+        waitpid(pid, &stat, 0);
 //        chdir(getenv("OLDPWD"));
         std::cout << "CGI ret fd"  << std::endl;
-//        return fd;
-        return fdset[0];
+        lseek(fd, 0, 0);
+//        close(fd);
+        dup2(fd1, 1);
+//        if ((fd = open("tmp", O_RDONLY)) < 0)
+//            error_exit("open error");
+//        char buf[501];
+//        ssize_t cnt = read(fd, buf, 500);
+//        buf[500] = 0;
+//        std::cout << "buf: " << buf    << std::endl;
+        return fd;
+//        return fdset[0];
 //        dup2(fd1, 1);
 //        dup2(fd0, 0);
     }
