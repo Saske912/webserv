@@ -128,7 +128,8 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
-	if ( is_file( request ) or head.getMethod() == "PUT")
+                                    std::cout << "reqest(requst_processing): " << request  << std::endl;
+	if ( is_file_with_extension( request ) or head.getMethod() == "PUT")
 		return targeting(head, request, route);
 	else
     {
@@ -284,10 +285,13 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //        int     fd0 = dup(0);
 
         head.setIsCgi(true);
-        std::cout << "CGI start"  << std::endl;
+        std::cout << "CGI start req:" << request << std::endl;
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
             error_exit("open_error");
         pipe(fdset);
+//        int fd;
+//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+//            error_exit("open error");
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
@@ -304,6 +308,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            getcwd(buf, 150);
 //            std::cout << "getcwd(): " << buf  << std::endl;
             dup2(fdset[1], 1);
+//            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
@@ -314,6 +319,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //        waitpid(pid, &stat, 0);
 //        chdir(getenv("OLDPWD"));
         std::cout << "CGI ret fd"  << std::endl;
+//        return fd;
         return fdset[0];
 //        dup2(fd1, 1);
 //        dup2(fd0, 0);

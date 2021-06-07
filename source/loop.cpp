@@ -475,23 +475,25 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	char line[32769];
 	char *str;
 	int z;
-	int ran = rand() % 32768;
-		z = read(fd, line, 32768);
-		if (z == 0)
-		{
-			std::cerr << "Z: " << z << std::endl;
-			send(it->fd, "0\r\n\r\n", 5, 0);
-			close(fd);
-			it->head.eraseStruct();
-			resetIt(it);
-			std::cout << std::endl << "----------REQUEST----------" << std::endl;
-			return ;
-		}
-		line[z] = 0;
-		str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
-		send(it->fd, str, strlen(str), 0);
-		send(it->fd, line, z, 0);
-		send(it->fd, "\r\n", 2, 0);
+//	int ran = rand() % 32768;
+
+    z = read(fd, line, 32768);
+    std::cerr << "z: " << z  << std::endl;
+    if (z == 0)
+    {
+        std::cerr << "Z: " << z << std::endl;
+        send(it->fd, "0\r\n\r\n", 5, 0);
+        close(fd);
+        it->head.eraseStruct();
+        resetIt(it);
+        std::cout << std::endl << "----------REQUEST----------" << std::endl;
+        return ;
+    }
+    line[z] = 0;
+    str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
+    send(it->fd, str, strlen(str), 0);
+    send(it->fd, line, z, 0);
+    send(it->fd, "\r\n", 2, 0);
 }
 
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
