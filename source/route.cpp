@@ -50,7 +50,8 @@ std::string route::swap_path( const std::string &request ) {
         tmp = "/";
     if (*_root.rbegin() != '/' and *tmp.begin() != '/')
         _root += '/';
-    return _root += tmp;
+//    return _root += tmp;
+    return tmp;
 }
 
 void route::set_default_page( const std::string &page ) {
