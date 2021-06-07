@@ -201,7 +201,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		t.rd = recv_next_line((*it).fd, &line);
 	if (t.rd == 0)
 	{
-		std::cout << "Minus svyaz'" << std::endl;
+		std::cerr << "t.rd = 0" << std::endl;
+        close(it->fd);
 		it->head.eraseStruct();
 		it = set.erase(it);
 		return 1;
@@ -268,6 +269,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		free(line);
 	if (t.rd == 0)
 	{
+        std::cerr << "t.rd = 0" << std::endl;
+        close(it->fd);
 		it->head.eraseStruct();
 		it = set.erase(it);
 		return 1;
@@ -316,6 +319,8 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             }
             if (t.rd == 0)
             {
+                std::cerr << "t.rd = 0" << std::endl;
+                close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
 				if (line)
@@ -395,6 +400,7 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 	send((*it).fd, "\r\n", 2, 0);
 	close(it->fd);
 	it->head.eraseStruct();
+    std::cerr << "noBodyResponse" << std::endl;
 	it = set.erase(it);
 	std::cout << std::endl << "----------REQUEST----------" << std::endl;
 }
