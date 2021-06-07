@@ -427,7 +427,7 @@ void sendHeader(std::list<t_write>::iterator &it)
 	send( (*it).fd, str, strlen(str), 0);
 }
 
-void parse_cgi(std::list<t_write>::iterator &it, char *line)
+int     parse_cgi(std::list<t_write>::iterator &it, char *line)
 {
 	char *tmp;
 
@@ -438,6 +438,9 @@ void parse_cgi(std::list<t_write>::iterator &it, char *line)
 	}
 	else if ((tmp = strstr(line, "Content-Type: ")))
 		it->head.setContent_Type(std::string(tmp) + "\n");
+	else
+        return 1;
+    return 0;
 }
 
 std::string getBaseSixteen(unsigned int n)
@@ -478,7 +481,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 //	int ran = rand() % 32768;
 
     z = read(fd, line, 32768);
-    std::cerr << "z: " << z  << std::endl;
+    std::cerr << "z: " << z  << std::endl;\
     if (z == 0)
     {
         std::cerr << "Z: " << z << std::endl;
@@ -490,6 +493,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
         return ;
     }
     line[z] = 0;
+    std::cerr << "line: " << line  << std::endl;
     str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
     send(it->fd, str, strlen(str), 0);
     send(it->fd, line, z, 0);
@@ -514,7 +518,12 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
             line = nullptr;
             break ;
         }
-		parse_cgi(it, line);
+		int ret = parse_cgi(it, line);
+		if (ret == 1)
+        {
+            lseek(fd, ((int)strlen(line) + 1) * (-1) ,SEEK_CUR);
+            break ;
+        }
 		size += strlen(line) + 1;
 		free(line);
 		line = nullptr;
