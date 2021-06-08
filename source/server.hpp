@@ -43,11 +43,11 @@ public:
 
     int                        responce( Header & head );
 protected:
-    int                         autoindex(std::string const & root, Header & head, std::string name);
+    int                         autoindex(std::string const & root, Header & head, const std::string& name);
 	int                         request_processing(std::string const & request, \
     std::string const & def_file, route const & route, Header & head);
     static bool                 is_file_with_extension( std::string request) ;
-	bool                        is_file( std::string request);
+	bool                        is_file( const std::string& request);
     int                         get_path_to_request(std::string const & request, Header & head);
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
@@ -58,7 +58,7 @@ protected:
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
-    bool                        is_allow(std::string const & request, std::string const & method, route r) const;
+    bool                        is_allow(std::string const & request, std::string const & method, const route& r) const;
 private:
     std::string                 _host;
     unsigned int                _port;
