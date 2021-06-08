@@ -73,6 +73,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
     while (it != _routs.end())
     {
         chdir(it->get_root().c_str());
+        std::cout << "request: " << request  << std::endl;
         if (!(*it).check_name(request))
         {
             if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
@@ -131,29 +132,32 @@ int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
                                     std::cout << "reqest(requst_processing): " << request  << std::endl;
 	if ( is_file_with_extension( request ) or head.getMethod() == "PUT")
-		return targeting(head, request, route);
+    {
+        return targeting(head, request, route);
+    }
 	else
     {
-	    if (def_file.empty() and route.get_autoindex())
+        if (def_file.empty() and route.get_autoindex())
         {
             return autoindex(route.get_root(), head, route.get_name());
         }
-//	    if (*request.rbegin() != '/' and *def_file.begin() != '/')
-//            return targeting(head, request + '/' + def_file, route);
-//        return targeting(head, request + def_file, route);
-        return targeting(head, def_file, route);
+        else if (request == "/")
+            return targeting(head, def_file, route);
+        else if (*request.rbegin() != '/' and *def_file.begin() != '/')
+            return targeting(head, request + '/' + def_file, route);
     }
+    return targeting(head, request + def_file, route);
 }
 
 bool server::is_file_with_extension( std::string request )
 {
-    int ret = static_cast<int>(request.rfind('/'));
-    if (ret == -1)
-        return false;
-    else
+//    int ret = static_cast<int>(request.rfind('/'));
+//    if (ret == -1)
+//        return false;
+//    else
     {
         std::string::reverse_iterator it = request.rbegin();
-        while(*it != '/')
+        while(it != request.rend() and *it != '/')
         {
             if (*it == '.')
                 return true;
@@ -291,10 +295,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0) {
             error_exit( "open_error" );
         }
-        pipe(fdset);
-//        int fd;
-//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-//            error_exit("open error");
+//        pipe(fdset);
+        int fd;
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+            error_exit("open error");
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
@@ -310,8 +314,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //            char  buf[150];
 //            getcwd(buf, 150);
 //            std::cout << "getcwd(): " << buf  << std::endl;
-            dup2(fdset[1], 1);
-//            dup2(fd, 1);
+//            dup2(fdset[1], 1);
+            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
@@ -320,16 +324,16 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else
             close(fdset[1]);
         int stat = 1;
-//        waitpid(pid, &stat, 0);
+        waitpid(pid, &stat, 0);
 //        chdir(getenv("OLDPWD"));
         std::cout << "CGI ret fd"  << std::endl;
-//        lseek(fd, 0, 0);
+        lseek(fd, 0, 0);
 //        close(fd);
 //        dup2(fd1, 1);
 //        if ((fd = open("tmp", O_RDONLY)) < 0)
 //            error_exit("open error");
-//        return fd;
-        return fdset[0];
+        return fd;
+//        return fdset[0];
 //        dup2(fd1, 1);
 //        dup2(fd0, 0);
     }
@@ -338,6 +342,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         struct ::stat st;
         ::stat(request.c_str(), &st);
 //        chdir(route.get_root().c_str());
+        std::cout << "debug here"  << std::endl;
         if (st.st_mode & S_IFDIR)
         {
             std::cout << "is_dir(GET file)"  << std::endl;
