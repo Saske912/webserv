@@ -1,5 +1,6 @@
 #include "../wpersimm.h"
 #include "header.hpp"
+#include "itressa.h"
 
 std::string const Header::Last_Modified = "Last_Modified: " + get_current_date();
 
@@ -324,7 +325,7 @@ void Header::addEnv(const char *str)
 	int i = 0;
 	char *tmp;
 
-	tmp = ft_substr(str, 0, strchr(str, '=') - str);
+	tmp = strdup(std::string(str, 0, strchr(str, '=') - str).c_str());
 	while (Env[i])
 	{
 		if (strstr(Env[i], tmp))

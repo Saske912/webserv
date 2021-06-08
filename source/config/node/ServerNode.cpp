@@ -1,5 +1,6 @@
 #include "ServerNode.hpp"
 #include "Validator.hpp"
+#include "Number.hpp"
 
 const ContextInfo ServerNode::validParamNames[] = {
     {"host",                 1,  Validator::validateHost},
@@ -42,7 +43,8 @@ bool ServerNode::isValid(ParseResult &result) {
             result.failure(ErrorNode::getValueError(it->name, "Server parameters must not duplicate."));
         }
         else if (current == SP_ERROR_PAGE) {
-            int value = ft_atoi(it->values.front().value.c_str());
+            int value;
+            strtot(it->values.front().value.c_str(), value);
             if (errorPages.end() != std::find(errorPages.begin(), errorPages.end(), value)) {
                 result.failure(ErrorNode::getValueError(it->name, "Duplicate error page code"));
             }

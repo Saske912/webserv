@@ -47,4 +47,8 @@ add_executable(webserv
         source/header.cpp
         source/header.hpp
         source/trim.cpp
-        source/template.hpp)
+        source/template.hpp
+        source/ft_doublecpy.cpp
+        source/ft_doublefree.cpp
+        source/get_next_line.cpp
+        source/get_next_line_utils.cpp)

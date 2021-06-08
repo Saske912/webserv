@@ -208,7 +208,7 @@ std::string server::get_error(int err, std::map<int, std::string> ers) {
 int server::exception_processing( int except, Header &head ) {
     int     pid;
     int     stat;
-    char    **arg;
+    char    *arg[4];
     int     fds[2];
     std::string concat;
     std::string to_head;
@@ -227,11 +227,11 @@ int server::exception_processing( int except, Header &head ) {
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
-            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
             arg[0] = strdup("content/sed.sh");
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
             arg[2] = strdup("content/error_template.html");
+            arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
             execve(arg[0], arg, head.getEnv());
@@ -251,7 +251,7 @@ int server::exception_processing( int except, Header &head ) {
 int server::targeting( Header &head, std::string request, route const & route ) {
     int     fd;
     int     pid;
-    char    **arg;
+    char    *arg[3];
     int     fdset[2];
     int     tmp;
 
@@ -302,10 +302,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
-            arg = (char **)ft_calloc(4, sizeof(char **));
             arg[0] = strdup("../cgi.sh");
-//            arg[0] = strdup("cgi_tester");
             arg[1] =  strdup(const_cast<char *>(route.get_cgi().second.c_str()));
+            arg[2] = NULL;
+//            arg[0] = strdup("cgi_tester");
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
 //            arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);

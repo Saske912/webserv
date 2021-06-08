@@ -2,6 +2,7 @@
 // Created by Pamula File on 5/8/21.
 //
 #include "../header.h"
+#include "Number.hpp"
 
 int		sorter(t_write a, t_write b)
 {
@@ -213,10 +214,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		if (it->head.getFd() != 1)
 		{
 			fstat(it->head.getFd(), &stat);
-			buf = ft_itoa(stat.st_size + 1);
-			it->head.addEnv((char *)("CONTENT_LENGTH=" + std::string(buf)).c_str());
-			free(buf);
-			buf = 0;
+			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
 			count = 0;
 		}
@@ -306,7 +304,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             if (!it->reminder.empty())
             {
                 buf = line;
-                line = ft_strjoin(it->reminder.c_str(), line);
+                line = strdup((it->reminder + line).c_str());
                 free(buf);
                 buf = 0;
                 it->reminder.erase();
@@ -323,8 +321,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
                 close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
-				if (line)
-					free(line);
+                free(line);
                 return 1;
             }
             if (!line[0]) {
@@ -340,11 +337,10 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             if (line)
                 std::cout << line  << std::endl;
             if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
-					&& it->head.getMethod() != "PUT")
+                    && it->head.getMethod() != "PUT")
                 (*it).flag = true;
         }
-		if (line)
-			free(line);
+        free(line);
         line = 0;
 	}
 	return 0;
@@ -570,7 +566,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	std::string string2;
 	struct stat stat;
 	char *str;
-	char *tmp;
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
@@ -603,9 +598,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
         send( (*it).fd, str, strlen(str), 0);
 		fstat(fd, &stat);
 		string = "Content-Length: ";
-		tmp = ft_itoa(stat.st_size);
-		string += std::string(tmp) + "\r\n";
-		free(tmp);
+		string += ttostr(stat.st_size) + "\r\n";
 		str = (char *)string.c_str();
 		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
@@ -670,9 +663,8 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
 {
     t_client            cli;
     std::list<t_write>       set;
-	std::list<t_write>::iterator it;
-	char *tmp[4];
-    (void)conf;
+    std::list<t_write>::iterator it;
+    std::string ipstr;
     while (true)
     {
         init_fd_sets(t);
@@ -680,14 +672,14 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
         it = set.begin();
         while ( it != set.end())
         {
-			if (!it->head.getFdr())
-				FD_SET((*it).fd, &t.read);
-			if ((*it).flag)
-           		 FD_SET((*it).fd, &t.write);             //if we have data to send
+            if (!it->head.getFdr())
+                FD_SET((*it).fd, &t.read);
+            if ((*it).flag)
+                FD_SET((*it).fd, &t.write);             //if we have data to send
             it++;
         }
-		if (Select(set, t, tv, serv))
-			continue ;
+        if (Select(set, t, tv, serv))
+            continue ;
         if ( FD_ISSET(serv.host, &t.read))
         {
             if (( cli.client = accept( serv.host, reinterpret_cast<sockaddr *>(&cli.ad), &cli.adlen)) == -1)
@@ -695,18 +687,14 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-			tmp[0] = ft_itoa(cli.ad.sin_addr.s_addr & 255);
-			tmp[1] = ft_itoa(cli.ad.sin_addr.s_addr >> 8 & 255);
-			tmp[2] = ft_itoa(cli.ad.sin_addr.s_addr >> 16 & 255);
-			tmp[3] = ft_itoa(cli.ad.sin_addr.s_addr >> 24);
+            ipstr = ttostr(cli.ad.sin_addr.s_addr & 255) + '.' +
+                    ttostr(cli.ad.sin_addr.s_addr >> 8 & 255) + '.' +
+                    ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +
+                    ttostr(cli.ad.sin_addr.s_addr >> 24);
 
-            t_write a = {Header(), std::string(tmp[0]) + "." \
-			+ std::string(tmp[1]) + "." + std::string(tmp[2]) + "." \
-			+ std::string(tmp[3]), std::string(), cli.client, 0, 0, false, false, false, false};
-			for (int i = 0 ; i < 4 ; i++)
-				free(tmp[i]);
-			set.push_back(a);
+            t_write a = {Header(), ipstr, std::string(), cli.client, 0, 0, false, false, false, false};
+            set.push_back(a);
         }
-		communication_with_clients(set, t, conf);
+        communication_with_clients(set, t, conf);
     }
 }

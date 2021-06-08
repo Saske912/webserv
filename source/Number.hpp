@@ -2,6 +2,7 @@
 #define NUMBER_HPP
 
 #include <iostream>
+#include <sstream>
 
 template<class T>
 class NumericLimits {
@@ -42,6 +43,14 @@ bool strtot(const char *str, Type &value) {
 template<class Type>
 bool strtot(const std::string &str, Type &value) {
     return strtot<Type>(str.c_str(), value);
+}
+
+
+template<class Type>
+std::string ttostr(Type value) {
+    std::stringstream ss;
+    ss << value;
+    return ss.str();
 }
 
 #endif
