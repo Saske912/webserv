@@ -59,6 +59,10 @@ class URI {
 
     static char get_decoded(const std::string &c);
 
+    static bool is_symbol_in_string(const std::string &symbols, char c);
+
+    static std::string::const_iterator get_symbol_from_string(const std::string &symbols, char c);
+
 public:
 
     explicit URI(const std::string &uri);

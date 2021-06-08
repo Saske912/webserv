@@ -282,31 +282,36 @@ bool URI::is_reserved(char c) {
     return is_gen_delim(c) || is_sub_delim(c);
 }
 
+bool URI::is_symbol_in_string(const std::string &symbols, char c) {
+    return get_symbol_from_string(symbols, c) != symbols.end();
+}
+
+std::string::const_iterator URI::get_symbol_from_string(const std::string &symbols, char c) {
+    return std::find(symbols.begin(), symbols.end(), c);
+}
+
 bool URI::is_gen_delim(char c) {
-    const char symbols[] = ":/?#[]@";
-    return std::find(std::begin(symbols), std::end(symbols), c) != std::end(symbols);
+    return is_symbol_in_string(":/?#[]@", c);
 }
 
 bool URI::is_sub_delim(char c) {
-    const char symbols[] = "!$&'()*+,;=";
-    return std::find(std::begin(symbols), std::end(symbols), c) != std::end(symbols);
+    return is_symbol_in_string("!$&'()*+,;=", c);
 }
 
 bool URI::is_unreserved(char c) {
-    const char symbols[] = "-._~";
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
            ('0' <= c && c <= '9') ||
-           std::find(std::begin(symbols), std::end(symbols), c) != std::end(symbols);
+            is_symbol_in_string(":/?#[]@", c);
 }
 
 int URI::get_unhexed(char c) {
-    const char symbols[] = "0123456789ABCDEF";
+    const std::string symbols("0123456789ABCDEF");
     if ('a' <= c && c <= 'f')
         c += 'A' - 'a';
-    const char *pos = std::find(std::begin(symbols), std::end(symbols), c);
-    if (pos == std::end(symbols))
+    std::string::const_iterator pos = get_symbol_from_string(symbols, c);
+    if (pos == symbols.end())
         return -1;
-    return static_cast<int>(pos - std::begin(symbols));
+    return static_cast<int>(pos - symbols.begin());
 }
 
 std::string URI::get_encoded(char c) {

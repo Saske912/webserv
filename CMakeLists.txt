@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 98)
 
 include_directories(webserv source source/config .)
 
-add_link_options(-L../libft -Llibft -lft)
+#add_link_options(-stdlib=libstdc++ -std=c++98 -L/usr/lib)
 
 add_compile_options(-g -Wall -Wextra)
 

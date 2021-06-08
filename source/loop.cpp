@@ -65,7 +65,7 @@ static void parse_request(char *line, Header &head)
 	{
         tmp += strlen("Host: ");
         tmp2 = strchr(tmp, ':');
-        if (head.getHost().empty() and tmp2 != nullptr )
+        if (head.getHost().empty() and tmp2 != NULL )
         {
             head.setHost(std::string(tmp, 0, tmp2 - tmp));
         }
@@ -517,7 +517,7 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
         {
             size += 2;
             free(line);
-            line = nullptr;
+            line = NULL;
             break ;
         }
 		int ret = parse_cgi(it, line);
@@ -528,7 +528,7 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
         }
 		size += strlen(line) + 1;
 		free(line);
-		line = nullptr;
+		line = NULL;
 	}
 	if (gnl == 0)
     {

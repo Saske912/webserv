@@ -16,7 +16,14 @@ bool Validator::isHost(const std::string &) {
 }
 
 bool Validator::isNumber(const std::string &value) {
-    return std::all_of(value.begin(), value.end(), IsNumberPredicate());
+    IsNumberPredicate isDigit;
+    for (std::string::const_iterator it = value.begin();
+        it != value.end(); ++it) {
+        if (!isDigit(*it)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Validator::isMemory(const std::string &value) {

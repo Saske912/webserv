@@ -317,7 +317,7 @@ char *Header::getEnvValue(char const *str)
 		}
 		++i;
 	}
-	return nullptr;
+	return NULL;
 }
 
 void Header::addEnv(const char *str)
