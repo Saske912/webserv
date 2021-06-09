@@ -51,7 +51,7 @@ protected:
     int                         get_path_to_request(std::string const & request, Header & head);
     int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
-    bool                        is_cgi(const std::string& request, route  const & route) const;
+    bool                        is_cgi(const std::string& request, route  const & route, std::string const & method, bool *flag  ) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
     bool                        check_methods(std::string str, std::list<std::string> arr) const;

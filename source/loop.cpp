@@ -195,9 +195,13 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	struct stat stat;
 	static int count = 0;
 
-//	std::cout << "count: " << count << std::endl;
 	if (it->head.getFd() == 1)
-		it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
+    {
+        it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
+        //
+        //we here after PUT or POST(1th part) server response
+        //
+    }
 	if (it->count == 0)
 		t.rd = recv_next_line((*it).fd, &line);
 	if (t.rd == 0)

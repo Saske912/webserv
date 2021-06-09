@@ -73,7 +73,6 @@ int server::get_path_to_request( const std::string &request, Header & head) {
     while (it != _routs.end())
     {
         chdir(it->get_root().c_str());
-        std::cout << "request: " << request  << std::endl;
         if (!(*it).check_name(request))
         {
             if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
@@ -207,8 +206,8 @@ std::string server::get_error(int err, std::map<int, std::string> ers) {
 
 int server::exception_processing( int except, Header &head ) {
     int     pid;
-    int     stat;
-    char    **arg;
+    int     stat = 0;
+    char    *arg[4];
     int     fds[2];
     std::string concat;
     std::string to_head;
@@ -227,11 +226,12 @@ int server::exception_processing( int except, Header &head ) {
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
-            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
+//            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
             arg[0] = strdup("content/sed.sh");
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
             arg[2] = strdup("content/error_template.html");
+            arg[3] = nullptr;
             close(fds[0]);
             dup2(fds[1], 1);
             execve(arg[0], arg, head.getEnv());
@@ -254,6 +254,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     char    *arg[3];
     int     fdset[2];
     int     tmp;
+    bool    flag = false;
 
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
@@ -285,7 +286,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else
             head.setResponse("HTTP/1.1 " + part);
     }
-    else if ((is_cgi(request, route)) and (_allow.first.empty() or head.getMethod() == _allow.second))
+    else if ((is_cgi(request, route, head.getMethod(), &flag)))
     {
 //        int     fd1 = dup(1);
 //        int     fd0 = dup(0);
@@ -301,15 +302,18 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(fdset[0]);
 //            arg = (char **)ft_calloc(4, sizeof(char **));
-            arg[0] = strdup("../cgi.sh");
-//            arg[0] = strdup("cgi_tester");
-            arg[1] =  strdup(const_cast<char *>(route.get_cgi().second.c_str()));
-            arg[2] = NULL;
+//            arg[0] = strdup("../cgi.sh");
+            arg[0] = strdup("../cgi_tester");
+//            if (!flag)
+//                arg[1] =  strdup(const_cast<char *>(route.get_cgi().second.c_str()));
+//            else
+//                arg[1] =  strdup(const_cast<char *>(_cgi_path.c_str()));
+//            arg[2] = NULL;
 //            arg[0] = strdup("cgi_tester");
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
 //            arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);
-            dup2(fdset[1], 1);
+//            dup2(fdset[1], 1);
 //            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
@@ -352,8 +356,15 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     return fd;
 }
 
-bool server::is_cgi( const std::string& request, route  const & route ) const {
-    return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
+bool server::is_cgi( const std::string& request, route  const & route, std::string const & method, bool *flag ) const {
+    std::string ext = request.substr(request.rfind('.') + 1, request.length());
+    bool ret = ext == route.get_cgi().first;
+    if (!ret and _allow.first == ext and _allow.second == method)
+    {
+        *flag = true;
+        return true;
+    }
+    return ret;
 }
 
 void server::set_default_pages( ) {
@@ -443,7 +454,7 @@ void server::set_list_of_methods( ) {
 }
 
 std::string server::set_location(route & route, Header & head) {
-    if ( route.get_default_page().empty() or is_file( head.getRequest( )))
+    if ( route.get_default_page().empty() or is_file_with_extension( head.getRequest( )))
         return head.getRequest();
     else
     {
@@ -476,7 +487,6 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     if (!_allow.first.empty() and !_allow.second.empty() and method == _allow.second)
     {
         std::string tmp = r.get_default_page();
-        std::cerr << "allowed "  << std::endl;
         if ( is_file_with_extension( request ))
         {
             if (std::string(request, request.rfind('.') + 1, request.length() - request.rfind('.')) == _allow.first)
