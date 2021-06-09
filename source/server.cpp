@@ -4,7 +4,6 @@
 
 #include "../header.h"
 #include "server.hpp"
-#include "Number.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
     _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
@@ -179,14 +178,14 @@ int    server::responce( Header & head )
     request = head.getRequest();
     server_name += *_server_names.begin();
     head.addEnv(const_cast<char *>(server_name.c_str()));
-    server_port += ttostr(static_cast<int>(_port));
+    server_port += std::to_string(static_cast<int>(_port));
     head.addEnv(const_cast<char *>(server_port.c_str()));
     head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
     if (head.getHost() == "400" || head.getHost().empty())
         return exception_processing(400, head);
     if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
         return exception_processing(501, head);
-    head.setHost("Host: " + _host + ":" + ttostr(static_cast<int>(_port)) + '\n');
+    head.setHost("Host: " + _host + ":" + std::to_string(static_cast<int>(_port)) + '\n');
     int n = (int)request.find('?');
     if (n > 0)
     {
@@ -209,7 +208,7 @@ std::string server::get_error(int err, std::map<int, std::string> ers) {
 int server::exception_processing( int except, Header &head ) {
     int     pid;
     int     stat;
-    char    *arg[4];
+    char    **arg;
     int     fds[2];
     std::string concat;
     std::string to_head;
@@ -217,7 +216,7 @@ int server::exception_processing( int except, Header &head ) {
     try
     {
         to_head = get_error(except, _error_pages);
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except) + " "\
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(std::to_string(except)) + " "\
         + get_error(except, _default_error_pages) + "\r\n").c_str()));
         return open(to_head.c_str(), O_RDONLY);
     }
@@ -228,11 +227,11 @@ int server::exception_processing( int except, Header &head ) {
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
+            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
             arg[0] = strdup("content/sed.sh");
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
             arg[2] = strdup("content/error_template.html");
-            arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
             execve(arg[0], arg, head.getEnv());
@@ -243,7 +242,7 @@ int server::exception_processing( int except, Header &head ) {
             waitpid(pid, &stat, 0);
         if (stat == 1)
             error_exit("system error in execve");
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except)\
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(std::to_string(except))\
         + " " + to_head + "\r\n").c_str()));
         return fds[0];
     }
@@ -292,31 +291,26 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //        int     fd0 = dup(0);
 
         head.setIsCgi(true);
-        std::cout << "CGI start req:" << request << std::endl;
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0) {
             error_exit( "open_error" );
         }
-//        pipe(fdset);
-        int fd;
-        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-            error_exit("open error");
+        pipe(fdset);
+//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+//            error_exit("open error");
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
+//            arg = (char **)ft_calloc(4, sizeof(char **));
             arg[0] = strdup("../cgi.sh");
+//            arg[0] = strdup("cgi_tester");
             arg[1] =  strdup(const_cast<char *>(route.get_cgi().second.c_str()));
             arg[2] = NULL;
 //            arg[0] = strdup("cgi_tester");
 //            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
 //            arg[1] = strdup(const_cast<char *>(request.c_str()));
             dup2(tmp, 0);
-//            std::cout << "root: " << route.get_root()  << std::endl;
-//            chdir(route.get_root().c_str());
-//            char  buf[150];
-//            getcwd(buf, 150);
-//            std::cout << "getcwd(): " << buf  << std::endl;
-//            dup2(fdset[1], 1);
-            dup2(fd, 1);
+            dup2(fdset[1], 1);
+//            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
@@ -324,17 +318,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             error_exit("fork_error");
         else
             close(fdset[1]);
-        int stat = 1;
-        waitpid(pid, &stat, 0);
-//        chdir(getenv("OLDPWD"));
-        std::cout << "CGI ret fd"  << std::endl;
-        lseek(fd, 0, 0);
+//        waitpid(pid, &stat, 0);
+//        lseek(fd, 0, 0);
 //        close(fd);
 //        dup2(fd1, 1);
-//        if ((fd = open("tmp", O_RDONLY)) < 0)
-//            error_exit("open error");
-        return fd;
-//        return fdset[0];
+//        return fd;
+        return fdset[0];
 //        dup2(fd1, 1);
 //        dup2(fd0, 0);
     }
@@ -343,10 +332,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         struct ::stat st;
         ::stat(request.c_str(), &st);
 //        chdir(route.get_root().c_str());
-        std::cout << "debug here"  << std::endl;
         if (st.st_mode & S_IFDIR)
         {
-            std::cout << "is_dir(GET file)"  << std::endl;
             return exception_processing(404, head);
         }
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
