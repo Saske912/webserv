@@ -72,9 +72,9 @@ int server::get_path_to_request( const std::string &request, Header & head) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        chdir(it->get_root().c_str());
         if (!(*it).check_name(request))
         {
+            chdir(it->get_root().c_str());
             if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
             {
                 head.setAllow(get_allow(it->get_http_methods()));
@@ -263,9 +263,9 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         struct ::stat st;
         std::string part;
         ::stat(request.c_str(), &st);
-        if (st.st_mode & S_IFDIR)
+        if ((fd = open(request.c_str(), O_RDONLY)) > 0 and st.st_mode & S_IFDIR)
         {
-            std::cout << "is_dir"  << std::endl;
+            std::cout << "is_dir" << std::endl;
             return exception_processing(404, head);
         }
         else if (errno == ENOENT)
