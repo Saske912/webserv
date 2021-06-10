@@ -266,12 +266,14 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((fd = open(request.c_str(), O_RDONLY)) > 0 and st.st_mode & S_IFDIR)
         {
             std::cout << "is_dir" << std::endl;
+            close(fd);
             return exception_processing(404, head);
         }
         else if (errno == ENOENT)
             part = "201 Created\r\n";
         else
             part = "204 No Content\r\n";
+        close(fd);
         if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
         {
             if (errno == EACCES) {
