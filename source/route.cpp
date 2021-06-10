@@ -36,9 +36,6 @@ route &route::operator=( route const &src ) {
 }
 
 bool route::check_name( std::string request ) {
-//    std::string tmp = request.substr(0, request.find('/', 2));
-//    tmp = tmp.empty() ? request : tmp;
-//    return (strcmp(trim(_name, "/").c_str(), trim(tmp, "/").c_str()));
     return (strncmp(trim(_name, "/").c_str(), trim(request, "/").c_str(),trim(_name, "/").length()));
 }
 
@@ -50,7 +47,6 @@ std::string route::swap_path( const std::string &request ) {
         tmp = "/";
     if (*_root.rbegin() != '/' and *tmp.begin() != '/')
         _root += '/';
-//    return _root += tmp;
     return tmp;
 }
 
