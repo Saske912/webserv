@@ -504,10 +504,11 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 //	int ran = rand() % 32768;
 
     z = read(fd, line, 32768);
-    std::cerr << "z: " << z  << std::endl;\
+    std::cerr << "z: " << z  << std::endl;
     if (z == 0)
     {
-		//if (waitpid())
+		if (waitpid(it->head.getPid(), 0, WNOHANG) == 0)
+			return ;
         std::cerr << "Z: " << z << std::endl;
         send(it->fd, "0\r\n\r\n", 5, 0);
         close(fd);
