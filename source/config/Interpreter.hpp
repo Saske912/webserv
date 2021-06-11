@@ -24,29 +24,22 @@ public:
     };
 
     explicit Interpreter(config &config_);
-
     Interpreter(const Interpreter &other);
-
     ~Interpreter();
 
     void visit(ANode *node);
-
     void visit(IdentifierNode *node);
-
     void visit(ParamNode *node);
-
     route visit(RouteNode *node);
-
     void visit(ServerNode *node);
-
     void visit(ConfigNode *node);
-
     void add_error_page(server &serv, const std::list<Token> &values);
-
-    void set_client_max_body_size(server &serv, const std::string &value);
+    template<class T>
+    void set_client_max_body_size(T &serv, const std::string &value);
 
 private:
     config &conf;
+    server *current_server;
 
 };
 

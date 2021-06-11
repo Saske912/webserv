@@ -1,16 +1,17 @@
 #include "Interpreter.hpp"
 #include "Number.hpp"
 
-Interpreter::Interpreter(config &config_) : conf(config_) {
+Interpreter::Interpreter(config &config_) : conf(config_), current_server() {
 
 }
 
-Interpreter::Interpreter(const Interpreter &other) : conf(other.conf) {
+Interpreter::Interpreter(const Interpreter &other) : conf(other.conf), current_server(other.current_server) {
 
 }
 
 Interpreter &Interpreter::operator=(const Interpreter &other) {
     this->conf = other.conf;
+    current_server = other.current_server;
     return *this;
 }
 
@@ -53,6 +54,7 @@ route Interpreter::visit(RouteNode *node) {
     std::list<std::string> index;
     std::string            upload_location;
     route::CgiType         cgi;
+    std::string            client_max_body_size;
 
     for (RouteNode::ParamValuesType::iterator it = node->values.begin();
          it != node->values.end(); ++it) {
@@ -85,6 +87,9 @@ route Interpreter::visit(RouteNode *node) {
             ++pit;
             cgi.second = pit->value;
         }
+        else if (it->name.value == "client_max_body_size") {
+            client_max_body_size = it->values.front().value;
+        }
         else {
             // this error is handled by parser, should not be accessible.
             std::cerr << "Unknown Route param: " << *it << std::endl;
@@ -95,6 +100,12 @@ route Interpreter::visit(RouteNode *node) {
                          index.empty() ? std::string() : index.front());
     route_.set_upload_location(upload_location);
     route_.set_cgi(cgi);
+    if (client_max_body_size.empty()) {
+        route_.set_client_body_size(current_server->get_client_body_size());
+    }
+    else {
+        set_client_max_body_size(route_, client_max_body_size);
+    }
     return route_;
 }
 
@@ -139,11 +150,13 @@ void Interpreter::visit(ServerNode *node) {
             std::cerr << "Unknown Server param: " << *it << std::endl;
         }
     }
+    current_server = &serv;
     for (ServerNode::RouteValuesType::iterator it = node->routes.begin();
          it != node->routes.end(); ++it) {
         RouteNode routeNode = *it;
         serv.add_route(visit(&routeNode));
     }
+    current_server = NULL;
     conf.add_server(serv);
 }
 
@@ -164,7 +177,8 @@ void Interpreter::add_error_page(server &serv, const std::list<Token> &values) {
     serv.add_error_page(code, filename);
 }
 
-void Interpreter::set_client_max_body_size(server &serv, const std::string &value) {
+template<class T>
+void Interpreter::set_client_max_body_size(T &serv, const std::string &value) {
     long client_body_size;
     strtot(value, client_body_size);
     char last = value[value.length() - 1];
