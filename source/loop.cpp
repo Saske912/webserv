@@ -586,7 +586,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		it->head.setFdr(serv.responce((*it).head));
 		fd = it->head.getFdr(); 
 		std::cout << "----------RESPONSE----------" << std::endl;
-
+		chdir(it->head.getEnvValue("PWD="));
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
 			std::cout << "--------CGI--------" << std::endl;
