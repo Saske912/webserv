@@ -51,4 +51,4 @@ add_executable(webserv
         source/ft_doublecpy.cpp
         source/ft_doublefree.cpp
         source/get_next_line.cpp
-        source/get_next_line_utils.cpp)
+        source/get_next_line_utils.cpp source/cgi_path.cpp)

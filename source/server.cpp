@@ -4,7 +4,6 @@
 
 #include "../header.h"
 #include "server.hpp"
-#include "Number.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
     _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
@@ -73,10 +72,9 @@ int server::get_path_to_request( const std::string &request, Header & head) {
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        chdir(it->get_root().c_str());
-        std::cout << "request: " << request  << std::endl;
         if (!(*it).check_name(request))
         {
+            chdir(it->get_root().c_str());
             if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
             {
                 head.setAllow(get_allow(it->get_http_methods()));
@@ -179,14 +177,14 @@ int    server::responce( Header & head )
     request = head.getRequest();
     server_name += *_server_names.begin();
     head.addEnv(const_cast<char *>(server_name.c_str()));
-    server_port += ttostr(static_cast<int>(_port));
+    server_port += std::to_string(static_cast<int>(_port));
     head.addEnv(const_cast<char *>(server_port.c_str()));
     head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
     if (head.getHost() == "400" || head.getHost().empty())
         return exception_processing(400, head);
     if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
         return exception_processing(501, head);
-    head.setHost("Host: " + _host + ":" + ttostr(static_cast<int>(_port)) + '\n');
+    head.setHost("Host: " + _host + ":" + std::to_string(static_cast<int>(_port)) + '\n');
     int n = (int)request.find('?');
     if (n > 0)
     {
@@ -208,7 +206,7 @@ std::string server::get_error(int err, std::map<int, std::string> ers) {
 
 int server::exception_processing( int except, Header &head ) {
     int     pid;
-    int     stat;
+    int     stat = 0;
     char    *arg[4];
     int     fds[2];
     std::string concat;
@@ -217,7 +215,7 @@ int server::exception_processing( int except, Header &head ) {
     try
     {
         to_head = get_error(except, _error_pages);
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except) + " "\
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(std::to_string(except)) + " "\
         + get_error(except, _default_error_pages) + "\r\n").c_str()));
         return open(to_head.c_str(), O_RDONLY);
     }
@@ -228,11 +226,12 @@ int server::exception_processing( int except, Header &head ) {
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
+//            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
             arg[0] = strdup("content/sed.sh");
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
             arg[2] = strdup("content/error_template.html");
-            arg[3] = NULL;
+            arg[3] = nullptr;
             close(fds[0]);
             dup2(fds[1], 1);
             execve(arg[0], arg, head.getEnv());
@@ -243,7 +242,7 @@ int server::exception_processing( int except, Header &head ) {
             waitpid(pid, &stat, 0);
         if (stat == 1)
             error_exit("system error in execve");
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except)\
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(std::to_string(except))\
         + " " + to_head + "\r\n").c_str()));
         return fds[0];
     }
@@ -255,6 +254,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     char    *arg[3];
     int     fdset[2];
     int     tmp;
+    bool    flag = false;
 
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
@@ -263,15 +263,17 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         struct ::stat st;
         std::string part;
         ::stat(request.c_str(), &st);
-        if (st.st_mode & S_IFDIR)
+        if ((fd = open(request.c_str(), O_RDONLY)) > 0 and st.st_mode & S_IFDIR)
         {
-            std::cout << "is_dir"  << std::endl;
+            std::cout << "is_dir" << std::endl;
+            close(fd);
             return exception_processing(404, head);
         }
         else if (errno == ENOENT)
             part = "201 Created\r\n";
         else
             part = "204 No Content\r\n";
+        close(fd);
         if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
         {
             if (errno == EACCES) {
@@ -286,37 +288,34 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else
             head.setResponse("HTTP/1.1 " + part);
     }
-    else if ((is_cgi(request, route)) and (_allow.first.empty() or head.getMethod() == _allow.second))
+    else if ((is_cgi(request, route, head.getMethod(), &flag)))
     {
 //        int     fd1 = dup(1);
 //        int     fd0 = dup(0);
 
+        std::string root;
+        if (!flag)
+            root = route.get_cgi().second;
+        else
+            root = _cgi_path;
+        root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
+        if (root.empty())
+            return exception_processing(500, head);
         head.setIsCgi(true);
-        std::cout << "CGI start req:" << request << std::endl;
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0) {
             error_exit( "open_error" );
         }
-//        pipe(fdset);
-        int fd;
-        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-            error_exit("open error");
+        pipe(fdset);
+//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+//            error_exit("open error");
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
-            arg[0] = strdup("../cgi.sh");
-            arg[1] =  strdup(const_cast<char *>(route.get_cgi().second.c_str()));
-            arg[2] = NULL;
-//            arg[0] = strdup("cgi_tester");
-//            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
-//            arg[1] = strdup(const_cast<char *>(request.c_str()));
+            arg[0] = strdup(root.c_str());
+            arg[1] = nullptr;
             dup2(tmp, 0);
-//            std::cout << "root: " << route.get_root()  << std::endl;
-//            chdir(route.get_root().c_str());
-//            char  buf[150];
-//            getcwd(buf, 150);
-//            std::cout << "getcwd(): " << buf  << std::endl;
-//            dup2(fdset[1], 1);
-            dup2(fd, 1);
+            dup2(fdset[1], 1);
+//            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
@@ -324,17 +323,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             error_exit("fork_error");
         else
             close(fdset[1]);
-        int stat = 1;
-        waitpid(pid, &stat, 0);
-//        chdir(getenv("OLDPWD"));
-        std::cout << "CGI ret fd"  << std::endl;
-        lseek(fd, 0, 0);
+//        waitpid(pid, &stat, 0);
+//        lseek(fd, 0, 0);
 //        close(fd);
 //        dup2(fd1, 1);
-//        if ((fd = open("tmp", O_RDONLY)) < 0)
-//            error_exit("open error");
-        return fd;
-//        return fdset[0];
+//        return fd;
+        return fdset[0];
 //        dup2(fd1, 1);
 //        dup2(fd0, 0);
     }
@@ -343,10 +337,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         struct ::stat st;
         ::stat(request.c_str(), &st);
 //        chdir(route.get_root().c_str());
-        std::cout << "debug here"  << std::endl;
         if (st.st_mode & S_IFDIR)
         {
-            std::cout << "is_dir(GET file)"  << std::endl;
             return exception_processing(404, head);
         }
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
@@ -365,8 +357,15 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     return fd;
 }
 
-bool server::is_cgi( const std::string& request, route  const & route ) const {
-    return request.substr(request.rfind('.') + 1, request.length()) == route.get_cgi().first;
+bool server::is_cgi( const std::string& request, route  const & route, std::string const & method, bool *flag ) const {
+    std::string ext = request.substr(request.rfind('.') + 1, request.length());
+    bool ret = ext == route.get_cgi().first;
+    if (!ret and _allow.first == ext and _allow.second == method)
+    {
+        *flag = true;
+        return true;
+    }
+    return ret;
 }
 
 void server::set_default_pages( ) {
@@ -456,7 +455,7 @@ void server::set_list_of_methods( ) {
 }
 
 std::string server::set_location(route & route, Header & head) {
-    if ( route.get_default_page().empty() or is_file( head.getRequest( )))
+    if ( route.get_default_page().empty() or is_file_with_extension( head.getRequest( )))
         return head.getRequest();
     else
     {
@@ -485,11 +484,10 @@ void server::setCgiPath(const std::string &cgi_path)
 	_cgi_path = cgi_path;
 }
 
-bool server::is_allow( const std::string & request, std::string const & method, route r) const {
+bool server::is_allow( const std::string & request, std::string const & method, route const &  r) const {
     if (!_allow.first.empty() and !_allow.second.empty() and method == _allow.second)
     {
         std::string tmp = r.get_default_page();
-        std::cerr << "allowed "  << std::endl;
         if ( is_file_with_extension( request ))
         {
             if (std::string(request, request.rfind('.') + 1, request.length() - request.rfind('.')) == _allow.first)
@@ -504,7 +502,7 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     return false;
 }
 
-int server::autoindex( std::string const & root, Header & head, std::string name )
+int server::autoindex( std::string const & root, Header & head, std::string const &  name )
 {
     DIR     *dir;
     dirent  *dir_p;
@@ -535,7 +533,7 @@ int server::autoindex( std::string const & root, Header & head, std::string name
     return fd;
 }
 
-bool server::is_file( std::string request ) {
+bool server::is_file( std::string const & request ) {
     struct ::stat st;
     std::string part;
     ::stat(request.c_str(), &st);
