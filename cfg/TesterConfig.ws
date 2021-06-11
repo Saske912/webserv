@@ -11,7 +11,7 @@ server {
        	allowed_methods GET	# allowed methods for route
 		root /Users/pfile/web_c/YoupiBanane/
        	index youpi.bad_extension
-       	cgi_extension bla  youpi.bla
+       	#cgi_extension bla  youpi.bla
     }
     route /put_test/ {
         allowed_methods PUT

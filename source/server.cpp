@@ -293,6 +293,14 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 //        int     fd1 = dup(1);
 //        int     fd0 = dup(0);
 
+        std::string root;
+        if (!flag)
+            root = route.get_cgi().second;
+        else
+            root = _cgi_path;
+        root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
+        if (root.empty())
+            return exception_processing(500, head);
         head.setIsCgi(true);
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0) {
             error_exit( "open_error" );
@@ -303,19 +311,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((pid = fork()) == 0)
         {
             close(fdset[0]);
-//            arg = (char **)ft_calloc(4, sizeof(char **));
-//            arg[0] = strdup("../cgi.sh");
-            arg[0] = strdup("../cgi_tester");
-//            if (!flag)
-//                arg[1] =  strdup(const_cast<char *>(route.get_cgi().second.c_str()));
-//            else
-//                arg[1] =  strdup(const_cast<char *>(_cgi_path.c_str()));
-//            arg[2] = NULL;
-//            arg[0] = strdup("cgi_tester");
-//            arg[2] = strdup(const_cast<char *>(route.get_cgi().second.c_str()));
-//            arg[1] = strdup(const_cast<char *>(request.c_str()));
+            arg[0] = strdup(root.c_str());
+            arg[1] = nullptr;
             dup2(tmp, 0);
-//            dup2(fdset[1], 1);
+            dup2(fdset[1], 1);
 //            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
@@ -485,7 +484,7 @@ void server::setCgiPath(const std::string &cgi_path)
 	_cgi_path = cgi_path;
 }
 
-bool server::is_allow( const std::string & request, std::string const & method, route r) const {
+bool server::is_allow( const std::string & request, std::string const & method, route const &  r) const {
     if (!_allow.first.empty() and !_allow.second.empty() and method == _allow.second)
     {
         std::string tmp = r.get_default_page();
@@ -503,7 +502,7 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     return false;
 }
 
-int server::autoindex( std::string const & root, Header & head, std::string name )
+int server::autoindex( std::string const & root, Header & head, std::string const &  name )
 {
     DIR     *dir;
     dirent  *dir_p;
@@ -534,7 +533,7 @@ int server::autoindex( std::string const & root, Header & head, std::string name
     return fd;
 }
 
-bool server::is_file( std::string request ) {
+bool server::is_file( std::string const & request ) {
     struct ::stat st;
     std::string part;
     ::stat(request.c_str(), &st);

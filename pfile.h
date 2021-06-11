@@ -7,5 +7,6 @@
 
 void    tests(std::list<server> conf);
 server  find_server(std::list<server> serv, std::string const & host, unsigned int port);
+std::string get_path_to_cgi(const std::string& binary, const std::string& path, std::string const & pwd);
 
 #endif //PFILE_H
