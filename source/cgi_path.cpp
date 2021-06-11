@@ -40,6 +40,7 @@ std::string get_path_to_cgi(const std::string& binary, const std::string& path, 
     }
     closedir(dir);
     dir = opendir((tmp = pwd).c_str());
+
     while ((dt = readdir(dir)) != nullptr)
     {
         if (std::string(dt->d_name) == binary)
