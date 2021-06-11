@@ -309,7 +309,7 @@ char *Header::getEnvValue(char const *str)
 
 	while (Env[i])
 	{
-		if (strstr(Env[i], str))
+		if ((strstr(Env[i], str) == Env[i]))
 		{
 			tmp = Env[i] + strlen(str);
 			tmp = strdup(tmp);
