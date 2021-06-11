@@ -16,7 +16,7 @@ std::string get_path_to_cgi(const std::string& binary, const std::string& path, 
         tmp = path.substr(n, k - n);
         n = k + 1;
         dir = opendir(tmp.c_str());
-        while ((dt = readdir(dir)) != nullptr)
+        while ((dt = readdir(dir)) != NULL)
         {
             if (std::string(dt->d_name) == binary)
             {
@@ -29,7 +29,7 @@ std::string get_path_to_cgi(const std::string& binary, const std::string& path, 
     }
     tmp = path.substr(path.rfind(':') + 1, path.length());
     dir = opendir(tmp.c_str());
-    while ((dt = readdir(dir)) != nullptr)
+    while ((dt = readdir(dir)) != NULL)
     {
         if (std::string(dt->d_name) == binary)
         {
@@ -41,7 +41,7 @@ std::string get_path_to_cgi(const std::string& binary, const std::string& path, 
     closedir(dir);
     dir = opendir((tmp = pwd).c_str());
 
-    while ((dt = readdir(dir)) != nullptr)
+    while ((dt = readdir(dir)) != NULL)
     {
         if (std::string(dt->d_name) == binary)
         {

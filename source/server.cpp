@@ -4,6 +4,7 @@
 
 #include "../header.h"
 #include "server.hpp"
+#include "Number.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
     _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
@@ -177,14 +178,14 @@ int    server::responce( Header & head )
     request = head.getRequest();
     server_name += *_server_names.begin();
     head.addEnv(const_cast<char *>(server_name.c_str()));
-    server_port += std::to_string(static_cast<int>(_port));
+    server_port += ttostr(static_cast<int>(_port));
     head.addEnv(const_cast<char *>(server_port.c_str()));
     head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
     if (head.getHost() == "400" || head.getHost().empty())
         return exception_processing(400, head);
     if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
         return exception_processing(501, head);
-    head.setHost("Host: " + _host + ":" + std::to_string(static_cast<int>(_port)) + '\n');
+    head.setHost("Host: " + _host + ":" + ttostr(static_cast<int>(_port)) + '\n');
     int n = (int)request.find('?');
     if (n > 0)
     {
@@ -215,7 +216,7 @@ int server::exception_processing( int except, Header &head ) {
     try
     {
         to_head = get_error(except, _error_pages);
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(std::to_string(except)) + " "\
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except) + " "\
         + get_error(except, _default_error_pages) + "\r\n").c_str()));
         return open(to_head.c_str(), O_RDONLY);
     }
@@ -231,7 +232,7 @@ int server::exception_processing( int except, Header &head ) {
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
             arg[2] = strdup("content/error_template.html");
-            arg[3] = nullptr;
+            arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
             execve(arg[0], arg, head.getEnv());
@@ -242,7 +243,7 @@ int server::exception_processing( int except, Header &head ) {
             waitpid(pid, &stat, 0);
         if (stat == 1)
             error_exit("system error in execve");
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + std::string(std::to_string(except))\
+        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except)\
         + " " + to_head + "\r\n").c_str()));
         return fds[0];
     }
@@ -312,7 +313,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(fdset[0]);
             arg[0] = strdup(root.c_str());
-            arg[1] = nullptr;
+            arg[1] = NULL;
             dup2(tmp, 0);
             dup2(fdset[1], 1);
 //            dup2(fd, 1);
