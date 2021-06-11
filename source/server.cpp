@@ -293,7 +293,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
         if (root.empty())
             return exception_processing(500, head);
-        head.setIsCgi(true);
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
         {
             if (errno == EACCES) {
@@ -305,6 +304,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
                 return exception_processing(404, head);
             }
         }
+        head.setIsCgi(true);
         pipe(fdset);
 //        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
 //            error_exit("open error");
