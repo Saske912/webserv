@@ -194,6 +194,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *buf = 0;
 	struct stat stat;
 	static int count = 0;
+	static bool flaggg = false;
 
 	if (it->head.getFd() == 1)
     {
@@ -203,10 +204,20 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
         //
     }
 	if (it->count == 0)
+	{
 		t.rd = recv_next_line((*it).fd, &line);
+		if (line && std::string(line).find_last_not_of("1234567890") != std::string::npos)
+		{
+			free(line);
+			return 1;
+		}
+		if (flaggg == true)
+		{
+			flaggg = false;
+		}
+	}
 	if (t.rd == 0)
 	{
-		std::cerr << "t.rd = 0" << std::endl;
         close(it->fd);
 		it->head.eraseStruct();
 		it = set.erase(it);
@@ -220,6 +231,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
+			std::cout << "count = " << count << std::endl;
 			count = 0;
 		}
 //                std::cout << "CHECK fILE" << std::endl;
@@ -233,8 +245,10 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			return 1;
 		}
 		if (line)
+		{
 			 it->bytes = ( int ) strtol( line, 0, 16 );
-		if (line && !it->bytes ) {
+		}
+		if (line && !it->bytes) {
 			it->eshe_odin_ebychiy_flag = true;
 //			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
@@ -245,12 +259,14 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			t.rd = recv( it->fd, buf, n , 0 );
 			if (t.rd == -1 && !buf[0])
 			{
-                std::cerr << "ER: " << buf  << std::endl;
 				free(buf);
 				return 1;
 			}
 			if (t.rd == -1)
-				t.rd = n;
+			{
+				t.rd = strlen(buf);
+				flaggg = true;
+			}
 			if (it->head.getFd() != 1)
 			{
 			    if (t.rd != -1)
@@ -258,20 +274,21 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                     buf[t.rd] = 0;
                     write(it->head.getFd(), buf, t.rd);
                 }
-				if (t.rd != -1)
-              	  count += t.rd;
-                it->count += t.rd;
 			}
+			if (t.rd != -1)
+			  count += t.rd;
+			it->count += t.rd;
 			free(buf);
 			if (it->count >= it->bytes)
+			{
 				it->count = 0;
+			}
 		}
 	}
 	if (line)
 		free(line);
 	if (t.rd == 0)
 	{
-        std::cerr << "t.rd = 0" << std::endl;
         close(it->fd);
 		it->head.eraseStruct();
 		it = set.erase(it);
@@ -499,7 +516,8 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
         return ;
     }
     line[z] = 0;
-    std::cerr << "line: " << line  << std::endl;
+    //std::cerr << "line: " << line  << std::endl;
+//	usleep(100);
     str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
     send(it->fd, str, strlen(str), 0);
     send(it->fd, line, z, 0);
