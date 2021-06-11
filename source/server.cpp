@@ -276,16 +276,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             part = "204 No Content\r\n";
         close(fd);
         if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
-        {
-            if (errno == EACCES) {
-                return exception_processing(403, head);
-            }
-            else
-            {
-                std::cout << "bad request: " << request  << std::endl;
-                return exception_processing(404, head);
-            }
-        }
+            return -1;
         else
             head.setResponse("HTTP/1.1 " + part);
     }
@@ -303,8 +294,16 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if (root.empty())
             return exception_processing(500, head);
         head.setIsCgi(true);
-        if ((tmp = open(request.c_str(), O_RDONLY)) < 0) {
-            error_exit( "open_error" );
+        if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
+        {
+            if (errno == EACCES) {
+                return exception_processing(403, head);
+            }
+            else
+            {
+                std::cout << "bad request: " << request  << std::endl;
+                return exception_processing(404, head);
+            }
         }
         pipe(fdset);
 //        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
@@ -323,10 +322,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         else if (pid == -1)
             error_exit("fork_error");
         else
+        {
+            head.setPid(pid);
             close(fdset[1]);
+        }
 //        waitpid(pid, &stat, 0);
 //        lseek(fd, 0, 0);
-//        close(fd);
 //        dup2(fd1, 1);
 //        return fd;
         return fdset[0];
