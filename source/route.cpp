@@ -4,13 +4,15 @@
 
 #include "header.h"
 #include "route.hpp"
+#include "Number.hpp"
 
 route::route( const std::string &name, const std::string &root, const std::list<std::string> &http_methods,
               bool autoindex, const std::string &def_page )
-        : _name(name), _root(root), _http_methods(http_methods), _default_page(def_page), _autoindex(autoindex) {
+        : _name(name), _root(root), _http_methods(http_methods), _default_page(def_page), _autoindex(autoindex),
+        _client_body_size(NumericLimits<long int>::max) {
 }
 
-route::route( void ) { }
+route::route( void ) : _client_body_size(NumericLimits<long int>::max) { }
 
 route::~route( void ) { }
 
@@ -22,6 +24,7 @@ route::route( route const &src ) {
     this->_default_page = src._default_page;
     this->_upload_location = src._upload_location;
     this->_cgi = src._cgi;
+    this->_client_body_size = src._client_body_size;
 }
 
 route &route::operator=( route const &src ) {
@@ -32,6 +35,7 @@ route &route::operator=( route const &src ) {
     this->_default_page = src._default_page;
     this->_upload_location = src._upload_location;
     this->_cgi = src._cgi;
+    this->_client_body_size = src._client_body_size;
     return *this;
 }
 
@@ -95,6 +99,10 @@ std::string route::get_upload_location() const
 	return _upload_location;
 }
 
+long int route::get_client_body_size() const {
+    return _client_body_size;
+}
+
 void route::set_upload_location(const std::string &location)
 {
 	_upload_location = location;
@@ -110,6 +118,10 @@ void route::set_cgi(const route::CgiType &cgi_)
 	_cgi = cgi_;
 }
 
+void route::set_client_body_size(long newSize) {
+    _client_body_size = newSize;
+}
+
 std::ostream& operator<<(std::ostream& o, const route &route_) {
 	o << "\t\troute '" << route_.get_name() << "': " << std::endl;
 	o << "\t\t\troot: " << route_.get_root() << std::endl;
@@ -123,5 +135,6 @@ std::ostream& operator<<(std::ostream& o, const route &route_) {
 	o << std::endl;
 	o << "\t\t\tupload_location: " << route_.get_upload_location() << std::endl;
 	o << "\t\t\tcgi: [" << route_.get_cgi().first << "] " << route_.get_cgi().second << std::endl;
+    o << "\t\t\tclient_max_body_size: " << route_.get_client_body_size() << std::endl;
 	return o;
 }

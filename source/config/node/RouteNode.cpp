@@ -8,6 +8,7 @@ const ContextInfo RouteNode::validParamNames[] = {
     {"index",             -1, Validator::validateIndex},
     {"cgi_extension",     2,  Validator::validateCgiExtension},
     {"upload_location",   1,  Validator::validateUploadLocation},
+    {"client_max_body_size", 1,  Validator::validateClientMaxBodySize},
 
     {NULL,                0, NULL}
 };
