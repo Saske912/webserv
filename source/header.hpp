@@ -36,6 +36,8 @@ class Header
 		unsigned int getPort();
 		int getFd();
 		int getFdr();
+		pid_t getPid();
+		void setPid(pid_t const &);
 		void setFdr(int const &);
 		void setFd(int const &);
 		void setEnv(char **env);
@@ -91,6 +93,7 @@ class Header
 		std::string User_Agent;
 		std::string WWW_Authenticate;
 		bool is_cgi;
+		pid_t Pid;
 };
 
 #endif

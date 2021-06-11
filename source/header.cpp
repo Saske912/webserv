@@ -10,6 +10,7 @@ Header::Header()
 	Fd = 1;
 	Fdr = 0;
 	is_cgi = false;
+	Pid = 0;
 }
 
 void Header::eraseStruct()
@@ -39,6 +40,7 @@ void Header::eraseStruct()
 	Fd = 1;
 	Fdr = 0;
 	is_cgi = false;
+	Pid = 0;
 }
 
 void Header::setAccept_Charsets(std::string const &str)
@@ -165,6 +167,16 @@ void Header::setFdr(int const &fd)
 void Header::setPort(unsigned int  const &port)
 {
 	Port = port;
+}
+
+void Header::setPid(pid_t  const &pid)
+{
+	Pid = pid;
+}
+
+pid_t Header::getPid()
+{
+	return Pid;
 }
 
 char **Header::getEnv()

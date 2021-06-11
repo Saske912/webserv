@@ -507,6 +507,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
     std::cerr << "z: " << z  << std::endl;\
     if (z == 0)
     {
+		//if (waitpid())
         std::cerr << "Z: " << z << std::endl;
         send(it->fd, "0\r\n\r\n", 5, 0);
         close(fd);
