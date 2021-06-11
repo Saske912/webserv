@@ -130,7 +130,6 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
-                                    std::cout << "reqest(requst_processing): " << request  << std::endl;
 	if ( is_file_with_extension( request ) or head.getMethod() == "PUT")
     {
         return targeting(head, request, route);
@@ -268,13 +267,14 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             std::cout << "is_dir" << std::endl;
             close(fd);
-            return exception_processing(404, head);
+            return -1;
         }
         else if (errno == ENOENT)
             part = "201 Created\r\n";
         else
             part = "204 No Content\r\n";
-        close(fd);
+        if (fd != -1)
+            close(fd);
         if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
             return -1;
         else
@@ -337,12 +337,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     else
     {
         struct ::stat st;
-        ::stat(request.c_str(), &st);
-//        chdir(route.get_root().c_str());
-        if (st.st_mode & S_IFDIR)
-        {
-            return exception_processing(404, head);
-        }
+
         if ( (fd = open(request.c_str(), O_RDONLY)) == -1)
         {
             if (errno == EACCES)
@@ -354,7 +349,15 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             }
         }
         else
+        {
+            ::stat(request.c_str(), &st);
+            if (st.st_mode & S_IFDIR)
+            {
+                close(fd);
+                return exception_processing(404, head);
+            }
             head.setResponse("HTTP/1.1 200 OK\r\n");
+        }
     }
     return fd;
 }
