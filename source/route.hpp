@@ -32,7 +32,7 @@ public:
     std::string const &get_name() const;
     std::string const &get_root() const;
     std::string get_upload_location() const;
-    long int get_client_body_size() const;
+    long int get_client_max_body_size() const;
     void set_upload_location(const std::string &location);
     const CgiType &get_cgi() const;
     void set_cgi(CgiType const &cgi_);

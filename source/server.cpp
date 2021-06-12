@@ -258,6 +258,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
+    if (head.getBodySize() > route.get_client_max_body_size())
+        return exception_processing(413, head);
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
     {
         struct ::stat st;

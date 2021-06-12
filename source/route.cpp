@@ -95,7 +95,7 @@ std::string route::get_upload_location() const
 	return _upload_location;
 }
 
-long int route::get_client_body_size() const {
+long int route::get_client_max_body_size() const {
     return _client_body_size;
 }
 
@@ -131,6 +131,6 @@ std::ostream& operator<<(std::ostream& o, const route &route_) {
 	o << std::endl;
 	o << "\t\t\tupload_location: " << route_.get_upload_location() << std::endl;
 	o << "\t\t\tcgi: [" << route_.get_cgi().first << "] " << route_.get_cgi().second << std::endl;
-    o << "\t\t\tclient_max_body_size: " << route_.get_client_body_size() << std::endl;
+    o << "\t\t\tclient_max_body_size: " << route_.get_client_max_body_size( ) << std::endl;
 	return o;
 }
