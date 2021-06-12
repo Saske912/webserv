@@ -193,7 +193,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *line = 0;
 	char *buf = 0;
 	struct stat stat;
-	static int count = 0;
 	static bool flaggg = false;
     static char *tr = strdup("k");
     static char *tr2 = 0;
@@ -238,8 +237,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
-			std::cout << "count = " << count << std::endl;
-			count = 0;
+			std::cout << "ct = " << it->ct << std::endl;
+			it->ct = 0;
 		}
 //                std::cout << "CHECK fILE" << std::endl;
 		it->flag = true;
@@ -259,6 +258,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		}
 		if (line && !it->bytes) {
 			it->eshe_odin_ebychiy_flag = true;
+			it->head.setBodySize(it->ct);
 //			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
 			int n = it->bytes - it->count; // < 0 ? 0 : it->bytes - it->count;
@@ -285,7 +285,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                 }
 			}
 			if (t.rd != -1)
-			  count += t.rd;
+			  it->ct += t.rd;
 			it->count += t.rd;
 			free(buf);
 			if (it->count >= it->bytes)
@@ -503,6 +503,7 @@ void resetIt(std::list<t_write>::iterator &it)
 	it->flag = false;
 	it->bytes = 0;
 	it->count = 0;
+	it->ct = 0;
 }
 
 void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
@@ -725,7 +726,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
                     ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 24);
 
-            t_write a = {Header(), ipstr, std::string(), cli.client, 0, 0, false, false, false, false};
+            t_write a = {Header(), ipstr, std::string(), cli.client, 0, 0, 0, false, false, false, false};
             set.push_back(a);
         }
         communication_with_clients(set, t, conf);

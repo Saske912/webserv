@@ -11,6 +11,7 @@ Header::Header()
 	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
+	BodySize = 0;
 }
 
 void Header::eraseStruct()
@@ -41,6 +42,7 @@ void Header::eraseStruct()
 	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
+	BodySize = 0;
 }
 
 void Header::setAccept_Charsets(std::string const &str)
@@ -172,6 +174,16 @@ void Header::setPort(unsigned int  const &port)
 void Header::setPid(pid_t  const &pid)
 {
 	Pid = pid;
+}
+
+void Header::setBodySize(int bodySize)
+{
+	BodySize = bodySize;
+}
+
+int	Header::getBodySize()
+{
+	return BodySize;
 }
 
 pid_t Header::getPid()

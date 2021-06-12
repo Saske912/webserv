@@ -63,6 +63,7 @@ typedef struct	s_write
 		int fd;
 		int count;
 		int bytes;
+		int ct;
 		bool flag;
         bool first_line;
         bool head_readed;

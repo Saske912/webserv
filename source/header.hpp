@@ -37,6 +37,8 @@ class Header
 		int getFd();
 		int getFdr();
 		pid_t getPid();
+		int	getBodySize();
+		void setBodySize(int);
 		void setPid(pid_t const &);
 		void setFdr(int const &);
 		void setFd(int const &);
@@ -66,6 +68,7 @@ class Header
 		void setIsCgi(bool status);
 		void eraseStruct();
 	private:
+		int BodySize;
 		int Fd;
 		int Fdr;
 		char **Env;
