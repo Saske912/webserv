@@ -213,7 +213,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
         }
 		t.rd = recv_next_line((*it).fd, &line);
         tr2 = strdup(line);
-		if (line && std::string(line).find_last_not_of("1234567890") != std::string::npos)
+		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
 		{
 			free(line);
 			return 1;
@@ -258,9 +258,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			     it->bytes = 32768;
 		}
 		if (line && !it->bytes) {
-            std::cout << "line in: " << line  << std::endl;
-            std::cout << "tr: " << tr  << std::endl;
-//            sleep(3);
 			it->eshe_odin_ebychiy_flag = true;
 //			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
@@ -276,8 +273,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			}
 			if (t.rd == -1)
 			{
-			    std::cout << "ERR laggg"  << std::endl;
-			    sleep(3);
 				t.rd = strlen(buf);
 				flaggg = true;
 			}
