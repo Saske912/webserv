@@ -138,6 +138,7 @@ std::string const & def_file, route const & route, Header & head) {
     {
         if (def_file.empty() and route.get_autoindex())
         {
+            head.setResponse("HTTP/1.1 200 OK\r\n");
             return autoindex(route.get_root(), head, route.get_name());
         }
         else if (request == "/")
@@ -517,29 +518,38 @@ int server::autoindex( std::string const & root, Header & head, std::string cons
     DIR     *dir;
     dirent  *dir_p;
     int     fd;
-    std::string tmp;
-    struct ::stat st;
 
     fd = open("autoindex.html", O_RDWR | O_CREAT | O_TRUNC, 0777 );
-    if (!(dir = opendir(".")))
-        exception_processing(404, head);
+    if (!(dir = opendir(("." + head.getRequest()).c_str())))
+        return exception_processing(404, head);
     std::string str = "<!DOCTYPE html>\n"
                       "<html lang=\"en\">\n"
                       "<head>\n"
-                      "    <meta charset=\"UTF-8\">\n"
-                      "    <title>Title</title>\n"
+                      "\t<meta charset=\"UTF-8\">\n"
+                      "\t<title>directory listing of " +
+                      head.getRequest() +
+                      "</title>\n"
                       "</head>\n"
-                      "<body>";
+                      "<body>\n";
     write(fd, str.c_str(), str.length());
+    str = "\t<h1>Directory listing of " + head.getRequest() + "</h1>\n";
+    write(fd, str.c_str(), str.length());
+    write(fd, "\t<hr>\n", 6);
     while ((dir_p = readdir(dir)))
     {
-        ::stat(dir_p->d_name, &st);
-        if (st.st_mode & S_IFDIR)
-            tmp = "<p>" + name + "/" + dir_p->d_name + "</p>\n";
+        if (((head.getRequest().empty() || head.getRequest() == "/") &&
+            dir_p->d_name == std::string("..")) ||
+            dir_p->d_name == std::string("."))
+            continue;
+        str = "\t<p>\n";
+        if (dir_p->d_type & DT_DIR)
+            str += "\t\t<a href=\"" + std::string(name + ltrim(head.getRequest(), "/") + dir_p->d_name + "/") + "\">" + std::string(dir_p->d_name) + "/</a>\n";
         else
-            tmp = "<a href=\"" + std::string(name + "/" + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a><br>\n";
-        write(fd, tmp.c_str(), tmp.length());
+            str += "\t\t<a href=\"" + std::string(name + ltrim(head.getRequest(), "/") + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a>\n";
+        str += "\t</p>\n";
+        write(fd, str.c_str(), str.length());
     }
+    write(fd, "\t<hr>\n", 6);
     closedir(dir);
     str = "</body>\n"
           "</html>";
