@@ -291,7 +291,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             root = _cgi_path;
         root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
         if (root.empty())
+        {
+            std::cout << "here"  << std::endl;
             return exception_processing(500, head);
+        }
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
         {
             if (errno == EACCES) {
