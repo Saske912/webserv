@@ -294,7 +294,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
         if (root.empty())
         {
-            std::cout << "here"  << std::endl;
+//            std::cout << "here"  << std::endl;
             return exception_processing(500, head);
         }
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
@@ -304,7 +304,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             }
             else
             {
-                std::cout << "bad request: " << request  << std::endl;
+//                std::cout << "bad request: " << request  << std::endl;
                 return exception_processing(404, head);
             }
         }
@@ -327,6 +327,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             error_exit("fork_error");
         else
         {
+            close(tmp);
             head.setPid(pid);
             close(fdset[1]);
         }
@@ -348,7 +349,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
                 return exception_processing(403, head);
             else
             {
-                std::cout << "bad request:(GET) " << request  << std::endl;
+//                std::cout << "bad request:(GET) " << request  << std::endl;
                 return exception_processing(404, head);
             }
         }
@@ -517,9 +518,10 @@ int server::autoindex( std::string const & root, Header & head, std::string cons
     dirent  *dir_p;
     int     fd;
     std::string tmp;
+    struct ::stat st;
 
-    fd = open("content/autoindex.html", O_RDWR | O_CREAT | O_TRUNC, 0777 );
-    if (!(dir = opendir(root.c_str())))
+    fd = open("autoindex.html", O_RDWR | O_CREAT | O_TRUNC, 0777 );
+    if (!(dir = opendir(".")))
         exception_processing(404, head);
     std::string str = "<!DOCTYPE html>\n"
                       "<html lang=\"en\">\n"
@@ -531,7 +533,11 @@ int server::autoindex( std::string const & root, Header & head, std::string cons
     write(fd, str.c_str(), str.length());
     while ((dir_p = readdir(dir)))
     {
-        tmp = "<a href=\"" + std::string(name + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a>\n";
+        ::stat(dir_p->d_name, &st);
+        if (st.st_mode & S_IFDIR)
+            tmp = "<p>" + name + "/" + dir_p->d_name + "</p>\n";
+        else
+            tmp = "<a href=\"" + std::string(name + "/" + dir_p->d_name) + "\">" + std::string(dir_p->d_name) + "</a><br>\n";
         write(fd, tmp.c_str(), tmp.length());
     }
     closedir(dir);

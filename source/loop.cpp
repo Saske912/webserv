@@ -194,8 +194,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *buf = 0;
 	struct stat stat;
 	static bool flaggg = false;
-    static char *tr = strdup("k");
-    static char *tr2 = 0;
 	if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -205,13 +203,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
     }
 	if (it->count == 0)
 	{
-	    if (tr2)
-        {
-            tr = strdup(tr2);
-            free(tr2);
-        }
 		t.rd = recv_next_line((*it).fd, &line);
-        tr2 = strdup(line);
 		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
 		{
 			free(line);
@@ -237,7 +229,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
-			std::cout << "ct = " << it->ct << std::endl;
+//			std::cout << "ct = " << it->ct << std::endl;
 			it->ct = 0;
 		}
 //                std::cout << "CHECK fILE" << std::endl;
@@ -347,7 +339,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             }
             if (t.rd == 0)
             {
-                std::cerr << "t.rd = 0" << std::endl;
+//                std::cerr << "t.rd = 0" << std::endl;
                 close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
@@ -365,7 +357,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             else
                 parse_request(line, (*it).head);
             if (line)
-                std::cout << line  << std::endl;
+//                std::cout << line  << std::endl;
             if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
                     && it->head.getMethod() != "PUT")
                 (*it).flag = true;
@@ -378,31 +370,6 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
 
 int sendFile(std::list<t_write>::iterator &it, int fd)
 {
-	/*
-	char *str = 0;
-    int stats = 0;
-	int	file_size = 0;
-
-	while ((stats = get_next_line(fd, &str)))
-	{
-        std::cout << "file_size: " << file_size << std::endl;
-		if (stats == -1)
-		{
-			close(fd);
-			return 1;
-		}
-		send( (*it).fd, str, strlen(str), 0);
-		send( (*it).fd, "\n", 1, 0);
-		file_size += strlen(str) + 1;
-		free(str);
-		str = 0;
-	}
-	send( (*it).fd, str, strlen(str), 0);
-	send( (*it).fd, "\n", 1, 0);
-	file_size += strlen(str) + 1;
-	free(str);
-	std::cout << "file_size: " << file_size << std::endl;
-*/
 	char str[32769];
 	int z;
 
@@ -419,16 +386,16 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 	char *str = 0;
 
 	str = (char *)(*it).head.getContent_Location().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 	if (fd != -1)
 		close(fd);
 	send((*it).fd, "\r\n", 2, 0);
 	close(it->fd);
 	it->head.eraseStruct();
-    std::cerr << "noBodyResponse" << std::endl;
+//    std::cerr << "noBodyResponse" << std::endl;
 	it = set.erase(it);
-	std::cout << std::endl << "----------REQUEST----------" << std::endl;
+//	std::cout << std::endl << "----------REQUEST----------" << std::endl;
 }
 
 void sendHeader(std::list<t_write>::iterator &it)
@@ -436,26 +403,26 @@ void sendHeader(std::list<t_write>::iterator &it)
 	char *str = 0;
 
 	str = (char *)(*it).head.getResponse().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 	if (!((*it).head.getContent_Language().empty()))	
 	{
 		str = (char *)(*it).head.getContent_Language().c_str();
-		std::cout << str;
+//		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
 	}
 	if (!((*it).head.getAllow().empty()))
 	{
 		str = (char *)(*it).head.getAllow().c_str();
-		std::cout << str;
+//		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);	
 	}
 	(*it).head.setDate("Date: " + get_current_date());
 	str = (char *)(*it).head.getDate().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 	str = (char *)(*it).head.getLast_Modified().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 }
 
@@ -524,7 +491,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
         close(fd);
         it->head.eraseStruct();
         resetIt(it);
-        std::cout << std::endl << "----------REQUEST----------" << std::endl;
+//        std::cout << std::endl << "----------REQUEST----------" << std::endl;
         return ;
     }
     line[z] = 0;
@@ -575,20 +542,20 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 	if (it->head.getResponse().empty())
 	    it->head.setResponse("HTTP/1.1 200 OK\r\n");
 	str = (char *)it->head.getResponse().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 	str = (char *)it->head.getContent_Type().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 	(*it).head.setDate("Date: " + get_current_date());
 	str = (char *)(*it).head.getDate().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
 	str = (char *)(*it).head.getLast_Modified().c_str();
-	std::cout << str;
+//	std::cout << str;
 	send( (*it).fd, str, strlen(str), 0);
     send(it->fd, "Transfer-Encoding: chunked\r\n", strlen("Transfer-Encoding: chunked\r\n"), 0);
-    std::cout << "Transfer-Encoding: chunked\r\n";
+//    std::cout << "Transfer-Encoding: chunked\r\n";
     send((*it).fd, "\r\n", 2, 0);
     sendFileChunked(it, fd);
 }
@@ -615,11 +582,11 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
         server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
 		it->head.setFdr(serv.responce((*it).head));
 		fd = it->head.getFdr(); 
-		std::cout << "----------RESPONSE----------" << std::endl;
+//		std::cout << "----------RESPONSE----------" << std::endl;
 		chdir(it->head.getEnvValue("PWD="));
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
-			std::cout << "--------CGI--------" << std::endl;
+//			std::cout << "--------CGI--------" << std::endl;
 			return cgiResponse(it, fd);
 		}
 		resetIt(it);
@@ -628,22 +595,21 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		if (it->head.getMethod() == "PUT" || fd == -1)
 			return noBodyResponse(it, fd, set);
         str = (char *)(*it).head.getContent_Location().c_str();
-        std::cout << str;
+//        std::cout << str;
         send( (*it).fd, str, strlen(str), 0);
 		fstat(fd, &stat);
 		string = "Content-Length: ";
 		string += ttostr(stat.st_size) + "\r\n";
 		str = (char *)string.c_str();
-		std::cout << str;
+//		std::cout << str;
 		send( (*it).fd, str, strlen(str), 0);
 		send((*it).fd, "\r\n", 2, 0);
 
 ///////////////////////////////////
-		if (sendFile(it, fd))
-			return ;
+		sendFile(it, fd);
 		close(fd);
 		(*it).head.eraseStruct();
-		std::cout << std::endl << "----------REQUEST----------" << std::endl;
+//		std::cout << std::endl << "----------REQUEST----------" << std::endl;
 	}
 }
 
