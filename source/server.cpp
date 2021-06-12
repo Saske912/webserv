@@ -265,7 +265,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         ::stat(request.c_str(), &st);
         if ((fd = open(request.c_str(), O_RDONLY)) > 0 and st.st_mode & S_IFDIR)
         {
-            std::cout << "is_dir" << std::endl;
             close(fd);
             return -1;
         }

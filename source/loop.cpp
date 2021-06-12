@@ -195,7 +195,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	struct stat stat;
 	static int count = 0;
 	static bool flaggg = false;
-
+    static char *tr = strdup("k");
+    static char *tr2 = 0;
 	if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -205,7 +206,13 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
     }
 	if (it->count == 0)
 	{
+	    if (tr2)
+        {
+            tr = strdup(tr2);
+            free(tr2);
+        }
 		t.rd = recv_next_line((*it).fd, &line);
+        tr2 = strdup(line);
 		if (line && std::string(line).find_last_not_of("1234567890") != std::string::npos)
 		{
 			free(line);
@@ -247,8 +254,13 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		if (line)
 		{
 			 it->bytes = ( int ) strtol( line, 0, 16 );
+			 if (!strcmp(line, "000") || !strcmp(line, "00"))
+			     it->bytes = 32768;
 		}
 		if (line && !it->bytes) {
+            std::cout << "line in: " << line  << std::endl;
+            std::cout << "tr: " << tr  << std::endl;
+//            sleep(3);
 			it->eshe_odin_ebychiy_flag = true;
 //			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
 		} else {
@@ -264,6 +276,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			}
 			if (t.rd == -1)
 			{
+			    std::cout << "ERR laggg"  << std::endl;
+			    sleep(3);
 				t.rd = strlen(buf);
 				flaggg = true;
 			}
@@ -504,12 +518,12 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 //	int ran = rand() % 32768;
 
     z = read(fd, line, 32768);
-    std::cerr << "z: " << z  << std::endl;
+//    std::cerr << "z: " << z  << std::endl;
     if (z == 0)
     {
 		if (waitpid(it->head.getPid(), 0, WNOHANG) == 0)
 			return ;
-        std::cerr << "Z: " << z << std::endl;
+//        std::cerr << "Z: " << z << std::endl;
         send(it->fd, "0\r\n\r\n", 5, 0);
         close(fd);
         it->head.eraseStruct();
@@ -519,7 +533,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
     }
     line[z] = 0;
     //std::cerr << "line: " << line  << std::endl;
-//	usleep(100);
+	usleep(100);
     str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
     send(it->fd, str, strlen(str), 0);
     send(it->fd, line, z, 0);
