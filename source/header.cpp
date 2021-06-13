@@ -326,7 +326,7 @@ void Header::initEnv()
 	addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
 }
 
-char *Header::getEnvValue(char const *str)
+std::string Header::getEnvValue(char const *str)
 {
 	int i = 0;
 	char *tmp;
@@ -336,8 +336,7 @@ char *Header::getEnvValue(char const *str)
 		if ((strstr(Env[i], str) == Env[i]))
 		{
 			tmp = Env[i] + strlen(str);
-			tmp = strdup(tmp);
-			return tmp;
+			return std::string(tmp);
 		}
 		++i;
 	}

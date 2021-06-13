@@ -29,7 +29,7 @@ class Header
 		std::string &getWWW_Authenticate();
 		bool &getIsCgi();
 		char **getEnv();
-		char *getEnvValue(char const *);
+		std::string getEnvValue(char const *);
 		void addEnv(const char *);
 		void initEnv();
 		void showEnv();
