@@ -194,8 +194,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *buf = 0;
 	struct stat stat;
 	static bool flaggg = false;
-    static char *tr = strdup("k");
-    static char *tr2 = 0;
 	if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -205,13 +203,29 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
     }
 	if (it->count == 0)
 	{
-	    if (tr2)
-        {
-            tr = strdup(tr2);
-            free(tr2);
-        }
 		t.rd = recv_next_line((*it).fd, &line);
-        tr2 = strdup(line);
+		if (t.rd == -1 && line && line[0])
+		{
+			if (it->reminder.empty())
+				it->reminder = std::string(line);
+			else
+				it->reminder += std::string(line);
+			free(line);
+			return 1;
+		}
+		if (!it->reminder.empty())
+		{
+			if (line)
+			{
+				buf = line;
+				line = strdup((it->reminder + std::string(line)).c_str());
+				free(buf);
+				buf = 0;
+			}
+			else
+				line = strdup(it->reminder.c_str());
+			it->reminder.erase();
+		}
 		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
 		{
 			free(line);
@@ -513,7 +527,7 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	int z;
 //	int ran = rand() % 32768;
 
-    z = read(fd, line, 32768);
+    z = read(fd, line, 1000);
 //    std::cerr << "z: " << z  << std::endl;
     if (z == 0)
     {
@@ -529,7 +543,6 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
     }
     line[z] = 0;
     //std::cerr << "line: " << line  << std::endl;
-	usleep(100);
     str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
     send(it->fd, str, strlen(str), 0);
     send(it->fd, line, z, 0);
@@ -616,7 +629,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		it->head.setFdr(serv.responce((*it).head));
 		fd = it->head.getFdr(); 
 		std::cout << "----------RESPONSE----------" << std::endl;
-		chdir(it->head.getEnvValue("PWD="));
+		chdir(it->head.getEnvValue("PWD=").c_str());
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
 			std::cout << "--------CGI--------" << std::endl;
@@ -653,8 +666,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 	while (it != set.end())
 	{
 //	    std::cout << "rec"  << std::endl;
-		if (recive(set, it, t, conf))
-            continue ;
+		recive(set, it, t, conf);
 //        std::cout << "no break"  << std::endl;
 		response(it, t, conf, set);
 		it++;
