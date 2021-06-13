@@ -68,6 +68,7 @@ typedef struct	s_write
         bool first_line;
         bool head_readed;
 		bool eshe_odin_ebychiy_flag;
+		std::string send_error;
 }				t_write;
 
 void        error_exit(const std::string& str);

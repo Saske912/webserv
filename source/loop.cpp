@@ -379,24 +379,31 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
 
 int sendFile(std::list<t_write>::iterator &it, int fd)
 {
-	char *str;
+	char str[32769];
 	int z;
-    size_t ret;
+    int ret;
 
-	str = (char *)malloc(32769);
 //	sleep(1);
 //	usleep(1000);
 	std::cout << "send to: " << it->fd  << std::endl;
 	while ((z = read(fd, str, 32768)) > 0)
 	{
 		str[z] = 0;
-		if ((ret = send(it->fd, str, z, 0)) != strlen(str))
+		ret = send(it->fd, str, z, 0);
+		if (ret == -1)
+		{
+			it->reminder = std::string(str);
+			it->send_error = "sendFile";
+			return 1;
+		}
+		else if ((size_t)ret != strlen(str))
         {
-		    std::cerr << "ERROR: ret: " << ret << "strlen(): " << strlen(str)  << std::endl;
-        }
+        	it->reminder = std::string(str, ret, strlen(str) - ret);
+			it->send_error = "sendFile";
+			return 1;
+		}
 //        std::cout << "ret: " << ret << " strlen(): " << strlen(str)  << std::endl;
 	}
-	free(str);
 	return 0;
 }
 
@@ -417,36 +424,38 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 //	std::cout << std::endl << "----------REQUEST----------" << std::endl;
 }
 
-void sendHeader(std::list<t_write>::iterator &it)
+int sendHeader(std::list<t_write>::iterator &it)
 {
 	std::string str;
-	size_t    ret;
+	int    ret;
 
 	str = (*it).head.getResponse();
-//	send( (*it).fd, str, strlen(str), 0);
 	if (!((*it).head.getContent_Language().empty()))	
 	{
 		str += (*it).head.getContent_Language();
-//		std::cout << str;
-//		send( (*it).fd, str, strlen(str), 0);
 	}
 	if (!((*it).head.getAllow().empty()))
 	{
 		str += (*it).head.getAllow();
-//		std::cout << str;
-//		send( (*it).fd, str, strlen(str), 0);
 	}
 	(*it).head.setDate("Date: " + get_current_date());
 	str += (*it).head.getDate();
-//	std::cout << str;
-//	send( (*it).fd, str, strlen(str), 0);
 	str += (*it).head.getLast_Modified();
 //	std::cout << str;
-	if ((ret = send( (*it).fd, str.c_str(), str.length(), 0)) != str.length())
-    {
-	    std::cerr << "ERROR(send head)"  << std::endl;
-    }
-//	std::cout << "head sended: " << ret << " strlen(str): " << str.length()  << std::endl;
+	ret = send(it->fd, str.c_str(), str.length(), 0);
+	if (ret == -1)
+	{
+		it->reminder = std::string(str);
+		it->send_error = "sendHeader";
+		return 1;
+	}
+	else if ((size_t)ret != str.length())
+	{
+		it->reminder = std::string(str, ret, str.length() - ret);
+		it->send_error = "sendHeader";
+		return 1;
+	}
+	return 0;
 }
 
 int     parse_cgi(std::list<t_write>::iterator &it, char *line)
@@ -502,26 +511,6 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	char *str;
 	int z;
 
-	if (!it->reminder.empty())
-	{
-    	str = strdup(it->reminder.c_str());
-    	z = send(it->fd, str, strlen(str), 0);
-		if (z == -1)
-		{
-			it->reminder = std::string(str);
-			free(str);
-			return ;
-		}
-		else if ((size_t)z != strlen(str))
-		{
-			it->reminder = std::string(str, z, strlen(str) - z);
-			free(str);
-			return ;
-		}
-		free(str);
-		str = 0;
-		it->reminder.erase();
-	}
     z = read(fd, line, 1000);
     if (z == 0)
     {
@@ -539,9 +528,15 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
     str = strdup((getBaseSixteen(z) + "\r\n" + line + "\r\n").c_str());
     z = send(it->fd, str, strlen(str), 0);
 	if (z == -1)
+	{
+		it->send_error = "sendFileChunked";
 		it->reminder = std::string(str);
+	}
 	else if ((size_t)z != strlen(str))
+	{
+		it->send_error = "sendFileChunked";
 		it->reminder = std::string(str, z, strlen(str) - z);
+	}
 	free(str);
     //send(it->fd, line, z, 0);
     //send(it->fd, "\r\n", 2, 0);
@@ -604,54 +599,109 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
     sendFileChunked(it, fd);
 }
 
+int sendBodyHeader(std::list<t_write>::iterator &it)
+{
+	std::string str;
+	struct stat stat;
+	int ret;
+
+	fstat(it->head.getFdr(), &stat);
+	str = std::string((*it).head.getContent_Location() + "Content-Length: " + ttostr(stat.st_size) + "\r\n\r\n");
+    ret = send( (*it).fd, str.c_str(), str.length(), 0);
+	if (ret == -1)
+	{
+		it->reminder = std::string(str);
+		it->send_error = "sendBodyHeader";
+		return 1;
+	}
+	else if ((size_t)ret != str.length())
+	{
+		it->reminder = std::string(str, ret, str.length() - ret);
+		it->send_error = "sendBodyHeader";
+		return 1;
+	}
+	return 0;
+}
+
 void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
 {
 	int fd;
 	std::string string;
 	std::string string2;
-	struct stat stat;
 	char *str;
+	int z;
 
 	if ( FD_ISSET((*it).fd, &t.write))
 	{
+		if (!it->reminder.empty())
+		{
+			str = strdup(it->reminder.c_str());
+			z = send(it->fd, str, strlen(str), 0);
+			if (z == -1)
+			{
+				it->reminder = std::string(str);
+				free(str);
+				return ;
+			}
+			else if ((size_t)z != strlen(str))
+			{
+				it->reminder = std::string(str, z, strlen(str) - z);
+				free(str);
+				return ;
+			}
+			free(str);
+			str = 0;
+			it->reminder.erase();
+			if (it->send_error == "sendFile")
+			{
+				it->send_error.erase();
+				goto sendFile;
+			}
+			if (it->send_error == "sendHeader")
+			{
+				it->send_error.erase();
+				goto sendHeader;
+			}
+			if (it->send_error == "sendBodyHeader")
+			{
+				it->send_error.erase();
+				goto sendBodyHeader;
+			}
+		}
 //		if (it->head.getFd() != 1)
 //            close( it->head.getFd( ));
-//        std::cout << "fdr " << it->head.getFdr()  << std::endl;
 		if (it->head.getFdr())
 			return (sendFileChunked(it, it->head.getFdr()));
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
 ////////////////////////////////////
-        server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
-		it->head.setFdr(serv.responce((*it).head));
+        //server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
+		it->head.setFdr(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 		fd = it->head.getFdr(); 
 //		std::cout << "----------RESPONSE----------" << std::endl;
 		chdir(it->head.getEnvValue("PWD=").c_str());
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
 //			std::cout << "--------CGI--------" << std::endl;
-			return cgiResponse(it, fd);
+			return cgiResponse(it, it->head.getFdr());
 		}
 		resetIt(it);
-		sendHeader(it);
+		if (sendHeader(it))
+			return ;
+sendHeader:
 				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
-		if (it->head.getMethod() == "PUT" || fd == -1)
-			return noBodyResponse(it, fd, set);
-        str = (char *)(*it).head.getContent_Location().c_str();
-//        std::cout << str;
-        send( (*it).fd, str, strlen(str), 0);
-		fstat(fd, &stat);
-		string = "Content-Length: ";
-		string += ttostr(stat.st_size) + "\r\n";
-		str = (char *)string.c_str();
-//		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);
-		send((*it).fd, "\r\n", 2, 0);
-
-///////////////////////////////////
-		sendFile(it, fd);
-		close(fd);
+		if (it->head.getMethod() == "PUT" || it->head.getFdr() == -1)
+			return noBodyResponse(it, it->head.getFdr(), set);
+   
+		if (sendBodyHeader(it))
+			return ;
+sendBodyHeader:
+		///////////////////////////////////
+sendFile:
+		if (sendFile(it, it->head.getFdr()))
+			return ;
+		close(it->head.getFdr());
 		(*it).head.eraseStruct();
 //		std::cout << std::endl << "----------REQUEST----------" << std::endl;
 	}
@@ -735,7 +785,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
                     ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 24);
 
-            t_write a = {Header(), ipstr, std::string(), cli.client, 0, 0, 0, false, false, false, false};
+            t_write a = {Header(), ipstr, std::string(), cli.client, 0, 0, 0, false, false, false, false, std::string()};
             set.push_back(a);
         }
         communication_with_clients(set, t, conf);

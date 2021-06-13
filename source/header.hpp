@@ -35,7 +35,7 @@ class Header
 		void showEnv();
 		unsigned int getPort();
 		int getFd();
-		int getFdr();
+		int &getFdr();
 		pid_t getPid();
 		int	getBodySize();
 		void setBodySize(int);

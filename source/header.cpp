@@ -201,7 +201,7 @@ int Header::getFd()
 	return Fd;
 }
 
-int Header::getFdr()
+int &Header::getFdr()
 {
 	return Fdr;
 }
