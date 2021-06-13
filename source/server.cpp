@@ -139,7 +139,7 @@ std::string const & def_file, route const & route, Header & head) {
         if (def_file.empty() and route.get_autoindex())
         {
             head.setResponse("HTTP/1.1 200 OK\r\n");
-            return autoindex(route.get_root(), head, route.get_name());
+            return autoindex( head, route.get_name( ));
         }
         else if (request == "/")
             return targeting(head, def_file, route);
@@ -513,7 +513,7 @@ bool server::is_allow( const std::string & request, std::string const & method, 
     return false;
 }
 
-int server::autoindex( std::string const & root, Header & head, std::string const &  name )
+int server::autoindex( Header &head, std::string const &name )
 {
     DIR     *dir;
     dirent  *dir_p;
