@@ -193,7 +193,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *line = 0;
 	char *buf = 0;
 	struct stat stat;
-	static bool flaggg = false;
 	if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -206,8 +205,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		t.rd = recv_next_line((*it).fd, &line);
 		if (t.rd == -1 && line && line[0])
 		{
-			std::cout << "line: " << line << std::endl;
-			getchar();
 			if (it->reminder.empty())
 				it->reminder = std::string(line);
 			else
@@ -288,7 +285,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			if (t.rd == -1)
 			{
 				t.rd = strlen(buf);
-				flaggg = true;
 			}
 			if (it->head.getFd() != 1)
 			{
@@ -497,15 +493,32 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 	char line[32769];
 	char *str;
 	int z;
-//	int ran = rand() % 32768;
 
+	if (!it->reminder.empty())
+	{
+    	str = strdup(it->reminder.c_str());
+    	z = send(it->fd, str, strlen(str), 0);
+		if (z == -1)
+		{
+			it->reminder = std::string(str);
+			free(str);
+			return ;
+		}
+		else if ((size_t)z != strlen(str))
+		{
+			it->reminder = std::string(str, z, strlen(str) - z);
+			free(str);
+			return ;
+		}
+		free(str);
+		str = 0;
+		it->reminder.erase();
+	}
     z = read(fd, line, 1000);
-//    std::cerr << "z: " << z  << std::endl;
     if (z == 0)
     {
 		if (waitpid(it->head.getPid(), 0, WNOHANG) == 0)
 			return ;
-//        std::cerr << "Z: " << z << std::endl;
         send(it->fd, "0\r\n\r\n", 5, 0);
         close(fd);
         it->head.eraseStruct();
@@ -515,10 +528,15 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
     }
     line[z] = 0;
     //std::cerr << "line: " << line  << std::endl;
-    str = (char *)(getBaseSixteen(z) + "\r\n").c_str();
-    send(it->fd, str, strlen(str), 0);
-    send(it->fd, line, z, 0);
-    send(it->fd, "\r\n", 2, 0);
+    str = strdup((getBaseSixteen(z) + "\r\n" + line + "\r\n").c_str());
+    z = send(it->fd, str, strlen(str), 0);
+	if (z == -1)
+		it->reminder = std::string(str);
+	else if ((size_t)z != strlen(str))
+		it->reminder = std::string(str, z, strlen(str) - z);
+	free(str);
+    //send(it->fd, line, z, 0);
+    //send(it->fd, "\r\n", 2, 0);
 }
 
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
