@@ -381,6 +381,7 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 {
 	char *str;
 	int z;
+    size_t ret;
 
 	str = (char *)malloc(32769);
 //	sleep(1);
@@ -389,8 +390,11 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 	while ((z = read(fd, str, 32768)) > 0)
 	{
 		str[z] = 0;
-//		std::cout << str  << std::endl;
-		send(it->fd, str, z, 0);
+		if ((ret = send(it->fd, str, z, 0)) != strlen(str))
+        {
+		    std::cerr << "ERROR: ret: " << ret << "strlen(): " << strlen(str)  << std::endl;
+        }
+//        std::cout << "ret: " << ret << " strlen(): " << strlen(str)  << std::endl;
 	}
 	free(str);
 	return 0;
@@ -415,30 +419,34 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 
 void sendHeader(std::list<t_write>::iterator &it)
 {
-	char *str = 0;
+	std::string str;
+	size_t    ret;
 
-	str = (char *)(*it).head.getResponse().c_str();
-//	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
+	str = (*it).head.getResponse();
+//	send( (*it).fd, str, strlen(str), 0);
 	if (!((*it).head.getContent_Language().empty()))	
 	{
-		str = (char *)(*it).head.getContent_Language().c_str();
+		str += (*it).head.getContent_Language();
 //		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);
+//		send( (*it).fd, str, strlen(str), 0);
 	}
 	if (!((*it).head.getAllow().empty()))
 	{
-		str = (char *)(*it).head.getAllow().c_str();
+		str += (*it).head.getAllow();
 //		std::cout << str;
-		send( (*it).fd, str, strlen(str), 0);	
+//		send( (*it).fd, str, strlen(str), 0);
 	}
 	(*it).head.setDate("Date: " + get_current_date());
-	str = (char *)(*it).head.getDate().c_str();
+	str += (*it).head.getDate();
 //	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
-	str = (char *)(*it).head.getLast_Modified().c_str();
+//	send( (*it).fd, str, strlen(str), 0);
+	str += (*it).head.getLast_Modified();
 //	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
+	if ((ret = send( (*it).fd, str.c_str(), str.length(), 0)) != str.length())
+    {
+	    std::cerr << "ERROR(send head)"  << std::endl;
+    }
+//	std::cout << "head sended: " << ret << " strlen(str): " << str.length()  << std::endl;
 }
 
 int     parse_cgi(std::list<t_write>::iterator &it, char *line)
