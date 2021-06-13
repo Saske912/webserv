@@ -226,39 +226,31 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 				line = strdup(it->reminder.c_str());
 			it->reminder.erase();
 		}
+		if (!t.rd)
+        {
+            close(it->fd);
+            it->head.eraseStruct();
+		    set.erase(it);
+            return 1;
+        }
 		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
 		{
 			free(line);
 			return 1;
 		}
-		if (flaggg == true)
-		{
-			flaggg = false;
-		}
 	}
-	if (t.rd == 0)
-	{
-        close(it->fd);
-		it->head.eraseStruct();
-		it = set.erase(it);
-		return 1;
-	}
-		//	if (line)
-        //   	 std::cout << "line: " << line << std::endl;
 	if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
 		if (it->head.getFd() != 1)
 		{
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
-//			std::cout << "ct = " << it->ct << std::endl;
 			it->ct = 0;
 		}
-//                std::cout << "CHECK fILE" << std::endl;
 		it->flag = true;
-//		std::cout << "exit" << std::endl;
 	}
-	else {
+	else
+	{
 		if (line && !line[0])
 		{
 			free(line);
@@ -270,16 +262,23 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			 if (!strcmp(line, "000") || !strcmp(line, "00"))
 			     it->bytes = 32768;
 		}
-		if (line && !it->bytes) {
+		if (line && !it->bytes)
+		{
 			it->eshe_odin_ebychiy_flag = true;
 			it->head.setBodySize(it->ct);
-//			std::cout << "eshe_odin_ebychiy_flag" << std::endl;
-		} else {
-			int n = it->bytes - it->count; // < 0 ? 0 : it->bytes - it->count;
-//                    std::cout << "BUF FOR ALOCATE: " << it->bytes - it->count + 1  << std::endl;
-               //     std::cout << "COUNT: " << it->count  << std::endl;
+		}
+		else
+		{
+			int n = it->bytes - it->count;
 			buf = (char *)malloc(sizeof(char) * (n + 1));
 			t.rd = recv( it->fd, buf, n , 0 );
+            if (t.rd == 0)
+            {
+                close(it->fd);
+                it->head.eraseStruct();
+                it = set.erase(it);
+                return 1;
+            }
 			if (t.rd == -1 && !buf[0])
 			{
 				free(buf);
@@ -310,17 +309,10 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	}
 	if (line)
 		free(line);
-	if (t.rd == 0)
-	{
-        close(it->fd);
-		it->head.eraseStruct();
-		it = set.erase(it);
-		return 1;
-	}
 	return 0;
 }
 
-int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
+void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
 	char    *line = 0;
 	char    *buf;
@@ -335,7 +327,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
         if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
         {
 			if (chunked(set, it, t, conf))
-				return 1;
+				return ;
         }
         else
         {
@@ -343,7 +335,7 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             if (t.rd != 0 and !line[0] and !it->first_line)
             {
                 free(line);
-                return 1;
+                return ;
             }
             if (!it->reminder.empty())
             {
@@ -357,16 +349,15 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
             {
                 it->reminder = std::string(line);
 				free(line);
-                return 1;
+                return ;
             }
             if (t.rd == 0)
             {
-//                std::cerr << "t.rd = 0" << std::endl;
                 close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
                 free(line);
-                return 1;
+                return ;
             }
             if (!line[0]) {
                 it->head_readed = true;
@@ -387,19 +378,24 @@ int recive(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t,
         free(line);
         line = 0;
 	}
-	return 0;
 }
 
 int sendFile(std::list<t_write>::iterator &it, int fd)
 {
-	char str[32769];
+	char *str;
 	int z;
 
+	str = (char *)malloc(32769);
+//	sleep(1);
+//	usleep(1000);
+	std::cout << "send to: " << it->fd  << std::endl;
 	while ((z = read(fd, str, 32768)) > 0)
 	{
 		str[z] = 0;
+//		std::cout << str  << std::endl;
 		send(it->fd, str, z, 0);
 	}
+	free(str);
 	return 0;
 }
 
@@ -703,7 +699,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
         if ( FD_ISSET(serv.host, &t.read))
         {
             if (( cli.client = accept( serv.host, reinterpret_cast<sockaddr *>(&cli.ad), &cli.adlen)) == -1)
-                error_exit("fail to accept Client");
+                continue ;
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
