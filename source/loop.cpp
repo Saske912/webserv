@@ -206,6 +206,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		t.rd = recv_next_line((*it).fd, &line);
 		if (t.rd == -1 && line && line[0])
 		{
+			std::cout << "line: " << line << std::endl;
+			getchar();
 			if (it->reminder.empty())
 				it->reminder = std::string(line);
 			else
@@ -251,7 +253,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
-//			std::cout << "ct = " << it->ct << std::endl;
+			std::cout << "ct = " << it->ct << std::endl;
 			it->ct = 0;
 		}
 //                std::cout << "CHECK fILE" << std::endl;
@@ -267,8 +269,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		if (line)
 		{
 			 it->bytes = ( int ) strtol( line, 0, 16 );
-			 if (!strcmp(line, "000") || !strcmp(line, "00"))
-			     it->bytes = 32768;
 		}
 		if (line && !it->bytes) {
 			it->eshe_odin_ebychiy_flag = true;
