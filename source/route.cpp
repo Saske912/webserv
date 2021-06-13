@@ -46,11 +46,16 @@ bool route::check_name( std::string request ) {
 std::string route::swap_path( const std::string &request ) {
     std::string tmp;
     if (_name.length() < request.length())
-        tmp = std::string(request, _name.length(), request.length() - _name.length());
+    {
+        if (*_name.rbegin() == '/')
+            tmp = std::string(request, _name.length(), request.length() - _name.length());
+        else
+            tmp = std::string(request, _name.length() + 1, request.length() - _name.length());
+    }
     else
         tmp = "/";
-    if (*_root.rbegin() != '/' and *tmp.begin() != '/')
-        _root += '/';
+//    if (*_root.rbegin() != '/' and *tmp.begin() != '/')
+//        _root += '/';
     return tmp;
 }
 

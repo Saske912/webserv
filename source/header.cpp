@@ -340,7 +340,7 @@ std::string Header::getEnvValue(char const *str)
 		}
 		++i;
 	}
-	return NULL;
+	return std::string();
 }
 
 void Header::addEnv(const char *str)
