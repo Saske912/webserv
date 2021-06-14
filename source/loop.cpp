@@ -410,13 +410,25 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write> &set)
 {
 	char *str = 0;
+	int ret;
 
-	str = (char *)(*it).head.getContent_Location().c_str();
-//	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
 	if (fd != -1)
 		close(fd);
-	send((*it).fd, "\r\n", 2, 0);
+	str = (char *)((*it).head.getContent_Location() + "\r\n").c_str();
+//	std::cout << str;
+	ret = send( (*it).fd, str, strlen(str), 0);
+	if (ret == -1)
+	{
+		it->reminder = std::string(str);
+		it->send_error = "noBodyResponse";
+		return ;
+	}
+	else if ((size_t)ret != strlen(str))
+	{
+		it->reminder = std::string(str, ret, strlen(str) - ret);
+		it->send_error = "noBodyResponse";
+		return ;
+	}
 	close(it->fd);
 	it->head.eraseStruct();
 //    std::cerr << "noBodyResponse" << std::endl;
@@ -516,7 +528,19 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
     {
 		if (waitpid(it->head.getPid(), 0, WNOHANG) == 0)
 			return ;
-        send(it->fd, "0\r\n\r\n", 5, 0);
+        z = send(it->fd, "0\r\n\r\n", 5, 0);
+		if (z == -1)
+		{
+			it->send_error = "sendFileChunkedLast";
+			it->reminder = std::string("0\r\n\r\n");
+			return ;
+		}
+		else if ((size_t)z != 5)
+		{
+			it->send_error = "sendFileChunkedLast";
+			it->reminder = std::string("0\r\n\r\n", z, 5 - z);
+			return ;
+		}
         close(fd);
         it->head.eraseStruct();
         resetIt(it);
@@ -544,10 +568,10 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 {
-	char *str;
 	char *line = 0;
 	int	 size = 0;
 	int     gnl;
+	int ret;
 	std::string string;
 
 	while ((gnl = get_next_line(fd, &line)) > 0)
@@ -560,7 +584,7 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
             line = NULL;
             break ;
         }
-		int ret = parse_cgi(it, line);
+		ret = parse_cgi(it, line);
 		if (ret == 1)
         {
             lseek(fd, ((int)strlen(line) + 1) * (-1) ,SEEK_CUR);
@@ -580,23 +604,22 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
     }
 	if (it->head.getResponse().empty())
 	    it->head.setResponse("HTTP/1.1 200 OK\r\n");
-	str = (char *)it->head.getResponse().c_str();
-//	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
-	str = (char *)it->head.getContent_Type().c_str();
-//	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
-	(*it).head.setDate("Date: " + get_current_date());
-	str = (char *)(*it).head.getDate().c_str();
-//	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
-	str = (char *)(*it).head.getLast_Modified().c_str();
-//	std::cout << str;
-	send( (*it).fd, str, strlen(str), 0);
-    send(it->fd, "Transfer-Encoding: chunked\r\n", strlen("Transfer-Encoding: chunked\r\n"), 0);
-//    std::cout << "Transfer-Encoding: chunked\r\n";
-    send((*it).fd, "\r\n", 2, 0);
-    sendFileChunked(it, fd);
+	string = std::string(it->head.getResponse() + it->head.getContent_Type() + (*it).head.getDate() + (*it).head.getLast_Modified() + "Transfer-Encoding: chunked\r\n\r\n");
+	ret = send(it->fd, string.c_str(), string.length(), 0);
+	if (ret == -1)
+	{
+		it->reminder = std::string(string);
+		it->send_error = "sendFileChunked";
+		return ;
+	}
+	else if ((size_t)ret != string.length())
+	{
+		it->reminder = std::string(string, ret, string.length() - ret);
+		it->send_error = "sendFileChunked";
+		return ;
+	}
+//	std::cout << string;
+	sendFileChunked(it, fd);
 }
 
 int sendBodyHeader(std::list<t_write>::iterator &it)
@@ -657,15 +680,31 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 				it->send_error.erase();
 				goto sendFile;
 			}
-			if (it->send_error == "sendHeader")
+			else if (it->send_error == "sendHeader")
 			{
 				it->send_error.erase();
 				goto sendHeader;
 			}
-			if (it->send_error == "sendBodyHeader")
+			else if (it->send_error == "sendBodyHeader")
 			{
 				it->send_error.erase();
 				goto sendBodyHeader;
+			}
+			else if (it->send_error == "sendFileChunkedLast")
+			{
+				it->send_error.erase();
+				close(it->head.getFdr());
+				it->head.eraseStruct();
+				resetIt(it);
+				return ;
+			}
+			else if (it->send_error == "noBodyResponse")
+			{
+				it->send_error.erase();
+				close(it->fd);
+				it->head.eraseStruct();
+				it = set.erase(it);
+				return ;
 			}
 		}
 //		if (it->head.getFd() != 1)
