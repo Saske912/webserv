@@ -200,6 +200,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
         //we here after PUT or POST(1th part) server response
         //
     }
+	std::cout << "debug1"  << std::endl;
 	if (it->count == 0)
 	{
 		t.rd = recv_next_line((*it).fd, &line);
@@ -212,7 +213,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			free(line);
 			return 1;
 		}
-		if (!it->reminder.empty())
+        std::cout << "debug2"  << std::endl;
+        if (!it->reminder.empty())
 		{
 			if (line)
 			{
@@ -225,7 +227,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 				line = strdup(it->reminder.c_str());
 			it->reminder.erase();
 		}
-		if (!t.rd)
+        std::cout << "debug3"  << std::endl;
+        if (!t.rd)
         {
             close(it->fd);
             it->head.eraseStruct();
@@ -240,7 +243,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			return 1;
 		}
 	}
-	if (line && !line[0] && it->eshe_odin_ebychiy_flag) {
+    std::cout << "debug4"  << std::endl;
+    if (line && !line[0] && it->eshe_odin_flag) {
 		if (it->head.getFd() != 1)
 		{
 			fstat(it->head.getFd(), &stat);
@@ -253,7 +257,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	}
 	else
 	{
-		if (line && !line[0])
+        std::cout << "debug5"  << std::endl;
+        if (line && !line[0])
 		{
 			free(line);
 			return 1;
@@ -264,7 +269,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 		}
 		if (line && !it->bytes)
 		{
-			it->eshe_odin_ebychiy_flag = true;
+			it->eshe_odin_flag = true;
 			it->head.setBodySize(it->ct);
 		}
 		else
@@ -274,6 +279,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			t.rd = recv( it->fd, buf, n , 0 );
             if (t.rd == 0)
             {
+                std::cout << "finished"  << std::endl;
                 close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
@@ -358,6 +364,7 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
             }
             if (t.rd == 0)
             {
+                std::cout << "finished"  << std::endl;
                 close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
@@ -393,7 +400,7 @@ int sendFile(std::list<t_write>::iterator &it, int fd)
 
 //	sleep(1);
 //	usleep(1000);
-	std::cout << "send to: " << it->fd  << std::endl;
+//	std::cout << "send to: " << it->fd  << std::endl
 	while ((z = read(fd, str, 32768)) > 0)
 	{
 		str[z] = 0;
@@ -425,7 +432,7 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 	str = (char *)((*it).head.getContent_Location() + "\r\n").c_str();
 //	std::cout << str;
 	ret = send( (*it).fd, str, strlen(str), 0);
-	if (ret == -1)
+    if (ret == -1)
 	{
 		it->reminder = std::string(str);
 		it->send_error = "noBodyResponse";
@@ -437,7 +444,7 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 		it->send_error = "noBodyResponse";
 		return ;
 	}
-	close(it->fd);
+    close(it->fd);
 	it->head.eraseStruct();
 //    std::cerr << "noBodyResponse" << std::endl;
 	it = set.erase(it);
@@ -518,7 +525,7 @@ void resetIt(std::list<t_write>::iterator &it)
 {
 	it->first_line = false;
 	it->head_readed = false;
-	it->eshe_odin_ebychiy_flag = false;
+	it->eshe_odin_flag = false;
 	it->flag = false;
 	it->bytes = 0;
 	it->count = 0;
@@ -725,8 +732,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 ////////////////////////////////////
         //server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
 		it->head.setFdr(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
-		fd = it->head.getFdr(); 
-//		std::cout << "----------RESPONSE----------" << std::endl;
+		fd = it->head.getFdr();
 		chdir(it->head.getEnvValue("PWD=").c_str());
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
@@ -750,20 +756,24 @@ sendFile:
 			return ;
 		close(it->head.getFdr());
 		(*it).head.eraseStruct();
-//		std::cout << std::endl << "----------REQUEST----------" << std::endl;
 	}
 }
 
 static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
 {
+    int i = 0;
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
 //	    std::cout << "rec"  << std::endl;
 		recive(set, it, t, conf);
 //        std::cout << "no break"  << std::endl;
+        if (it == set.end())
+            continue ;
 		response(it, t, conf, set);
-		it++;
+		if (it != set.end())
+		    it++;
+		std::cout << "I:! " << i++  << std::endl;
 	}
 }
 
@@ -780,7 +790,8 @@ static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
 		if ((t.ret = select(t.max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
 		{
 			if (errno != EINTR)
-				error_exit("error in select");
+                return 1;
+//				error_exit("error in select");
 			else
 			{
 				//signal income
@@ -807,6 +818,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     std::string ipstr;
     while (true)
     {
+        std::cout << "loop"  << std::endl;
         init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();
@@ -827,6 +839,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
+//            setsockopt(cli.client, SOL_SOCKET, SO_LINGER, &serv.opt, sizeof(serv.opt));
             ipstr = ttostr(cli.ad.sin_addr.s_addr & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 8 & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +

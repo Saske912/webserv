@@ -257,6 +257,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     fdset[2];
     int     tmp;
     bool    flag = false;
+    int     st;
 
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
@@ -285,8 +286,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     }
     else if ((is_cgi(request, route, head.getMethod(), &flag)))
     {
-//        int     fd1 = dup(1);
-//        int     fd0 = dup(0);
+        int     fd1 = dup(1);
+        int     fd0 = dup(0);
 
         std::string root;
         if (!flag)
@@ -311,17 +312,17 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             }
         }
         head.setIsCgi(true);
-        pipe(fdset);
-//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-//            error_exit("open error");
+//        pipe(fdset);
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+            error_exit("open error");
         if ((pid = fork()) == 0)
         {
-            close(fdset[0]);
+//            close(fdset[0]);
             arg[0] = strdup(root.c_str());
             arg[1] = NULL;
             dup2(tmp, 0);
-            dup2(fdset[1], 1);
-//            dup2(fd, 1);
+//            dup2(fdset[1], 1);
+            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
@@ -331,15 +332,15 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(tmp);
             head.setPid(pid);
-            close(fdset[1]);
+//            close(fdset[1]);
         }
-//        waitpid(pid, &stat, 0);
-//        lseek(fd, 0, 0);
+        waitpid(pid, &st, 0);
+        lseek(fd, 0, 0);
+        dup2(fd1, 1);
+        dup2(fd0, 0);
+        return fd;
+//        return fdset[0];
 //        dup2(fd1, 1);
-//        return fd;
-        return fdset[0];
-//        dup2(fd1, 1);
-//        dup2(fd0, 0);
     }
     else
     {
@@ -366,6 +367,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             head.setResponse("HTTP/1.1 200 OK\r\n");
         }
     }
+    std::cout << "server responce"  << std::endl;
     return fd;
 }
 
