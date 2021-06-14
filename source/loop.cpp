@@ -196,6 +196,11 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
+        if (it->head.getFd() == -2)
+        {
+            it->head.setFd(1);
+            return 1;
+        }
         //
         //we here after PUT or POST(1th part) server response
         //
@@ -231,6 +236,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
         if (!t.rd)
         {
             close(it->fd);
+            erase(it);
             it->head.eraseStruct();
 		    set.erase(it);
             return 1;
@@ -248,6 +254,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
 			close(it->head.getFd());
+			erase(it);
 			std::cout << "ct = " << it->ct << std::endl;
 			it->ct = 0;
 		}
@@ -279,6 +286,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
             {
                 std::cout << "finished"  << std::endl;
                 close(it->fd);
+                erase(it);
                 it->head.eraseStruct();
                 it = set.erase(it);
                 return 1;
@@ -358,6 +366,7 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
             {
                 std::cout << "finished"  << std::endl;
                 close(it->fd);
+                erase(it);
                 it->head.eraseStruct();
                 it = set.erase(it);
                 free(line);
@@ -386,29 +395,42 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
 
 int sendFile(std::list<t_write>::iterator &it, int fd)
 {
-	char str[32769];
+	char *str;
 	int z;
     int ret;
 
 //	sleep(1);
 //	usleep(1000);
-//	std::cout << "send to: " << it->fd  << std::endl
+    str = (char *)malloc(32769);
+	std::cout << "debug1" << std::endl;
+    std::cout << "fd = " << fd << std::endl;
 	while ((z = read(fd, str, 32768)) > 0)
 	{
+	    std::cout << "z: " << z << std::endl;
 		str[z] = 0;
 		ret = send(it->fd, str, z, 0);
+        std::cout << "ret: " << ret << std::endl;
+        std::cout << "strlen: " << strlen(str) << std::endl;
+        std::cout << "str: |" << str << "|" << std::endl;
 		if (ret == -1)
 		{
+            std::cout << "ret = -1" << std::endl;
 			it->reminder = std::string(str);
 			it->send_error = "sendFile";
 			return 1;
 		}
 		else if ((size_t)ret != strlen(str))
         {
+		    std::list<std::string>::iterator itt(Header::current_files_in_work.begin());
+		    while(itt != Header::current_files_in_work.end())
+		        std::cout << "itt: " << *itt++  << std::endl;
+            std::cout << "methd: " << it->head.getMethod() << std::endl;
+            std::cout << "ret != strlen" << std::endl;
         	it->reminder = std::string(str, ret, strlen(str) - ret);
 			it->send_error = "sendFile";
 			return 1;
 		}
+        std::cout << "debug2" << std::endl;
 //        std::cout << "ret: " << ret << " strlen(): " << strlen(str)  << std::endl;
 	}
 	return 0;
@@ -418,12 +440,22 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 {
 	char *str = 0;
 	int ret;
+    std::list<std::string >::iterator iter;
 
+	std::cout << "kek1"  << std::endl;
 	if (fd != -1)
-		close(fd);
+    {
+        iter = Header::current_files_in_work.begin();
+        while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
+            iter++;
+        if (iter != Header::current_files_in_work.end())
+            Header::current_files_in_work.erase(iter);
+        close(fd);
+    }
 	str = (char *)((*it).head.getContent_Location() + "\r\n").c_str();
 //	std::cout << str;
 	ret = send( (*it).fd, str, strlen(str), 0);
+    std::cout << "kek2"  << std::endl;
     if (ret == -1)
 	{
 		it->reminder = std::string(str);
@@ -436,11 +468,14 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 		it->send_error = "noBodyResponse";
 		return ;
 	}
+    std::cout << "kek3"  << std::endl;
     close(it->fd);
+    erase(it);
 	it->head.eraseStruct();
 //    std::cerr << "noBodyResponse" << std::endl;
 	it = set.erase(it);
 //	std::cout << std::endl << "----------REQUEST----------" << std::endl;
+    std::cout << "kek4"  << std::endl;
 }
 
 int sendHeader(std::list<t_write>::iterator &it)
@@ -549,6 +584,11 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 			return ;
 		}
         close(fd);
+        std::list<std::string>::iterator iter = Header::current_files_in_work.begin();
+        while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
+            iter++;
+        if (iter != Header::current_files_in_work.end())
+            Header::current_files_in_work.erase(iter);
         it->head.eraseStruct();
         resetIt(it);
 //        std::cout << std::endl << "----------REQUEST----------" << std::endl;
@@ -701,6 +741,11 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 			{
 				it->send_error.erase();
 				close(it->head.getFdr());
+                std::list<std::string>::iterator iter = Header::current_files_in_work.begin();
+                while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
+                    iter++;
+                if (iter != Header::current_files_in_work.end())
+                    Header::current_files_in_work.erase(iter);
 				it->head.eraseStruct();
 				resetIt(it);
 				return ;
@@ -709,6 +754,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 			{
 				it->send_error.erase();
 				close(it->fd);
+                erase(it);
 				it->head.eraseStruct();
 				it = set.erase(it);
 				return ;
@@ -725,15 +771,24 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
         //server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
 		it->head.setFdr(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 		fd = it->head.getFdr();
+		if (fd == -2)
+        {
+		    it->head.setFdr(0);
+            return;
+        }
+		std::cout << "----------RESPONSE----------" << std::endl;
 		chdir(it->head.getEnvValue("PWD=").c_str());
+        std::cout << "----------RESPONSE2----------" << std::endl;
 		if (it->head.getIsCgi()) {
 		    // parse cgi header
 //			std::cout << "--------CGI--------" << std::endl;
 			return cgiResponse(it, it->head.getFdr());
 		}
 		resetIt(it);
+        std::cout << "----------RESPONSE3----------" << std::endl;
 		if (sendHeader(it))
 			return ;
+        std::cout << "----------RESPONSE4----------" << std::endl;
 sendHeader:
 				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
 		if (it->head.getMethod() == "PUT" || it->head.getFdr() == -1)
@@ -741,13 +796,21 @@ sendHeader:
    
 		if (sendBodyHeader(it))
 			return ;
+        std::cout << "----------RESPONSE5----------" << std::endl;
 sendBodyHeader:
 		///////////////////////////////////
 sendFile:
 		if (sendFile(it, it->head.getFdr()))
 			return ;
+        std::cout << "----------RESPONSE6----------" << std::endl;
 		close(it->head.getFdr());
+        std::list<std::string>::iterator iter = Header::current_files_in_work.begin();
+        while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
+            iter++;
+        if (iter != Header::current_files_in_work.end())
+            Header::current_files_in_work.erase(iter);
 		(*it).head.eraseStruct();
+		std::cout << std::endl << "----------REQUEST----------" << std::endl;
 	}
 }
 
@@ -761,7 +824,7 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 		recive(set, it, t, conf);
 //        std::cout << "no break"  << std::endl;
         if (it == set.end())
-            continue ;
+            continue;
 		response(it, t, conf, set);
 		if (it != set.end())
 		    it++;
@@ -819,7 +882,9 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             if (!it->head.getFdr())
                 FD_SET((*it).fd, &t.read);
             if ((*it).flag)
-                FD_SET((*it).fd, &t.write);             //if we have data to send
+            {
+                FD_SET(( *it ).fd, &t.write );
+            }//if we have data to send
             it++;
         }
         if (Select(set, t, tv, serv))

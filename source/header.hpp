@@ -1,5 +1,6 @@
 #ifndef HEADER_HPP
 #define HEADER_HPP
+#include <list>
 
 class Header
 {
@@ -67,6 +68,7 @@ class Header
 		void setWWW_Authenticate(std::string const &);
 		void setIsCgi(bool status);
 		void eraseStruct();
+        static std::list<std::string>  current_files_in_work;
 	private:
 		int BodySize;
 		int Fd;
