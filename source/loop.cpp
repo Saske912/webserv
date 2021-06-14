@@ -230,6 +230,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
             close(it->fd);
             it->head.eraseStruct();
 		    set.erase(it);
+			if (line)
+				free(line);
             return 1;
         }
 		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
@@ -275,10 +277,16 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                 close(it->fd);
                 it->head.eraseStruct();
                 it = set.erase(it);
+				if (line)
+					free(line);
+				if (buf)
+					free(buf);
                 return 1;
             }
 			if (t.rd == -1 && !buf[0])
 			{
+				if (line)
+					free(line);
 				free(buf);
 				return 1;
 			}
