@@ -259,6 +259,12 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     bool    flag = false;
     int     st;
 
+    if (std::find(Header::current_files_in_work.begin(), Header::current_files_in_work.end(), head.getRequest()) != Header::current_files_in_work.end())
+    {
+        std::cout << "ret -2" << head.getMethod() << std::endl;
+        return -2;
+    }
+    std::cout << "opened " << head.getMethod()  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
@@ -283,6 +289,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             return -1;
         else
             head.setResponse("HTTP/1.1 " + part);
+        Header::current_files_in_work.push_back(head.getRequest());
     }
     else if ((is_cgi(request, route, head.getMethod(), &flag)))
     {
@@ -311,8 +318,9 @@ int server::targeting( Header &head, std::string request, route const & route ) 
                 return exception_processing(404, head);
             }
         }
+        Header::current_files_in_work.push_back(head.getRequest());
         head.setIsCgi(true);
-//        pipe(fdset);
+        pipe(fdset);
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
@@ -364,6 +372,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
                 close(fd);
                 return exception_processing(404, head);
             }
+            Header::current_files_in_work.push_back(head.getRequest());
             head.setResponse("HTTP/1.1 200 OK\r\n");
         }
     }

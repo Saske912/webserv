@@ -3,6 +3,7 @@
 #include "itressa.h"
 
 std::string const Header::Last_Modified = "Last_Modified: " + get_current_date();
+std::list<std::string>   Header::current_files_in_work;
 
 Header::Header()
 {
