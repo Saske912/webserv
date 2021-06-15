@@ -132,47 +132,6 @@ static void parse_request(char *line, Header &head)
     }
 }
 
-std::string get_current_date()
-{
-	const static std::string daysOfWeek[] = {
-		"Sun",
-		"Mon",
-		"Tue",
-		"Wed",
-		"Thu",
-		"Fri",
-		"Sat"
-	};
-	const static std::string monthsOfYear[] = {
-		"January",
-		"Fubruary",
-		"March",
-		"April",
-		"May",
-		"June",
-		"August"
-		"September"
-		"October"
-		"November"
-		"December"
-	};
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer[80];
-  std::string date;
-  std::string month;
-  time (&rawtime);
-  timeinfo = localtime(&rawtime);
-  date = daysOfWeek[timeinfo->tm_wday] + ", ";
-  strftime(buffer,sizeof(buffer),"%d",timeinfo);
-  date += std::string(buffer) + " ";
-  strftime(buffer,sizeof(buffer),"%m",timeinfo);
-  date += monthsOfYear[atoi(buffer) - 1] + " ";
-  strftime(buffer,sizeof(buffer),"%Y %H:%M:%S",timeinfo);
-  date += std::string(buffer) + "\n";
-  return date;
-}
-
 int recv_next_line(int fd, char **line) {
     int z;
     char    buf[2];
@@ -201,11 +160,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
             it->head.setFd(1);
             return 1;
         }
-        //
-        //we here after PUT or POST(1th part) server response
-        //
     }
-	std::cout << "debug1"  << std::endl;
 	if (it->count == 0)
 	{
 		t.rd = recv_next_line((*it).fd, &line);
@@ -218,7 +173,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			free(line);
 			return 1;
 		}
-        std::cout << "debug2"  << std::endl;
         if (!it->reminder.empty())
 		{
 			if (line)
@@ -232,13 +186,10 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 				line = strdup(it->reminder.c_str());
 			it->reminder.erase();
 		}
-        std::cout << "debug3"  << std::endl;
         if (!t.rd)
         {
-            close(it->fd);
-            erase(it);
-            it->head.eraseStruct();
-		    set.erase(it);
+            erase(it, it->fd, false);
+		    it = set.erase(it);
             return 1;
         }
 		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
@@ -247,22 +198,18 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			return 1;
 		}
 	}
-    std::cout << "debug4"  << std::endl;
     if (line && !line[0] && it->eshe_odin_flag) {
 		if (it->head.getFd() != 1)
 		{
 			fstat(it->head.getFd(), &stat);
 			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
-			close(it->head.getFd());
-			erase(it);
-			std::cout << "ct = " << it->ct << std::endl;
+			erase(it, it->head.getFd(), false);
 			it->ct = 0;
 		}
 		it->flag = true;
 	}
 	else
 	{
-        std::cout << "debug5"  << std::endl;
         if (line && !line[0])
 		{
 			free(line);
@@ -284,10 +231,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			t.rd = recv( it->fd, buf, n , 0 );
             if (t.rd == 0)
             {
-                std::cout << "finished"  << std::endl;
-                close(it->fd);
-                erase(it);
-                it->head.eraseStruct();
+                erase(it, it->fd, false);
                 it = set.erase(it);
                 return 1;
             }
@@ -364,10 +308,7 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
             }
             if (t.rd == 0)
             {
-                std::cout << "finished"  << std::endl;
-                close(it->fd);
-                erase(it);
-                it->head.eraseStruct();
+                erase(it, it->fd, false);
                 it = set.erase(it);
                 free(line);
                 return ;
@@ -395,43 +336,26 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
 
 int sendFile(std::list<t_write>::iterator &it, int fd)
 {
-	char *str;
+	char str[32769];
 	int z;
     int ret;
 
-//	sleep(1);
-//	usleep(1000);
-    str = (char *)malloc(32769);
-	std::cout << "debug1" << std::endl;
-    std::cout << "fd = " << fd << std::endl;
 	while ((z = read(fd, str, 32768)) > 0)
 	{
-	    std::cout << "z: " << z << std::endl;
 		str[z] = 0;
 		ret = send(it->fd, str, z, 0);
-        std::cout << "ret: " << ret << std::endl;
-        std::cout << "strlen: " << strlen(str) << std::endl;
-        std::cout << "str: |" << str << "|" << std::endl;
 		if (ret == -1)
 		{
-            std::cout << "ret = -1" << std::endl;
 			it->reminder = std::string(str);
 			it->send_error = "sendFile";
 			return 1;
 		}
 		else if ((size_t)ret != strlen(str))
         {
-		    std::list<std::string>::iterator itt(Header::current_files_in_work.begin());
-		    while(itt != Header::current_files_in_work.end())
-		        std::cout << "itt: " << *itt++  << std::endl;
-            std::cout << "methd: " << it->head.getMethod() << std::endl;
-            std::cout << "ret != strlen" << std::endl;
         	it->reminder = std::string(str, ret, strlen(str) - ret);
 			it->send_error = "sendFile";
 			return 1;
 		}
-        std::cout << "debug2" << std::endl;
-//        std::cout << "ret: " << ret << " strlen(): " << strlen(str)  << std::endl;
 	}
 	return 0;
 }
@@ -444,18 +368,9 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 
 	std::cout << "kek1"  << std::endl;
 	if (fd != -1)
-    {
-        iter = Header::current_files_in_work.begin();
-        while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
-            iter++;
-        if (iter != Header::current_files_in_work.end())
-            Header::current_files_in_work.erase(iter);
-        close(fd);
-    }
+	    erase(it, fd, false);
 	str = (char *)((*it).head.getContent_Location() + "\r\n").c_str();
-//	std::cout << str;
 	ret = send( (*it).fd, str, strlen(str), 0);
-    std::cout << "kek2"  << std::endl;
     if (ret == -1)
 	{
 		it->reminder = std::string(str);
@@ -468,14 +383,8 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 		it->send_error = "noBodyResponse";
 		return ;
 	}
-    std::cout << "kek3"  << std::endl;
-    close(it->fd);
-    erase(it);
-	it->head.eraseStruct();
-//    std::cerr << "noBodyResponse" << std::endl;
+    erase(it, it->fd, false);
 	it = set.erase(it);
-//	std::cout << std::endl << "----------REQUEST----------" << std::endl;
-    std::cout << "kek4"  << std::endl;
 }
 
 int sendHeader(std::list<t_write>::iterator &it)
@@ -583,19 +492,10 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 			it->reminder = std::string("0\r\n\r\n", z, 5 - z);
 			return ;
 		}
-        close(fd);
-        std::list<std::string>::iterator iter = Header::current_files_in_work.begin();
-        while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
-            iter++;
-        if (iter != Header::current_files_in_work.end())
-            Header::current_files_in_work.erase(iter);
-        it->head.eraseStruct();
-        resetIt(it);
-//        std::cout << std::endl << "----------REQUEST----------" << std::endl;
+        erase(it, fd, true);
         return ;
     }
     line[z] = 0;
-    //std::cerr << "line: " << line  << std::endl;
     str = strdup((getBaseSixteen(z) + "\r\n" + line + "\r\n").c_str());
     z = send(it->fd, str, strlen(str), 0);
 	if (z == -1)
@@ -609,8 +509,6 @@ void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 		it->reminder = std::string(str, z, strlen(str) - z);
 	}
 	free(str);
-    //send(it->fd, line, z, 0);
-    //send(it->fd, "\r\n", 2, 0);
 }
 
 void cgiResponse(std::list<t_write>::iterator &it, int &fd)
@@ -623,7 +521,6 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 
 	while ((gnl = get_next_line(fd, &line)) > 0)
 	{
-//		std::cout << "line: " << line << std::endl;
 		if (line && line[0] == '\r')
         {
             size += 2;
@@ -665,7 +562,6 @@ void cgiResponse(std::list<t_write>::iterator &it, int &fd)
 		it->send_error = "sendFileChunked";
 		return ;
 	}
-//	std::cout << string;
 	sendFileChunked(it, fd);
 }
 
@@ -753,22 +649,16 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 			else if (it->send_error == "noBodyResponse")
 			{
 				it->send_error.erase();
-				close(it->fd);
-                erase(it);
-				it->head.eraseStruct();
+                erase(it, it->fd, false);
 				it = set.erase(it);
 				return ;
 			}
 		}
-//		if (it->head.getFd() != 1)
-//            close( it->head.getFd( ));
 		if (it->head.getFdr())
 			return (sendFileChunked(it, it->head.getFdr()));
 		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
 		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
 		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
-////////////////////////////////////
-        //server serv = find_server(conf, (*it).head.getHost(), (*it).head.getPort());
 		it->head.setFdr(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
 		fd = it->head.getFdr();
 		if (fd == -2)
@@ -776,41 +666,23 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		    it->head.setFdr(0);
             return;
         }
-		std::cout << "----------RESPONSE----------" << std::endl;
 		chdir(it->head.getEnvValue("PWD=").c_str());
-        std::cout << "----------RESPONSE2----------" << std::endl;
 		if (it->head.getIsCgi()) {
-		    // parse cgi header
-//			std::cout << "--------CGI--------" << std::endl;
 			return cgiResponse(it, it->head.getFdr());
 		}
-		resetIt(it);
-        std::cout << "----------RESPONSE3----------" << std::endl;
 		if (sendHeader(it))
 			return ;
-        std::cout << "----------RESPONSE4----------" << std::endl;
 sendHeader:
-				//|| (it->head.getMethod() == "POST" && it->head.getResponse() != "HTTP/1.1 405 Method Not Allowed\r\n")
 		if (it->head.getMethod() == "PUT" || it->head.getFdr() == -1)
 			return noBodyResponse(it, it->head.getFdr(), set);
    
 		if (sendBodyHeader(it))
 			return ;
-        std::cout << "----------RESPONSE5----------" << std::endl;
 sendBodyHeader:
-		///////////////////////////////////
 sendFile:
 		if (sendFile(it, it->head.getFdr()))
 			return ;
-        std::cout << "----------RESPONSE6----------" << std::endl;
-		close(it->head.getFdr());
-        std::list<std::string>::iterator iter = Header::current_files_in_work.begin();
-        while (iter != Header::current_files_in_work.end() and *iter != it->head.getRequest())
-            iter++;
-        if (iter != Header::current_files_in_work.end())
-            Header::current_files_in_work.erase(iter);
-		(*it).head.eraseStruct();
-		std::cout << std::endl << "----------REQUEST----------" << std::endl;
+		erase(it, it->head.getFdr(), true);
 	}
 }
 
@@ -820,15 +692,12 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
-//	    std::cout << "rec"  << std::endl;
 		recive(set, it, t, conf);
-//        std::cout << "no break"  << std::endl;
         if (it == set.end())
             continue;
 		response(it, t, conf, set);
 		if (it != set.end())
 		    it++;
-		std::cout << "I:! " << i++  << std::endl;
 	}
 }
 
@@ -846,10 +715,8 @@ static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
 		{
 			if (errno != EINTR)
                 return 1;
-//				error_exit("error in select");
 			else
 			{
-				//signal income
 				return 1;//??
 			}
 //                loop(tv, serv, t, cli, set);
@@ -857,8 +724,6 @@ static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
 		}
 		if (!t.ret)
 		{
-			//timeout
-//                loop(tv, serv, t, cli, set);
 			return 1;
 		}
 	}
@@ -873,7 +738,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     std::string ipstr;
     while (true)
     {
-        std::cout << "loop"  << std::endl;
         init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();
@@ -884,7 +748,7 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             if ((*it).flag)
             {
                 FD_SET(( *it ).fd, &t.write );
-            }//if we have data to send
+            }
             it++;
         }
         if (Select(set, t, tv, serv))
@@ -896,7 +760,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-//            setsockopt(cli.client, SOL_SOCKET, SO_LINGER, &serv.opt, sizeof(serv.opt));
             ipstr = ttostr(cli.ad.sin_addr.s_addr & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 8 & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +

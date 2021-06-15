@@ -78,6 +78,7 @@ timeval     init_timevals(void);
 t_serv      init_serv(void);
 void        loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf);
 server    default_config(void);
-void    erase(std::list<t_write>::iterator &it);
+void    erase(std::list<t_write>::iterator &it, int fd, bool flag);
+void resetIt(std::list<t_write>::iterator &it);
 
 #endif //HEADER_H

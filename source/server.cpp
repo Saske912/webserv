@@ -261,7 +261,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 
     if (std::find(Header::current_files_in_work.begin(), Header::current_files_in_work.end(), head.getRequest()) != Header::current_files_in_work.end())
     {
-        std::cout << "ret -222222" << head.getMethod() << std::endl;
+        std::cout << "ret -2" << head.getMethod() << std::endl;
         return -2;
     }
     std::cout << "opened " << head.getMethod()  << std::endl;
@@ -293,8 +293,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     }
     else if ((is_cgi(request, route, head.getMethod(), &flag)))
     {
-//        int     fd1 = dup(1);
-//        int     fd0 = dup(0);
+        int     fd1 = dup(1);
+        int     fd0 = dup(0);
 
         std::string root;
         if (!flag)
@@ -321,16 +321,16 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         Header::current_files_in_work.push_back(head.getRequest());
         head.setIsCgi(true);
         pipe(fdset);
-//        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-//            error_exit("open error");
+        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+            error_exit("open error");
         if ((pid = fork()) == 0)
         {
-            close(fdset[0]);
+//            close(fdset[0]);
             arg[0] = strdup(root.c_str());
             arg[1] = NULL;
             dup2(tmp, 0);
-            dup2(fdset[1], 1);
-//            dup2(fd, 1);
+//            dup2(fdset[1], 1);
+            dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
         }
@@ -340,14 +340,14 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(tmp);
             head.setPid(pid);
-            close(fdset[1]);
+//            close(fdset[1]);
         }
-//        waitpid(pid, &st, 0);
-//        lseek(fd, 0, 0);
-//        dup2(fd1, 1);
-//        dup2(fd0, 0);
-//        return fd;
-        return fdset[0];
+        waitpid(pid, &st, 0);
+        lseek(fd, 0, 0);
+        dup2(fd1, 1);
+        dup2(fd0, 0);
+        return fd;
+//        return fdset[0];
 //        dup2(fd1, 1);
     }
     else
