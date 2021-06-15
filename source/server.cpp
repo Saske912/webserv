@@ -254,7 +254,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     fd;
     int     pid;
     char    *arg[3];
-    int     fdset[2];
+//    int     fdset[2];
     int     tmp;
     bool    flag = false;
     int     st;

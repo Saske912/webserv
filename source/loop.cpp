@@ -200,7 +200,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
         //we here after PUT or POST(1th part) server response
         //
     }
-	std::cout << "debug1"  << std::endl;
 	if (it->count == 0)
 	{
 		t.rd = recv_next_line((*it).fd, &line);
@@ -213,7 +212,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			free(line);
 			return 1;
 		}
-        std::cout << "debug2"  << std::endl;
         if (!it->reminder.empty())
 		{
 			if (line)
@@ -227,7 +225,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 				line = strdup(it->reminder.c_str());
 			it->reminder.erase();
 		}
-        std::cout << "debug3"  << std::endl;
         if (!t.rd)
         {
             close(it->fd);
@@ -243,7 +240,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 			return 1;
 		}
 	}
-    std::cout << "debug4"  << std::endl;
     if (line && !line[0] && it->eshe_odin_flag) {
 		if (it->head.getFd() != 1)
 		{
@@ -257,7 +253,6 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	}
 	else
 	{
-        std::cout << "debug5"  << std::endl;
         if (line && !line[0])
 		{
 			free(line);
@@ -761,7 +756,6 @@ sendFile:
 
 static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
 {
-    int i = 0;
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
@@ -773,7 +767,6 @@ static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::
 		response(it, t, conf, set);
 		if (it != set.end())
 		    it++;
-		std::cout << "I:! " << i++  << std::endl;
 	}
 }
 
@@ -818,7 +811,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
     std::string ipstr;
     while (true)
     {
-        std::cout << "loop"  << std::endl;
         init_fd_sets(t);
         FD_SET(serv.host, &t.read);
         it = set.begin();
