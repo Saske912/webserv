@@ -11,7 +11,7 @@ int main( )
     socklen_t           addrlen;
 //    struct timeval      tv;
     int                 sock;
-    std::string     ip = "127.0.0.1";
+    std::string     ip = "10.21.31.73";
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
 //    tv.tv_sec = 3;
@@ -23,7 +23,7 @@ int main( )
     if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
 //        error_exit("fail to Connect");
         exit(1);
-    std::string tmp = "GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n";
+    std::string tmp = "GET / HTTP/1.1\r\nHost: 10.21.31.73:1024\r\n\r\n";
     char buf[327888];
     int ret;
     while ( true )
