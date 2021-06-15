@@ -4,35 +4,115 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
 
-int main( )
+typedef struct s_str
 {
+    int     sock;
+    int     err;
+}           t_str;
+
+void    *func(void *t)
+{
+    int     sock;
+    std::string tmp = "GET / HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
+    t_str  *st = (t_str *)t;
+    char buf[32769];
+    int ret;
+    int cnt = 15;
     struct sockaddr_in  addr;
     socklen_t           addrlen;
-//    struct timeval      tv;
-    int                 sock;
-    std::string     ip = "10.21.31.73";
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-//    tv.tv_sec = 3;
-//    tv.tv_usec = 500000;
+    std::string     ip = "127.0.0.1";
+    int num;
+    bool flag = false;
+
+    pthread_mutex_lock(&mutex2);
+    num = st->sock;
+    st->sock++;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(1024);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
     addrlen = sizeof(addr);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
     if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
-//        error_exit("fail to Connect");
         exit(1);
-    std::string tmp = "GET / HTTP/1.1\r\nHost: 10.21.31.73:1024\r\n\r\n";
-    char buf[327888];
-    int ret;
-    while ( true )
+    pthread_mutex_unlock(&mutex2);
+    fd_set  fd_read;
+    FD_SET(sock, &fd_read);
+    timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    while ( cnt-- )
     {
-        send(sock, tmp.c_str(), tmp.length(), 0);
-        sleep(2);
-        ret = recv(sock, buf, 32769, 0);
-        buf[ret] = 0;
-        std::cout << "buf: " << buf  << std::endl;
+        if (!flag)
+        {
+            pthread_mutex_lock(&mutex);
+            std::cout << num  << std::endl;
+            if (send(sock, tmp.c_str(), tmp.length(), 0) == -1)
+            {
+                perror("send");
+                exit(1);
+            }
+            flag = true;
+            pthread_mutex_unlock(&mutex);
+        }
+        select(sock + 1, &fd_read, NULL, NULL, &tv);
+//        usleep(100000);
+        if ( FD_ISSET(sock, &fd_read))
+        {
+            pthread_mutex_lock(&mutex3);
+            ret = recv(sock, buf, 32768, 0);
+            if (ret < 0)
+            {
+                perror("recive");
+                exit(1);
+            }
+            buf[ret] = 0;
+            if (ret != 198 || strlen(buf) != 198)
+            {
+                std::cout << "ret: " << ret << " buf: " << buf  << std::endl;
+                st->err = 1;
+            }
+            pthread_mutex_unlock(&mutex3);
+            flag = false;
+        }
+        else
+            ++cnt;
     }
+    return NULL;
+}
+
+int main( )
+{
+    t_str st;
+    int count = 5;
+    st.err = 0;
+    st.sock = 0;
+
+    int cnt = count;
+    pthread_t   tred[count];
+    while(cnt--)
+    {
+        if (pthread_create(&tred[cnt], NULL, func, &st))
+        {
+            perror("pthread_c");
+            exit(1);
+        }
+        std::cout << "cnt: " << cnt  << std::endl;
+
+//        sleep(1);
+    }
+    cnt = count;
+    while (cnt--)
+    {
+        pthread_join(tred[cnt], NULL);
+    }
+    if (st.err)
+        std::cout << "err finded"  << std::endl;
+    perror("error");
 //    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
