@@ -151,10 +151,13 @@ int recv_next_line(int fd, char **line) {
 
 int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
-	char *line = 0;
-	char *buf = 0;
-	struct stat stat;
-	if (it->head.getFd() == 1)
+    char *line = 0;
+    char *buf = 0;
+    struct stat stat;
+    std::string str;
+    std::string str2;
+    bool flag = false;
+    if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
         if (it->head.getFd() == -2)
@@ -163,112 +166,90 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
             return 1;
         }
     }
-	if (it->count == 0)
-	{
-		t.rd = recv_next_line((*it).fd, &line);
-		if (t.rd == -1 && line && line[0])
-		{
-			if (it->reminder.empty())
-				it->reminder = std::string(line);
-			else
-				it->reminder += std::string(line);
-			free(line);
-			return 1;
-		}
+    if (it->count == 0)
+    {
+        t.rd = recv_next_line((*it).fd, &line);
+        str = line;
+        if (line[0] == '\0')
+            flag = true;
+        free(line);
+        if (t.rd == -1 && !str.empty())
+        {
+            if (it->reminder.empty())
+                it->reminder = str;
+            else
+                it->reminder += str;
+            return 1;
+        }
         if (!it->reminder.empty())
-		{
-			if (line)
-			{
-				buf = line;
-				line = strdup((it->reminder + std::string(line)).c_str());
-				free(buf);
-				buf = 0;
-			}
-			else
-				line = strdup(it->reminder.c_str());
-			it->reminder.erase();
-		}
+        {
+            str = it->reminder + str;
+            it->reminder.erase();
+        }
         if (!t.rd)
         {
             if (it->head.getFd() != 1)
                 close(it->head.getFd());
-            erase(it, it->fd, false);
-		    it = set.erase(it);
+            erase(it, it->fd, true);//
+            it = set.erase(it);
             return 1;
         }
-		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
-		{
-			free(line);
-			return 1;
-		}
-	}
-    if (line && !line[0] && it->eshe_odin_flag) {
-		if (it->head.getFd() != 1)
-		{
-			fstat(it->head.getFd(), &stat);
-			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
-			erase(it, it->head.getFd(), false);
-			it->ct = 0;
-		}
-		it->flag = true;
-	}
-	else
-	{
-        if (line && !line[0])
-		{
-			free(line);
-			return 1;
-		}
-		if (line)
-		{
-			 it->bytes = ( int ) strtol( line, 0, 16 );
-		}
-		if (line && !it->bytes)
-		{
-			it->eshe_odin_flag = true;
-			it->head.setBodySize(it->ct);
-		}
-		else
-		{
-			int n = it->bytes - it->count;
-			buf = (char *)malloc(sizeof(char) * (n + 1));
-			t.rd = recv( it->fd, buf, n , 0 );
+        if (!str.empty() && str.find_last_not_of("1234567890abcdef") != std::string::npos)
+            return 1;
+    }
+    if (str.empty() && flag && it->eshe_odin_flag) {
+        if (it->head.getFd() != 1)
+        {
+            fstat(it->head.getFd(), &stat);
+            it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
+            erase(it, it->head.getFd(), false);
+            it->ct = 0;
+        }
+        it->flag = true;
+    }
+    else
+    {
+        if (str.empty() && flag)
+            return 1;
+        if (!str.empty())
+            it->bytes = ( int ) strtol( str.c_str(), 0, 16 );
+        if (!str.empty() && !it->bytes)
+        {
+            it->eshe_odin_flag = true;
+            it->head.setBodySize(it->ct);
+        }
+        else
+        {
+            int n = it->bytes - it->count;
+            buf = (char *)malloc(sizeof(char) * (n + 1));
+            t.rd = recv( it->fd, buf, n , 0 );
+            str2 = buf;
+            free(buf);
             if (t.rd == 0)
             {
-                erase(it, it->fd, false);
+                erase(it, it->fd, true);//
                 it = set.erase(it);
                 return 1;
             }
-			if (t.rd == -1 && !buf[0])
-			{
-				free(buf);
-				return 1;
-			}
-			if (t.rd == -1)
-			{
-				t.rd = strlen(buf);
-			}
-			if (it->head.getFd() != 1)
-			{
-			    if (t.rd != -1)
+            if (t.rd == -1 && str2.empty())
+                return 1;
+            if (t.rd == -1)
+                t.rd = str2.length();
+            if (it->head.getFd() != 1)
+            {
+                if (t.rd != -1)
                 {
-                    buf[t.rd] = 0;
-                    write(it->head.getFd(), buf, t.rd);
+                    write(it->head.getFd(), str2.c_str(), t.rd);
                 }
-			}
-			if (t.rd != -1)
-			  it->ct += t.rd;
-			it->count += t.rd;
-			free(buf);
-			if (it->count >= it->bytes)
-			{
-				it->count = 0;
-			}
-		}
-	}
-	if (line)
-		free(line);
-	return 0;
+            }
+            if (t.rd != -1)
+                it->ct += t.rd;
+            it->count += t.rd;
+            if (it->count >= it->bytes)
+                it->count = 0;
+        }
+    }
+    return 0;
 }
 
 void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
@@ -312,7 +293,7 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
             }
             if (t.rd == 0)
             {
-                erase(it, it->fd, false);
+                erase(it, it->fd, true);//
                 it = set.erase(it);
                 free(line);
                 return ;
@@ -341,14 +322,12 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
 
 int sendFile(std::list<t_write>::iterator &it, int fd, std::string &str2)
 {
-	char str[32769];
+	char str[BUFSIZE + 1];
 	int z;
     int ret;
 
-    std::cout << "fd: " << it->fd  << std::endl;
-//    if ( send_protected(str2, it, "sendFile"))
-//        return 1;
-	while ((z = read(fd, str, 32768)) > 0)
+//    std::cout << "fd: " << it->fd  << std::endl;
+	while ((z = read(fd, str, BUFSIZE)) > 0)
 	{
 		str[z] = 0;
 		str2 += str;
@@ -363,8 +342,8 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
     if (send_protected(str + "\r\n", it, "noBodyResponse"))
         return ;//send error
     if (fd != -1)
-	    erase(it, fd, false);
-    erase(it, it->fd, false);
+	    erase(it, fd, true);//
+    erase(it, it->fd, true);//
 	it = set.erase(it);
 //    std::cout << "NoBody"  << std::endl;
 //all right
@@ -440,11 +419,12 @@ void resetIt(std::list<t_write>::iterator &it)
 
 void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
 {
-	char line[32769];
+	char line[BUFSIZE + 1];
 	std::string str;
 	int z;
 
-    z = read(fd, line, 1000);
+    z = read(fd, line, BUFSIZE);
+    std::cout << "z: " << z  << std::endl;
     if (z == 0)
     {
 		if (waitpid(it->head.getPid(), 0, WNOHANG) == 0)
@@ -536,7 +516,7 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 			else if (it->send_error == "noBodyResponse")
 			{
 				it->send_error.erase();
-                erase(it, it->fd, false);
+                erase(it, it->fd, true);//
 				it = set.erase(it);
 				return ;
 			}
@@ -643,8 +623,8 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-//            int bufer = 1048576;
-//            setsockopt(cli.client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
+            int bufer = BUFSIZE;
+            setsockopt(cli.client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
             ipstr = ttostr(cli.ad.sin_addr.s_addr & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 8 & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +

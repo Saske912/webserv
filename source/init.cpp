@@ -38,6 +38,8 @@ t_serv  init_serv(void)
         error_exit("bind error");
     serv.opt = 1;
     setsockopt(serv.host, SOL_SOCKET, SO_REUSEADDR, &serv.opt, sizeof(serv.opt));
+    int    buf = BUFSIZE;
+    setsockopt(serv.host, SOL_SOCKET, SO_RCVBUF, &buf, sizeof(serv.opt));
     if (bind(serv.host, reinterpret_cast<sockaddr *>(&serv.addr), sizeof(serv.addr)) == -1)
         error_exit("fail to bind IP");
     if (listen(serv.host, QUEUE) == -1)

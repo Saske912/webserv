@@ -27,7 +27,7 @@
 #define QUEUE 16
 #define TVS 320000
 #define TVMS 0
-#define BUFSIZE 1024
+#define BUFSIZE 1048576
 
 typedef struct  s_data
 {

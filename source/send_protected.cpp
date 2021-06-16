@@ -6,9 +6,10 @@
 int send_protected(std::string const & str, std::list<t_write>::iterator &it, std::string str2)
 {
     int ret;
+    int len = str.length() < BUFSIZE ? str.length() : BUFSIZE;
 
-    std::cout << str  << std::endl;
-    ret = send(it->fd, str.c_str(), str.length(), 0);
+//    std::cout << str  << std::endl;
+    ret = send(it->fd, str.c_str(), len, 0);
     if (ret == -1)
     {
         perror("SEND ERROR");
