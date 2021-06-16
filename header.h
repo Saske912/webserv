@@ -80,5 +80,6 @@ void        loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf);
 server    default_config(void);
 void    erase(std::list<t_write>::iterator &it, int fd, bool flag);
 void resetIt(std::list<t_write>::iterator &it);
+int     send_protected(std::string const & str, std::list<t_write>::iterator &it, std::string str2);
 
 #endif //HEADER_H
