@@ -157,6 +157,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
     std::string str;
     std::string str2;
     bool flag = false;
+    bool flag2 = false;
     if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -170,10 +171,10 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
     {
         t.rd = recv_next_line((*it).fd, &line);
         str = line;
-        if (line[0] == '\0')
+        if (line && !line[0])
             flag = true;
         free(line);
-        if (t.rd == -1 && !str.empty())
+        if (t.rd == -1 && !str.empty() && !flag)
         {
             if (it->reminder.empty())
                 it->reminder = str;
@@ -197,7 +198,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
         if (!str.empty() && str.find_last_not_of("1234567890abcdef") != std::string::npos)
             return 1;
     }
-    if (str.empty() && flag && it->eshe_odin_flag) {
+    if (flag && it->eshe_odin_flag) {
         if (it->head.getFd() != 1)
         {
             fstat(it->head.getFd(), &stat);
@@ -209,7 +210,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
     }
     else
     {
-        if (str.empty() && flag)
+        if (flag)
             return 1;
         if (!str.empty())
             it->bytes = ( int ) strtol( str.c_str(), 0, 16 );
@@ -224,6 +225,8 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
             buf = (char *)malloc(sizeof(char) * (n + 1));
             t.rd = recv( it->fd, buf, n , 0 );
             str2 = buf;
+			if (buf && !buf[0])
+				flag2 = true;
             free(buf);
             if (t.rd == 0)
             {
@@ -231,7 +234,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
                 it = set.erase(it);
                 return 1;
             }
-            if (t.rd == -1 && str2.empty())
+            if (t.rd == -1 && flag2)
                 return 1;
             if (t.rd == -1)
                 t.rd = str2.length();
@@ -324,7 +327,6 @@ int sendFile(std::list<t_write>::iterator &it, int fd, std::string &str2)
 {
 	char str[BUFSIZE + 1];
 	int z;
-    int ret;
 
 //    std::cout << "fd: " << it->fd  << std::endl;
 	while ((z = read(fd, str, BUFSIZE)) > 0)
@@ -352,7 +354,6 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 std::string  sendHeader(std::list<t_write>::iterator &it)
 {
 	std::string str;
-	int    ret;
 
 	str = (*it).head.getResponse();
 	if (!((*it).head.getContent_Language().empty()))	
@@ -485,7 +486,6 @@ std::string  sendBodyHeader(std::list<t_write>::iterator &it)
 {
 	std::string str;
 	struct stat stat;
-	int ret;
 
 	fstat(it->head.getFdr(), &stat);
 	return std::string("Content-Length: " + ttostr(stat.st_size) + "\r\n\r\n");
@@ -496,8 +496,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	int fd;
 	std::string string;
 	std::string string2;
-	char *str;
-	int z;
 
 	if ( FD_ISSET((*it).fd, &t.write))
 //	if (it->flag)
@@ -551,7 +549,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
 {
-    int i = 0;
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
