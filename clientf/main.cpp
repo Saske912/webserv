@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#define COUNT 128
+#define CNT 50
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -18,14 +20,13 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "GET / HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
+    std::string tmp = "GET /directory/nop HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;
-    int cnt = 15;
+    int cnt = CNT;
     struct sockaddr_in  addr;
     socklen_t           addrlen;
-
     std::string     ip = "127.0.0.1";
     int num;
     bool flag = false;
@@ -72,7 +73,7 @@ void    *func(void *t)
                 exit(1);
             }
             buf[ret] = 0;
-            if (ret != 198 || strlen(buf) != 198)
+            if (ret == -1)
             {
                 std::cout << "ret: " << ret << " buf: " << buf  << std::endl;
                 st->err = 1;
@@ -89,12 +90,11 @@ void    *func(void *t)
 int main( )
 {
     t_str st;
-    int count = 5;
     st.err = 0;
     st.sock = 0;
 
-    int cnt = count;
-    pthread_t   tred[count];
+    int cnt = COUNT;
+    pthread_t   tred[COUNT];
     while(cnt--)
     {
         if (pthread_create(&tred[cnt], NULL, func, &st))
@@ -102,17 +102,19 @@ int main( )
             perror("pthread_c");
             exit(1);
         }
-        std::cout << "cnt: " << cnt  << std::endl;
+     //   std::cout << "cnt: " << cnt  << std::endl;
 
 //        sleep(1);
     }
-    cnt = count;
+    cnt = COUNT;
     while (cnt--)
     {
         pthread_join(tred[cnt], NULL);
     }
     if (st.err)
+    {
         std::cout << "err finded"  << std::endl;
-    perror("error");
+        perror("error");
+    }
 //    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }

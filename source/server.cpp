@@ -130,7 +130,7 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
-                                    std::cout << "req:" << request  << std::endl;
+//                                    std::cout << "req:" << request  << std::endl;
 	if ( is_file_with_extension( request ) or head.getMethod() == "PUT")
     {
         return targeting(head, request, route);
@@ -183,7 +183,11 @@ int    server::responce( Header & head )
     head.addEnv(const_cast<char *>(server_port.c_str()));
     head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
     if (head.getHost() == "400" || head.getHost().empty())
+    {
+        std::cout << "HOST ERROR ACCEPT |"  << head.getHost().empty() << "| get host: " << head.getHost() << std::endl;
+//        sleep(4);
         return exception_processing(400, head);
+    }
     if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
         return exception_processing(501, head);
     head.setHost("Host: " + _host + ":" + ttostr(static_cast<int>(_port)) + '\n');
@@ -254,7 +258,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     fd;
     int     pid;
     char    *arg[3];
-    int     fdset[2];
+//    int     fdset[2];
     int     tmp;
     bool    flag = false;
     int     st;
@@ -264,7 +268,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         std::cout << "ret -2" << head.getMethod() << std::endl;
         return -2;
     }
-    std::cout << "opened " << head.getMethod()  << std::endl;
+//    std::cout << "opened " << head.getMethod()  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
@@ -320,7 +324,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         }
         Header::current_files_in_work.push_back(head.getRequest());
         head.setIsCgi(true);
-        pipe(fdset);
+//        pipe(fdset);
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
@@ -376,7 +380,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             head.setResponse("HTTP/1.1 200 OK\r\n");
         }
     }
-    std::cout << "server responce"  << std::endl;
+//    std::cout << "server responce"  << std::endl;
     return fd;
 }
 
