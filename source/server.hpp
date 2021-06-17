@@ -40,8 +40,8 @@ public:
     void                        setAllow(const std::pair<std::string, std::string>& allow);
     std::string                 getCgiPath() const;
     void                        setCgiPath(const std::string &cgi_path);
-
-    int                        responce( Header & head );
+    int                         exception_processing(int except, Header &head);
+    int                         responce( Header & head );
 protected:
     int autoindex( Header &head, route route );
 	int                         request_processing(std::string const & request, \
@@ -49,7 +49,6 @@ protected:
     static bool                 is_file_with_extension( std::string request) ;
 	bool                        is_file( const std::string& request);
     int                         get_path_to_request(std::string const & request, Header & head);
-    int                         exception_processing(int except, Header &head);
     int                         targeting(Header &head, std::string request, route const & route);
     bool                        is_cgi(const std::string& request, route  const & route, std::string const & method, bool *flag  ) const;
     std::string                 get_error(int, std::map<int, std::string> ers);

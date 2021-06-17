@@ -263,17 +263,11 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     bool    flag = false;
     int     st;
 
-    if (std::find(Header::current_files_in_work.begin(), Header::current_files_in_work.end(), head.getRequest()) != Header::current_files_in_work.end())
-    {
-        std::cout << "ret -2" << head.getMethod() << std::endl;
-        return -2;
-    }
-//    std::cout << "opened " << head.getMethod()  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
         return exception_processing(413, head);
-    if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
+    if ((head.getMethod() == "PUT" or head.getMethod() == "POST"))
     {
         struct ::stat st;
         std::string part;

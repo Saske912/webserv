@@ -9,315 +9,70 @@ int		sorter(t_write a, t_write b)
 	return (a.fd < b.fd);
 }
 
-
-static void parse_first_line(char *line, Header &head)
+std::string  receive_buffer( int fd, std::list<t_write> &set, std::list<t_write>::iterator &it)
 {
-	int i = -1;
-	int j;
-	std::string str;
+    int         z;
+    char        buf[BUFSIZE + 1];
+    std::string ret;
+    std::string buffer;
 
-	while (line[++i])
-		if (line[i] == ' ')
-			break ;
-    if (!line[i])
+    z = recv( fd, buf, BUFSIZE, 0 );
+    buffer = it->head.reminder + buf;
+    it->head.reminder.erase();
+    if (z == -1)
     {
-        head.setMethod(std::string("THIS SHIT NOT IMPLEMENTED", 0, i));
-        return ;
-    }
-	head.setMethod(std::string(line, 0, i));
-	j = i + 1;
-	while (line[++i])
-		if (line[i] == ' ')
-			break ;
-	if (!line[i])
-	{
-        head.setMethod(std::string("THIS SHIT NOT IMPLEMENTED", 0, i));
-        return ;
-    }
-	head.setRequest(std::string(line, j, i - j));
-	j = i + 1;
-	while (line[++i]);
-	head.setHttp(std::string(line, j, i - j));
-	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
-	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
-	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
-	head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
-	head.addEnv((char *)("PATH_TRANSLATED=" + head.getRequest()).c_str());
-	str = head.getRequest();
-	if (str.find('?') != std::string::npos)
-		head.addEnv((char *)("QUERY_STRING=" + str.erase(0, str.find('?') + 1)).c_str());
-}
-
-static void parse_request(char *line, Header &head)
-{
-	char *tmp;
-	char *tmp2;
-	std::string str;
-	unsigned long int i = -1;
-	int count = 0;
-
-	if ((tmp = strstr(line, "Accept-Language: ")))
-	{
-		tmp += strlen("Accept-Language: ");
-		head.setContent_Language("Content-Language: " + std::string(tmp) + "\n");
-	}
-	else if ((tmp = strstr(line, "Host: ")))
-	{
-        tmp += strlen("Host: ");
-        tmp2 = strchr(tmp, ':');
-        if (head.getHost().empty() and tmp2 != NULL )
+        if (errno == EAGAIN)
         {
-            head.setHost(std::string(tmp, 0, tmp2 - tmp));
+            return std::string("wait");
         }
-		else
+        else
         {
-		    std::cout << "line : " << line  << std::endl;
-            head.setHost("400");
-            std::cout << "HOST ERROR"  << std::endl;
+            perror("errno");
+            return std::string("error");
         }
-		head.setPort(atoi(tmp2 + 1));
-	}
-	else if ((tmp = strstr(line, "Referer: ")))
-	{
-
-        tmp += strlen("Referer: ");
-		head.setReferer(tmp);
-		while (line[++i])
-		{
-			if (line[i] == '/')
-				count++;
-			if (count == 3)
-				break ;
-		}
-		str = std::string(line + i);
-		if ((i = str.find('?')) != std::string::npos)
-			str.erase(i);
-		if ((i = str.rfind('.')) != std::string::npos)
-			str.erase(0, i);
-		if ((i = str.find('/')) != std::string::npos)
-		{
-			char tmpp[150];
-			str.erase(0, i);
-			head.addEnv((char *)("PATH_INFO=" + str).c_str());
-			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
-		}
-	}
-	else if ((tmp = strstr(line, "Accept: ")))
-	{
-
-        tmp += strlen("Accept: ");
-		str = std::string(tmp);
-		head.addEnv((char *)("CONTENT_TYPE=" + std::string(str, 0, str.find(','))).c_str());
-	}
-	else if (head.getMethod() == "POST" && strchr(line, '='))
-	{
-
-        head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
-	}
-    else if ((tmp = strstr(line, "Transfer-Encoding: ")))
+    }
+    else if (z == 0)
     {
-
-        tmp += strlen("Transfer-Encoding: ");
-        head.setTransfer_Encoding(std::string(tmp));
-    }
-    else if ((tmp = strstr(line, "Authorization: ")))
-    {
-        tmp += strlen("Authorization: ");
-		head.addEnv((char *)("AUTH_TYPE=" + std::string(tmp, 0, strchr(tmp, ' ') - tmp)).c_str());
-		if (std::string(head.getEnvValue("AUTH_TYPE=")) == "BASIC" || std::string(head.getEnvValue("AUTH_TYPE=")) == "DIGEST")
-		{
-			tmp = strchr(tmp, ' ') + 1;
-			head.addEnv((char *)("REMOTE_USER=" + std::string(tmp, 0, strchr(tmp, ':') - tmp)).c_str());
-			tmp = strchr(tmp, ':') + 1;
-			head.addEnv((char *)("REMOTE_IDENT=" + std::string(tmp)).c_str());
-		}
-    }
-}
-
-int recv_next_line(int fd, char **line) {
-    int z;
-    char    buf[2];
-    std::string str("");
-    while (( z = recv( fd, buf, 1, 0 )) > 0 ) {
-        if ( buf[0] == '\n' )
-            break;
-        buf[1] = 0;
-        if ( buf[0] != '\r' )
-            str += std::string( buf );
-    }
-    *line = strdup(str.c_str());
-    return z;
-}
-
-int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
-{
-    char *line = 0;
-    char *buf = 0;
-    struct stat stat;
-    std::string str;
-    std::string str2;
-    bool flag = false;
-    if (it->head.getFd() == 1)
-    {
-        it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
-        if (it->head.getFd() == -2)
-        {
-            it->head.setFd(1);
-            return 1;
-        }
-    }
-    if (it->count == 0)
-    {
-        t.rd = recv_next_line((*it).fd, &line);
-        str = line;
-        if (line[0] == '\0')
-            flag = true;
-        free(line);
-        if (t.rd == -1 && !str.empty())
-        {
-            if (it->reminder.empty())
-                it->reminder = str;
-            else
-                it->reminder += str;
-            return 1;
-        }
-        if (!it->reminder.empty())
-        {
-            str = it->reminder + str;
-            it->reminder.erase();
-        }
-        if (!t.rd)
-        {
-            if (it->head.getFd() != 1)
-                close(it->head.getFd());
-            erase(it, it->fd, true);//
-            it = set.erase(it);
-            return 1;
-        }
-        if (!str.empty() && str.find_last_not_of("1234567890abcdef") != std::string::npos)
-            return 1;
-    }
-    if (str.empty() && flag && it->eshe_odin_flag) {
-        if (it->head.getFd() != 1)
-        {
-            fstat(it->head.getFd(), &stat);
-            it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
-            erase(it, it->head.getFd(), false);
-            it->ct = 0;
-        }
-        it->flag = true;
+        it = set.erase(it);
+        return std::string("connection closed");
     }
     else
     {
-        if (str.empty() && flag)
-            return 1;
-        if (!str.empty())
-            it->bytes = ( int ) strtol( str.c_str(), 0, 16 );
-        if (!str.empty() && !it->bytes)
-        {
-            it->eshe_odin_flag = true;
-            it->head.setBodySize(it->ct);
-        }
-        else
-        {
-            int n = it->bytes - it->count;
-            buf = (char *)malloc(sizeof(char) * (n + 1));
-            t.rd = recv( it->fd, buf, n , 0 );
-            str2 = buf;
-            free(buf);
-            if (t.rd == 0)
-            {
-                erase(it, it->fd, true);//
-                it = set.erase(it);
-                return 1;
-            }
-            if (t.rd == -1 && str2.empty())
-                return 1;
-            if (t.rd == -1)
-                t.rd = str2.length();
-            if (it->head.getFd() != 1)
-            {
-                if (t.rd != -1)
-                {
-                    write(it->head.getFd(), str2.c_str(), t.rd);
-                }
-            }
-            if (t.rd != -1)
-                it->ct += t.rd;
-            it->count += t.rd;
-            if (it->count >= it->bytes)
-                it->count = 0;
-        }
+        return split_buffer(buffer, it->head);
     }
-    return 0;
 }
 
-void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
+int receive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
-	char    *line = 0;
-	char    *buf;
-
-	if ( FD_ISSET((*it).fd, &t.read))
+	if ( FD_ISSET(it->fd, &t.read))
 	{
-		if (!it->first_line)
-		{
-			(*it).head.setEnv(t.env);
-			it->head.initEnv();
-		}
-        if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
-        {
-			if (chunked(set, it, t, conf))
-				return ;
-        }
-        else
-        {
-            t.rd = recv_next_line((*it).fd, &line);
-            if (t.rd != 0 and !line[0] and !it->first_line)
-            {
-                free(line);
-                return ;
-            }
-            if (!it->reminder.empty())
-            {
-                buf = line;
-                line = strdup((it->reminder + line).c_str());
-                free(buf);
-                buf = 0;
-                it->reminder.erase();
-            }
-            if (t.rd == -1 && line[0])
-            {
-                it->reminder = std::string(line);
-				free(line);
-                return ;
-            }
-            if (t.rd == 0)
-            {
-                erase(it, it->fd, true);//
-                it = set.erase(it);
-                free(line);
-                return ;
-            }
-            if (!line[0]) {
-                it->head_readed = true;
-            }
-            else if ( !it->first_line )
-            {
-                it->first_line = true;
-                parse_first_line(line, (*it).head);
-            }
-            else
-                parse_request(line, (*it).head);
-            if (line) {
-               // std::cout << line << std::endl;
-            }
-                if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
-                    && it->head.getMethod() != "PUT")
-                (*it).flag = true;
-        }
-        free(line);
-        line = 0;
+        std::string str;
+
+        it->head.setFd(find_server(conf, it->head.getHost(), it->head.getPort()).responce(it->head));
+        str = receive_buffer( it->fd, set, it );
+        if (str == "connection closed")
+            return 1;
 	}
+}
+
+
+static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
+{
+    int ret;
+
+    std::list<t_write>::iterator it = set.begin();
+    while (it != set.end())
+    {
+        if (file_available(it->head.getRequest()))
+        {
+            ret = receive(set, it, t, conf);
+            if (ret == 1)
+                continue ;
+            response(it, t, conf, set);
+        }
+        if (it != set.end())
+            it++;
+    }
 }
 
 int sendFile(std::list<t_write>::iterator &it, int fd, std::string &str2)
@@ -546,21 +301,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		if (sendFile(it, it->head.getFdr(), string2))
 			return ;
 		erase(it, it->head.getFdr(), true);
-	}
-}
-
-static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
-{
-    int i = 0;
-	std::list<t_write>::iterator it = set.begin();
-	while (it != set.end())
-	{
-		recive(set, it, t, conf);
-        if (it == set.end())
-            continue;
-		response(it, t, conf, set);
-		if (it != set.end())
-		    it++;
 	}
 }
 

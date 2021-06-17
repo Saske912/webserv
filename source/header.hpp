@@ -5,7 +5,9 @@
 class Header
 {
 	public:
+        void (*Func)(std::string const &);
 		Header();
+		void    set();
 		std::string &getAccept_Charsets();
 		std::string &getAccept_Language();
 		std::string &getAllow();
@@ -22,7 +24,7 @@ class Header
 		std::string &getMethod();
 		std::string &getReferer();
 		std::string &getResponse();
-		std::string &getRequest();
+		std::string getRequest();
 		std::string &getRetry_after();
 		std::string &getServer();
 		std::string &getTransfer_Encoding();
@@ -68,7 +70,9 @@ class Header
 		void setWWW_Authenticate(std::string const &);
 		void setIsCgi(bool status);
 		void eraseStruct();
-        static std::list<std::string>  current_files_in_work;
+        static std::list<std::string>   current_files_in_work;
+        bool                            empty_line;
+        std::string                     reminder;
 	private:
 		int BodySize;
 		int Fd;

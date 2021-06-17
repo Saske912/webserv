@@ -13,6 +13,7 @@ Header::Header()
 	is_cgi = false;
 	Pid = 0;
 	BodySize = 0;
+	empty_line = false;
 }
 
 void Header::eraseStruct()
@@ -282,7 +283,7 @@ std::string &Header::getReferer()
 	return Referer;
 }
 
-std::string &Header::getRequest()
+std::string Header::getRequest()
 {
 	return Request;
 }
