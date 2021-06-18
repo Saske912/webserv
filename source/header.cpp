@@ -1,20 +1,7 @@
-#include "../wpersimm.h"
 #include "header.hpp"
-#include "itressa.h"
 
 std::string const Header::Last_Modified = "Last_Modified: " + get_current_date();
 std::list<std::string>   Header::current_files_in_work;
-
-Header::Header()
-{
-	Env = 0;
-	Fd = 1;
-	Fdr = 0;
-	is_cgi = false;
-	Pid = 0;
-	BodySize = 0;
-	empty_line = false;
-}
 
 void Header::eraseStruct()
 {
@@ -54,7 +41,7 @@ void Header::setAccept_Charsets(std::string const &str)
 
 void Header::setAccept_Language(std::string const &str)
 {
-	Accept_Language = str;
+	Accept_Language = "Accept-Language: " + str;
 }
 
 void Header::setAllow(std::string const &str)
@@ -64,12 +51,14 @@ void Header::setAllow(std::string const &str)
 
 void Header::setAuthorization(std::string const &str)
 {
+    std::string tmp(str);
+    tmp.erase(0, strlen(AUTH));
 	Authorization = str;
 }
 
 void Header::setContent_Language(std::string const &str)
 {
-	Content_Language = str;
+	Content_Language = "Content-Language: " + str;
 }
 
 void Header::setContent_Length(std::string const &str)
@@ -84,7 +73,7 @@ void Header::setContent_Location(std::string const &str)
 
 void Header::setContent_Type(std::string const &str)
 {
-	Content_Type = str;
+	Content_Type = "Content-Type: " + str;
 }
 
 void Header::setDate(std::string const &str)
@@ -94,7 +83,7 @@ void Header::setDate(std::string const &str)
 
 void Header::setHttp(std::string const &str)
 {
-	Http = str;
+	Http = "HTTP/" + str;
 }
 
 void Header::setHost(std::string const &str)
@@ -134,7 +123,9 @@ void Header::setServer(std::string const &str)
 
 void Header::setTransfer_Encoding(std::string const &str)
 {
-	Transfer_Encoding = str;
+    std::string tmp(str);
+    tmp.erase(0, strlen(TRANS_ENC));
+	Transfer_Encoding = tmp;
 }
 
 void Header::setUser_Agent(std::string const &str)
@@ -379,4 +370,58 @@ void Header::showEnv()
 	int i = -1;
 	while (Env[++i])
 		printf("%s\n", Env[i]);
+}
+
+Header::Header()
+{
+//    typedef void (Header::*Func)(std::string const &);
+
+//    Func    set[10];
+//    set[0] = &Header::setAccept_Language;
+    array[HTTP] = &Header::http;
+    array[ACEPT_LANG] = &Header::setContent_Language;
+    array[HOST] = &Header::host;
+    array[REFERER] = &Header::referer;
+    array[ACCEPT] = &Header::accept;
+    array[TRANS_ENC] = &Header::setTransfer_Encoding;
+    array[AUTH] = &Header::setAuthorization;
+    Env = 0;
+    Fd = 1;
+    Fdr = 0;
+    is_cgi = false;
+    Pid = 0;
+    BodySize = 0;
+    empty_line = false;
+}
+
+void Header::setter( const std::string &line )
+{
+    for (std::map<std::string const &, Func>::iterator it(array.begin()); it != array.end(); it++)
+    {
+        if (line.find(it->first) != std::string::npos)
+            return (this->*array[it->first])(line);
+    }
+}
+
+void Header::http( const std::string &string )
+{
+    setMethod(std::string( string, 0, string.find( ' ' )));
+    setRequest(std::string( string, string.find( ' ' ) + 1, string.rfind( ' ' )));
+    setHttp(std::string( string, string.find(HTTP) + strlen( HTTP )));
+}
+
+void Header::host( const std::string &string )
+{
+    setHost(std::string(string, string.find(' ') + 1, string.find(':')));
+    setPort(atoi(std::string(string, string.find(':') + 1).c_str()));
+}
+
+void Header::referer( const std::string &string )
+{
+    setReferer(std::string(string, string.find(' ') + 1));
+}
+
+void Header::accept( const std::string &string )
+{
+    setContent_Type(std::string(string, string.find(' ') + 1));
 }

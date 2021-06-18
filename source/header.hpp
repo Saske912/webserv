@@ -1,13 +1,17 @@
 #ifndef HEADER_HPP
 #define HEADER_HPP
-#include <list>
+#include "header.h"
 
 class Header
 {
+    typedef void (Header::*Func)(std::string const &);
 	public:
-        void (*Func)(std::string const &);
 		Header();
-		void    set();
+		void setter( const std::string &line );
+        void    http( std::string const & string);
+        void    host(std::string const & string);
+        void    referer(std::string const & string);
+        void    accept(std::string const & string);
 		std::string &getAccept_Charsets();
 		std::string &getAccept_Language();
 		std::string &getAllow();
@@ -73,6 +77,7 @@ class Header
         static std::list<std::string>   current_files_in_work;
         bool                            empty_line;
         std::string                     reminder;
+        std::map<std::string const &, Func>    array;
 	private:
 		int BodySize;
 		int Fd;

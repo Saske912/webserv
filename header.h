@@ -23,11 +23,24 @@
 #include "wpersimm.h"
 #include "itressa.h"
 #include <dirent.h>
+#include <list>
+#include <map>
 
 #define QUEUE 16
 #define TVS 320000
 #define TVMS 0
 #define BUFSIZE 1048576
+
+#define ACEPT_LANG "Accept-Language: "
+#define HTTP        "HTTP/"
+#define CONT_LANG   "Content-Language: "
+#define METHOD      "method"
+#define REQUEST     "request"
+#define HOST        "Host: "
+#define REFERER     "Referer: "
+#define ACCEPT      "Accept: "
+#define TRANS_ENC   "Transfer-Encoding: "
+#define AUTH "Authorization: "
 
 typedef struct  s_data
 {
