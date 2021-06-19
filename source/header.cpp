@@ -1,4 +1,7 @@
 #include "header.hpp"
+#include "header.h"
+#include "Number.hpp"
+#include "config.hpp"
 
 std::string const Header::Last_Modified = "Last_Modified: " + get_current_date();
 std::list<std::string>   Header::current_files_in_work;
@@ -27,8 +30,8 @@ void Header::eraseStruct()
 		ft_doublefree(Env);
 	Port = 0;
 	Env = 0;
-	Fd = 1;
-	Fdr = 0;
+	Fd = 0;
+//	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
 	BodySize = 0;
@@ -154,10 +157,10 @@ void Header::setFd(int const &fd)
 	Fd = fd;
 }
 
-void Header::setFdr(int const &fd)
-{
-	Fdr = fd;
-}
+//void Header::setFdr(int const &fd)
+//{
+//	Fdr = fd;
+//}
 
 void Header::setPort(unsigned int  const &port)
 {
@@ -193,11 +196,11 @@ int Header::getFd()
 {
 	return Fd;
 }
-
-int &Header::getFdr()
-{
-	return Fdr;
-}
+//
+//int &Header::getFdr()
+//{
+//	return Fdr;
+//}
 
 unsigned int Header::getPort()
 {
@@ -374,28 +377,15 @@ void Header::showEnv()
 
 Header::Header()
 {
-//    typedef void (Header::*Func)(std::string const &);
-
-//    Func    set[10];
-//    set[0] = &Header::setAccept_Language;
-    array[HTTP] = &Header::http;
-    array[ACEPT_LANG] = &Header::setContent_Language;
-    array[HOST] = &Header::host;
-    array[REFERER] = &Header::referer;
-    array[ACCEPT] = &Header::accept;
-    array[TRANS_ENC] = &Header::setTransfer_Encoding;
-    array[AUTH] = &Header::setAuthorization;
-    Env = 0;
-    Fd = 1;
-    Fdr = 0;
-    is_cgi = false;
-    Pid = 0;
-    BodySize = 0;
-    empty_line = false;
 }
 
 void Header::setter( const std::string &line )
 {
+    if (line.empty())
+    {
+        cgi_env();
+        empty_line = true;
+    }
     for (std::map<std::string const &, Func>::iterator it(array.begin()); it != array.end(); it++)
     {
         if (line.find(it->first) != std::string::npos)
@@ -424,4 +414,66 @@ void Header::referer( const std::string &string )
 void Header::accept( const std::string &string )
 {
     setContent_Type(std::string(string, string.find(' ') + 1));
+}
+
+void Header::cgi_env( )
+{
+    std::string str;
+    size_t      pos;
+
+    addEnv((char *)("REQUEST_URI=" + getRequest()).c_str());
+    addEnv((char *)("REQUEST_METHOD=" + getMethod()).c_str());
+    addEnv((char *)("SERVER_PROTOCOL=" + getHttp()).c_str());
+    addEnv((char *)("PATH_INFO=" + getRequest()).c_str());
+    addEnv((char *)("PATH_TRANSLATED=" + getRequest()).c_str());
+    str = getRequest();
+    if ((pos = str.find('?')) != std::string::npos)
+        addEnv((char *)(("QUERY_STRING=" + std::string(str, pos + 1)).c_str()));
+    //
+    addEnv((char *)("CONTENT_TYPE=" + std::string(getContent_Type(), 0, getContent_Type().find(','))).c_str());
+    addEnv((char *)("AUTH_TYPE=" + std::string(getAuthorization(), 0, getAuthorization().find(' '))).c_str());
+    addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
+    addEnv((char *)("REMOTE_ADDR=" + ip_addr).c_str());
+    addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
+//    if (std::string(getEnvValue("AUTH_TYPE=")) == "BASIC" || std::string(getEnvValue("AUTH_TYPE=")) == "DIGEST")
+//    {
+//        tmp = strchr(tmp, ' ') + 1;
+//        addEnv((char *)("REMOTE_USER=" + std::string(tmp, 0, strchr(tmp, ':') - tmp)).c_str());
+//        tmp = strchr(tmp, ':') + 1;
+//        head.addEnv((char *)("REMOTE_IDENT=" + std::string(tmp)).c_str());
+//    }
+}
+
+Header::Header( config &serv )
+{
+    int bufer = BUFSIZE;
+    array[HTTP] = &Header::http;
+    array[ACEPT_LANG] = &Header::setContent_Language;
+    array[HOST] = &Header::host;
+    array[REFERER] = &Header::referer;
+    array[ACCEPT] = &Header::accept;
+    array[TRANS_ENC] = &Header::setTransfer_Encoding;
+    array[AUTH] = &Header::setAuthorization;
+//    Fd = 0;
+//    is_cgi = false;
+//    Pid = 0;
+    BodySize = 0;
+    empty_line = false;
+    body_end = false;
+    if (( client = ::accept( serv.host, reinterpret_cast<sockaddr *>(&ad), &adlen)) == -1)
+    {
+        perror("accept");
+    }
+    fcntl(client, F_SETFL, O_NONBLOCK);
+    serv.opt = 1;
+    setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const void *>(serv.opt), sizeof(serv.opt));
+    setsockopt(client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
+    ip_addr = ttostr(ad.sin_addr.s_addr & 255) + '.' +
+            ttostr(ad.sin_addr.s_addr >> 8 & 255) + '.' +
+            ttostr(ad.sin_addr.s_addr >> 16 & 255) + '.' +
+            ttostr(ad.sin_addr.s_addr >> 24);
+}
+
+int Header::getClient( ) const {
+    return client;
 }

@@ -49,7 +49,7 @@ protected:
     static bool                 is_file_with_extension( std::string request) ;
 	bool                        is_file( const std::string& request);
     int                         get_path_to_request(std::string const & request, Header & head);
-    int                         targeting(Header &head, std::string request, route const & route);
+    int                         targeting(Header &head, const std::string& request, route const & route);
     bool                        is_cgi(const std::string& request, route  const & route, std::string const & method, bool *flag  ) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();

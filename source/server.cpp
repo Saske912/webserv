@@ -147,25 +147,19 @@ std::string const & def_file, route const & route, Header & head) {
         else if (*request.rbegin() != '/' and *def_file.begin() != '/')
             return targeting(head, request + '/' + def_file, route);
     }
-    return targeting(head, request + def_file, route);
+//    return targeting(head, request + def_file, route);
 }
 
 bool server::is_file_with_extension( std::string request )
 {
-//    int ret = static_cast<int>(request.rfind('/'));
-//    if (ret == -1)
-//        return false;
-//    else
+    std::string::reverse_iterator it = request.rbegin();
+    while(it != request.rend() and *it != '/')
     {
-        std::string::reverse_iterator it = request.rbegin();
-        while(it != request.rend() and *it != '/')
-        {
-            if (*it == '.')
-                return true;
-            it++;
-        }
-        return false;
+        if (*it == '.')
+            return true;
+        it++;
     }
+    return false;
 }
 
 int    server::responce( Header & head )
@@ -254,7 +248,7 @@ int server::exception_processing( int except, Header &head ) {
     }
 }
 
-int server::targeting( Header &head, std::string request, route const & route ) {
+int server::targeting( Header &head, const std::string& request, route const & route ) {
     int     fd;
     int     pid;
     char    *arg[3];
@@ -267,7 +261,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
         return exception_processing(413, head);
-    if ((head.getMethod() == "PUT" or head.getMethod() == "POST"))
+    if (head.getMethod() == "PUT" or head.getMethod() == "POST")
     {
         struct ::stat st;
         std::string part;

@@ -15,11 +15,7 @@ void print_usage() {
 
 int main(int ac, char *av[], char *env[])
 {
-    t_data              t;
-    t_serv              serv;
-    timeval             tv = init_timevals();
     config              config_class;
-
 
     if (ac == 2) {
         config_class = parse(av[1]);
@@ -33,9 +29,9 @@ int main(int ac, char *av[], char *env[])
         print_usage();
         return 1;
     }
-    serv = init_serv();
-    if (!(t.env = ft_doublecpy(env)))
+    init_serv(config_class);
+    if (!(config_class.env = ft_doublecpy(env)))
         error_exit("malloc error");
-    loop(tv, serv, t, config_class.servers);
+    loop(config_class);
     return (0);
 }

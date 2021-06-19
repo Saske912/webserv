@@ -15,5 +15,5 @@ std::string     split_buffer(std::string &buffer, Header &head)
     {
         return line;
     }
-    split_buffer(buffer, head);
+    return split_buffer(buffer, head);
 }
