@@ -19,8 +19,10 @@ server {
     }
     route /post_body {
         allowed_methods POST
-        root /Users/pfile/web_c/content/index.html
-    }
+        root /Users/pfile/web_c/content/
+        index tmp.html
+        client_max_body_size 100
+        }
 	route / {							    # route for file $(index)/public/index.html
 		allowed_methods GET					# allowed methods for route
 		root /Users/pfile/web_c/content/

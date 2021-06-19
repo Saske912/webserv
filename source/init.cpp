@@ -1,14 +1,7 @@
 //
 // Created by Pamula File on 5/6/21.
 //
-#include "../header.h"
-
-void init_fd_sets(t_data &ret)
-{
-    FD_ZERO(&ret.read);
-    FD_ZERO(&ret.write);
-    FD_ZERO(&ret.emerg);
-}
+#include "header.h"
 
 sockaddr_in init_host_addr(void)
 {
@@ -20,18 +13,8 @@ sockaddr_in init_host_addr(void)
     return (addr);
 }
 
-timeval init_timevals(void)
+void init_serv( config &serv )
 {
-    timeval tv;
-
-    tv.tv_usec = TVMS;
-    tv.tv_sec = TVS;
-    return  tv;
-}
-
-t_serv  init_serv(void)
-{
-    t_serv              serv;
 
     serv.addr = init_host_addr();
     if ((serv.host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -44,5 +27,4 @@ t_serv  init_serv(void)
         error_exit("fail to bind IP");
     if (listen(serv.host, QUEUE) == -1)
         error_exit("listening error");
-    return serv;
 }

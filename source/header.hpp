@@ -1,11 +1,24 @@
 #ifndef HEADER_HPP
 #define HEADER_HPP
 #include <list>
+#include <map>
+#include <string>
+#include <sys/socket.h>
+#include <libc.h>
+class config;
 
 class Header
 {
+    typedef void (Header::*Func)(std::string const &);
 	public:
 		Header();
+		explicit Header(config &);
+		void    setter( const std::string &line );
+        void    http( std::string const & string);
+        void    host(std::string const & string);
+        void    referer(std::string const & string);
+        void    accept(std::string const & string);
+        void    cgi_env();
 		std::string &getAccept_Charsets();
 		std::string &getAccept_Language();
 		std::string &getAllow();
@@ -22,7 +35,7 @@ class Header
 		std::string &getMethod();
 		std::string &getReferer();
 		std::string &getResponse();
-		std::string &getRequest();
+		std::string getRequest();
 		std::string &getRetry_after();
 		std::string &getServer();
 		std::string &getTransfer_Encoding();
@@ -68,12 +81,22 @@ class Header
 		void setWWW_Authenticate(std::string const &);
 		void setIsCgi(bool status);
 		void eraseStruct();
-        static std::list<std::string>  current_files_in_work;
+        static std::list<std::string>   current_files_in_work;
+        bool                            empty_line;
+        std::string                     reminder;
+        bool                            body_end;
+        std::map<std::string const &, Func>    array;
+        std::string                     ip_addr;
+        int                             client;
+
+    int getClient( ) const;
+
+    sockaddr_in                     ad;
+        socklen_t                       adlen;
 	private:
-		int BodySize;
-		int Fd;
-		int Fdr;
-		char **Env;
+		int         BodySize;
+		int         Fd;
+		char        **Env;
 		unsigned int Port;
 		std::string Request;
 		std::string Response;
@@ -97,8 +120,8 @@ class Header
 		std::string Transfer_Encoding;
 		std::string User_Agent;
 		std::string WWW_Authenticate;
-		bool is_cgi;
-		pid_t Pid;
+		bool        is_cgi;
+		pid_t       Pid;
 };
 
 #endif

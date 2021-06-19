@@ -147,25 +147,19 @@ std::string const & def_file, route const & route, Header & head) {
         else if (*request.rbegin() != '/' and *def_file.begin() != '/')
             return targeting(head, request + '/' + def_file, route);
     }
-    return targeting(head, request + def_file, route);
+//    return targeting(head, request + def_file, route);
 }
 
 bool server::is_file_with_extension( std::string request )
 {
-//    int ret = static_cast<int>(request.rfind('/'));
-//    if (ret == -1)
-//        return false;
-//    else
+    std::string::reverse_iterator it = request.rbegin();
+    while(it != request.rend() and *it != '/')
     {
-        std::string::reverse_iterator it = request.rbegin();
-        while(it != request.rend() and *it != '/')
-        {
-            if (*it == '.')
-                return true;
-            it++;
-        }
-        return false;
+        if (*it == '.')
+            return true;
+        it++;
     }
+    return false;
 }
 
 int    server::responce( Header & head )
@@ -254,7 +248,7 @@ int server::exception_processing( int except, Header &head ) {
     }
 }
 
-int server::targeting( Header &head, std::string request, route const & route ) {
+int server::targeting( Header &head, const std::string& request, route const & route ) {
     int     fd;
     int     pid;
     char    *arg[3];
@@ -263,17 +257,11 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     bool    flag = false;
     int     st;
 
-    if (std::find(Header::current_files_in_work.begin(), Header::current_files_in_work.end(), head.getRequest()) != Header::current_files_in_work.end())
-    {
-        std::cout << "ret -2" << head.getMethod() << std::endl;
-        return -2;
-    }
-//    std::cout << "opened " << head.getMethod()  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
         return exception_processing(413, head);
-    if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
+    if (head.getMethod() == "PUT" or head.getMethod() == "POST")
     {
         struct ::stat st;
         std::string part;
@@ -295,7 +283,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             head.setResponse("HTTP/1.1 " + part);
         Header::current_files_in_work.push_back(head.getRequest());
     }
-    else if ((is_cgi(request, route, head.getMethod(), &flag)))
+    else if (is_cgi(request, route, head.getMethod(), &flag))
     {
         int     fd1 = dup(1);
         int     fd0 = dup(0);
