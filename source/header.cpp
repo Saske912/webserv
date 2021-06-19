@@ -449,16 +449,25 @@ void Header::cgi_env( )
 Header::Header( config &serv )
 {
     int bufer = BUFSIZE;
-    array[HTTP] = &Header::http;
-    array[ACEPT_LANG] = &Header::setContent_Language;
-    array[HOST] = &Header::host;
-    array[REFERER] = &Header::referer;
-    array[ACCEPT] = &Header::accept;
-    array[TRANS_ENC] = &Header::setTransfer_Encoding;
-    array[AUTH] = &Header::setAuthorization;
-//    Fd = 0;
-//    is_cgi = false;
-//    Pid = 0;
+//    std::vector<Func> arr;
+//    arr.push_back(&Header::http);
+
+    array.insert(std::pair<std::string const &, Func>(HTTP, &Header::http));
+    array.insert(std::pair<std::string const &, Func>(ACEPT_LANG, &Header::setContent_Language));
+    array.insert(std::pair<std::string const &, Func>(HOST, &Header::host));
+    array.insert(std::pair<std::string const &, Func>(REFERER, &Header::referer));
+    array.insert(std::pair<std::string const &, Func>(ACCEPT, &Header::accept));
+    array.insert(std::pair<std::string const &, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
+    array.insert(std::pair<std::string const &, Func>(AUTH, &Header::setAuthorization));
+//    array[ACEPT_LANG] = &Header::setContent_Language;
+//    array[HOST] = &Header::host;
+//    array[REFERER] = &Header::referer;
+//    array[ACCEPT] = &Header::accept;
+//    array[TRANS_ENC] = &Header::setTransfer_Encoding;
+//    array[AUTH] = &Header::setAuthorization;
+    Fd = 0;
+    is_cgi = false;
+    Pid = 0;
     BodySize = 0;
     empty_line = false;
     body_end = false;

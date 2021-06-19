@@ -25,7 +25,6 @@ add_executable(webserv
         source/route.cpp
         source/route.hpp
         source/tests.cpp
-        source/find.cpp
         source/config.cpp
         source/config.hpp
         source/Number.cpp

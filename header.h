@@ -25,6 +25,7 @@
 #include <dirent.h>
 #include <list>
 #include <map>
+#include <vector>
 
 #define QUEUE 16
 #define TVS 320000
