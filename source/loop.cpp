@@ -84,7 +84,6 @@ int sendFile(std::list<Header>::iterator &it, int fd, std::string &str2)
 {
 	char str[BUFSIZE + 1];
 	int z;
-    int ret;
 
 	while ((z = read(fd, str, BUFSIZE)) > 0)
 	{
@@ -166,6 +165,17 @@ std::string getBaseSixteen(unsigned int n)
 //	it->ct = 0;
 //}
 
+void clear( std::list<Header>::iterator &it)
+{
+    close(it->client);
+    std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
+    while (iter != Header::current_files_in_work.end() and *iter != it->getRequest())
+        iter++;
+    if (iter != Header::current_files_in_work.end())
+        Header::current_files_in_work.erase(iter);
+    it->eraseStruct();
+}
+
 void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 {
 	char line[BUFSIZE + 1];
@@ -179,7 +189,7 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
 			return ;
         send_protected("0\r\n\r\n", it, "sendFileChunkedLast");
-        erase( it );
+        clear(it);
         return ;
     }
     line[z] = 0;
@@ -241,7 +251,6 @@ void cgiResponse( std::list<Header>::iterator &it, int &fd)
 void response( std::list<Header>::iterator &it, config &conf)
 {
 	std::string string;
-
 	if (it->body_end)
 	{
         sendHeader(it);
