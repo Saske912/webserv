@@ -7,6 +7,11 @@ std::string  parse_request(const std::string& string, Header &head)
 {
     if (head.empty_line)
     {
+        if (string.empty())
+        {
+            head.body_end = true;
+            return "body_end";
+        }
         if (head.getTransfer_Encoding() == "chunked")
         {
             if (string.find_last_not_of("0123456789abcdef") != std::string::npos)

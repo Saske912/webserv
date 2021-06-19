@@ -81,7 +81,7 @@ void Header::setContent_Type(std::string const &str)
 
 void Header::setDate(std::string const &str)
 {
-	Date = str;
+	Date = "Date: " + str;
 }
 
 void Header::setHttp(std::string const &str)
@@ -395,6 +395,7 @@ void Header::setter( const std::string &line )
 
 void Header::http( const std::string &string )
 {
+    setDate(get_current_date());
     setMethod(std::string( string, 0, string.find( ' ' )));
     setRequest(std::string( string, string.find( ' ' ) + 1, string.rfind( ' ' )));
     setHttp(std::string( string, string.find(HTTP) + strlen( HTTP )));

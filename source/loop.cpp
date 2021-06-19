@@ -52,6 +52,10 @@ int receive( std::list<Header>::iterator &it, config &conf)
         str = receive_buffer( it );
         if (str == "connection closed")
             return 1;
+        else if (str == "body_end")
+        {
+            return 0;
+        }
 	}
     return 0;
 }
@@ -107,15 +111,8 @@ std::string  sendHeader(std::list<Header>::iterator &it)
 	std::string str;
 
 	str = it->getResponse();
-	if (!(it->getContent_Language().empty()))
-	{
-		str += it->getContent_Language();
-	}
-	if (!(it->getAllow().empty()))
-	{
-		str += it->getAllow();
-	}
-    it->setDate("Date: " + get_current_date());
+    str += it->getContent_Language();
+    str += it->getAllow();
 	str += it->getDate();
 	str += it->getLast_Modified();
 	str += it->getContent_Location();
@@ -247,7 +244,7 @@ void response( std::list<Header>::iterator &it, config &conf)
 
 	if (it->body_end)
 	{
-
+        sendHeader(it);
 	}
 }
 

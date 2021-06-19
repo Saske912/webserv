@@ -10,6 +10,8 @@ std::string     split_buffer(std::string &buffer, Header &head)
     try
     {
         line = get_http_line(buffer, head);
+        if (line == "body_end")
+            return line;
     }
     catch (std::exception &)
     {

@@ -12,9 +12,8 @@ public:
     config();
     config(const config& other);
     config &operator=(const config &other);
-    server  find_server(std::string const & host_addr, unsigned int port);
     ~config();
-
+    server  find_server(std::string const & host_addr, unsigned int port);
     void add_server(const server &server_);
 
     std::list<server>   servers;
@@ -26,6 +25,7 @@ public:
     int                 ret;
     fd_set              read;
     timeval             tv;
+private:
 };
 
 std::ostream &operator<<(std::ostream &o, const config &conf);

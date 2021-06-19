@@ -27,7 +27,6 @@ server config::find_server( const std::string &host_addr, unsigned int port ) {
     std::list<server>::iterator it = servers.begin( );
     while (it != servers.end())
     {
-//        std::cout << it->get_host() << " " << it->get_port()  << std::endl;
         if (it->get_host() == host_addr and it->get_port() == port)
         {
             return *it;

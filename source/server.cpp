@@ -283,7 +283,7 @@ int server::targeting( Header &head, const std::string& request, route const & r
             head.setResponse("HTTP/1.1 " + part);
         Header::current_files_in_work.push_back(head.getRequest());
     }
-    else if ((is_cgi(request, route, head.getMethod(), &flag)))
+    else if (is_cgi(request, route, head.getMethod(), &flag))
     {
         int     fd1 = dup(1);
         int     fd0 = dup(0);
