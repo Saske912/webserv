@@ -167,19 +167,12 @@ int    server::responce( Header & head )
     std::pair<int, std::string> ret;
     std::string                 request;
     std::string                 tmp;
-    std::string server_name = "SERVER_NAME=";
-    std::string server_port = "SERVER_PORT=";
 
     request = head.getRequest();
-    server_name += *_server_names.begin();
-    head.addEnv(const_cast<char *>(server_name.c_str()));
-    server_port += ttostr(static_cast<int>(_port));
-    head.addEnv(const_cast<char *>(server_port.c_str()));
-    head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
-    if (head.getHost() == "400" || head.getHost().empty())
+    head.addEnv(const_cast<char *>(("SERVER_NAME=" + _server_names.front()).c_str()));
+    head.addEnv(const_cast<char *>(("SERVER_PORT=" + ttostr(static_cast<int>(_port))).c_str()));
+    if (head.getHost().empty())
     {
-        std::cout << "HOST ERROR ACCEPT |"  << head.getHost().empty() << "| get host: " << head.getHost() << std::endl;
-//        sleep(4);
         return exception_processing(400, head);
     }
     if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())

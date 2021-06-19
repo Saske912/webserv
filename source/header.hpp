@@ -91,7 +91,7 @@ class Header
 
     int getClient( ) const;
 
-    sockaddr_in                     ad;
+        sockaddr_in                     ad;
         socklen_t                       adlen;
 	private:
 		int         BodySize;

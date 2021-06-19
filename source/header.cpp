@@ -318,8 +318,7 @@ bool &Header::getIsCgi() {
 
 void Header::initEnv()
 {
-	addEnv((char *)"PATH_INFO=/");
-	addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
+
 }
 
 std::string Header::getEnvValue(char const *str)
@@ -436,6 +435,8 @@ void Header::cgi_env( )
     addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
     addEnv((char *)("REMOTE_ADDR=" + ip_addr).c_str());
     addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
+    addEnv((char *)("PATH_INFO=" + getRequest()).c_str());
+    addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
 //    if (std::string(getEnvValue("AUTH_TYPE=")) == "BASIC" || std::string(getEnvValue("AUTH_TYPE=")) == "DIGEST")
 //    {
 //        tmp = strchr(tmp, ' ') + 1;
