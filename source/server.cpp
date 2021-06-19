@@ -350,6 +350,8 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         lseek(fd, 0, 0);
         dup2(fd1, 1);
         dup2(fd0, 0);
+		close(fd1);
+		close(fd0);
         return fd;
 //        return fdset[0];
 //        dup2(fd1, 1);

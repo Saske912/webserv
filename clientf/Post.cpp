@@ -122,6 +122,7 @@ void    *func(void *t)
         }
     }
 	std::cout << num << ": finished" << std::endl;
+	close(sock);
     return NULL;
 }
 

@@ -154,6 +154,7 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	char *line = 0;
 	char *buf = 0;
 	struct stat stat;
+
 	if (it->head.getFd() == 1)
     {
         it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
@@ -334,7 +335,7 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
             else
                 parse_request(line, (*it).head);
             if (line) {
-               // std::cout << line << std::endl;
+             //   std::cout << line << std::endl;
             }
                 if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
                     && it->head.getMethod() != "PUT")
@@ -444,7 +445,7 @@ void resetIt(std::list<t_write>::iterator &it)
 	it->ct = 0;
 }
 
-void  sendFileChunked(std::list<t_write>::iterator &it, int fd)
+void  sendFileChunked(std::list<t_write>::iterator &it, int &fd)
 {
 	char line[32769];
 	std::string str;
