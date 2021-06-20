@@ -11,6 +11,7 @@
 #include "route.hpp"
 #include "../wpersimm.h"
 #include <fcntl.h>
+class Header;
 
 class server {
 public:
@@ -67,6 +68,12 @@ private:
     std::list<route>            _routs;
     long int                    _client_body_size;
     std::list<std::string>      _list_of_methods;
+public:
+    const std::list<std::string> &getListOfMethods( ) const;
+
+    void setListOfMethods( const std::list<std::string> &listOfMethods );
+
+private:
     std::pair<std::string, std::string> _allow;
     std::string                 _cgi_path;
 };

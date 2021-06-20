@@ -39,7 +39,8 @@ route &route::operator=( route const &src ) {
     return *this;
 }
 
-bool route::check_name( std::string request ) {
+bool route::check_name( std::string request )
+{
     return (strncmp(trim(_name, "/").c_str(), trim(request, "/").c_str(),trim(_name, "/").length()));
 }
 

@@ -69,11 +69,12 @@ server::server( const std::string  &host, unsigned int port,
     set_list_of_methods();
 }
 
-int server::get_path_to_request( const std::string &request, Header & head) {
+int server::get_path_to_request( const std::string &request, Header & head)
+{
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        if (!(*it).check_name(request))
+        if (!(it->check_name(request)))
         {
             chdir(it->get_root().c_str());
             if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
@@ -83,8 +84,6 @@ int server::get_path_to_request( const std::string &request, Header & head) {
             }
             else if (head.getMethod() == "GET" || head.getMethod() == "PUT" || head.getMethod() == "POST")
                 return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
-            else if (head.getMethod() == "HEAD")
-                return -1;
 //            else if (head.getMethod() == "PUT")
 //                return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
 //            else if (head.getMethod() == "POST") {
@@ -164,30 +163,7 @@ bool server::is_file_with_extension( std::string request )
 
 int    server::responce( Header & head )
 {
-    std::pair<int, std::string> ret;
-    std::string                 request;
-    std::string                 tmp;
-
-    request = head.getRequest();
-    head.addEnv(const_cast<char *>(("SERVER_NAME=" + _server_names.front()).c_str()));
-    head.addEnv(const_cast<char *>(("SERVER_PORT=" + ttostr(static_cast<int>(_port))).c_str()));
-    if (head.getHost().empty())
-    {
-        return exception_processing(400, head);
-    }
-    if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
-        return exception_processing(501, head);
-    head.setHost("Host: " + _host + ":" + ttostr(static_cast<int>(_port)) + '\n');
-    int n = (int)request.find('?');
-    if (n > 0)
-    {
-        tmp = request.substr(0, n);
-        ret.second = request.substr(n + 1, request.length());
-        ret.first = get_path_to_request(tmp, head);
-    }
-    else
-        ret.first = get_path_to_request(request, head);
-    return ret.first;
+    return get_path_to_request(head.getRequest(), head);
 }
 
 std::string server::get_error(int err, std::map<int, std::string> ers) {
@@ -564,6 +540,14 @@ bool server::is_file( std::string const & request ) {
     if (st.st_mode & S_IFDIR)
         return false;
     return true;
+}
+
+const std::list<std::string> &server::getListOfMethods( ) const {
+    return _list_of_methods;
+}
+
+void server::setListOfMethods( const std::list<std::string> &listOfMethods ) {
+    _list_of_methods = listOfMethods;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

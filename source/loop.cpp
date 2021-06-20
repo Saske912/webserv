@@ -9,7 +9,7 @@ int		sorter(const Header& a, const Header& b)
 	return (a.client < b.client);
 }
 
-std::string  receive_buffer(std::list<Header>::iterator &it)
+std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
 {
     int         z;
     char        buf[BUFSIZE + 1];
@@ -37,7 +37,7 @@ std::string  receive_buffer(std::list<Header>::iterator &it)
     }
     else
     {
-        return split_buffer(buffer, *it);
+        return split_buffer(buffer, *it, conf);
     }
 }
 
@@ -47,9 +47,7 @@ int receive( std::list<Header>::iterator &it, config &conf)
 	{
         std::string str;
 
-        if (!it->getFd())
-            it->setFd(conf.find_server(it->getHost(), it->getPort()).responce(*it));
-        str = receive_buffer( it );
+        str = receive_buffer( it, conf );
         if (str == "connection closed")
             return 1;
         else if (str == "body_end")
@@ -115,6 +113,7 @@ std::string  sendHeader(std::list<Header>::iterator &it)
 	str += it->getDate();
 	str += it->getLast_Modified();
 	str += it->getContent_Location();
+	str += it->getHostHeaderResponse();
 	return str;
 }
 

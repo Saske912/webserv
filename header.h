@@ -43,13 +43,6 @@
 #define TRANS_ENC   "Transfer-Encoding: "
 #define AUTH "Authorization: "
 
-typedef struct  s_data
-{
-//    fd_set  write;
-
-
-}               t_data;
-
 void        error_exit(const std::string& str);
 sockaddr_in init_host_addr();
 timeval     init_timevals();
@@ -60,9 +53,9 @@ std::list<Header>::iterator& erase( std::list<Header>::iterator &it );
 //void        resetIt(std::list<Header>::iterator &it);
 int         send_protected( std::string const & str, std::list<Header>::iterator &it, std::string str2);
 bool        file_available(const std::string& request);
-std::string     split_buffer(std::string &buffer, Header &head);
-std::string     get_http_line(std::string &buffer, Header &head);
-std::string     parse_request(const std::string& string, Header &head);
+std::string     split_buffer(std::string &buffer, Header &head, config &conf);
+std::string     get_http_line(std::string &buffer, Header &head, config &conf);
+std::string     parse_request(const std::string& string, Header &head, config &conf);
 void            response( std::list<Header>::iterator &it, config &conf);
 
 #endif //HEADER_H

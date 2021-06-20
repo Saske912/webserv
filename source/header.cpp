@@ -378,12 +378,15 @@ Header::Header()
 {
 }
 
-void Header::setter( const std::string &line )
+void Header::setter( const std::string &line, config &conf )
 {
     if (line.empty())
     {
+        setServ(&conf.find_server(getHost(), getPort()));
         cgi_env();
+        setHostHeaderResponse("Host: " + serv->get_host() + ":" + ttostr(static_cast<int>(serv->get_port())) + '\n');
         empty_line = true;
+        error = error_management();
         return ;
     }
     for (std::map<std::string, Func>::iterator it(array.begin()); it != array.end();)
@@ -394,12 +397,31 @@ void Header::setter( const std::string &line )
     }
 }
 
-void Header::http( const std::string &string )
+void Header::http( std::string const & str )
 {
+    size_t  finder;
+    std::string string(str);
+
     setDate(get_current_date());
-    setMethod(std::string( string, 0, string.find( ' ' )));
-    setRequest(std::string( string, string.find( ' ' ) + 1, string.rfind( ' ' )));
-    setHttp(std::string( string, string.find(HTTP) + strlen( HTTP )));
+    finder = string.find( ' ' );
+    setMethod( string.substr( 0, finder));
+    string.erase( 0, finder + 1);
+    if ((finder = string.find( '?')) != std::string::npos)
+    {
+        setRequest( string.substr( 0, finder));
+        string.erase( 0, finder + 1);
+        finder = string.find( ' ');
+        setQuery( string.substr( 0, finder));
+        string.erase( 0, finder + 1);
+    }
+    else
+    {
+        finder = string.find( ' ' );
+        setRequest( string.substr( 0, finder));
+        string.erase( 0, finder + 1);
+    }
+    string.erase( 0, strlen( HTTP));
+    setHttp(string);
 }
 
 void Header::host( const std::string &string )
@@ -439,6 +461,8 @@ void Header::cgi_env( )
     addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
     addEnv((char *)("PATH_INFO=" + getRequest()).c_str());
     addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
+    addEnv(const_cast<char *>(("SERVER_NAME=" + getServ()->get_server_names().front()).c_str()));
+    addEnv(const_cast<char *>(("SERVER_PORT=" + ttostr(static_cast<int>(getServ()->get_port()))).c_str()));
 //    if (std::string(getEnvValue("AUTH_TYPE=")) == "BASIC" || std::string(getEnvValue("AUTH_TYPE=")) == "DIGEST")
 //    {
 //        tmp = strchr(tmp, ' ') + 1;
@@ -451,7 +475,7 @@ void Header::cgi_env( )
 Header::Header( config &serv )
 {
     int bufer = BUFSIZE;
-
+    std::pair<std::string, Func>(std::string(HTTP), &Header::http);
     array.insert(std::pair<std::string, Func>(HTTP, &Header::http));
     array.insert(std::pair<std::string, Func>(ACEPT_LANG, &Header::setContent_Language));
     array.insert(std::pair<std::string, Func>(HOST, &Header::host));
@@ -482,4 +506,44 @@ Header::Header( config &serv )
 
 int Header::getClient( ) const {
     return client;
+}
+
+void Header::setServ( server *serv ) {
+    Header::serv = serv;
+}
+
+server *Header::getServ( ) const {
+    return serv;
+}
+
+const std::string &Header::getHostHeaderResponse( ) const {
+    return host_header_response;
+}
+
+void Header::setHostHeaderResponse( const std::string &hostHeaderResponse ) {
+    host_header_response = hostHeaderResponse;
+}
+
+int Header::error_management( ) {
+    std::list<std::string> lom(serv->getListOfMethods());
+
+    if (std::find(lom.begin(), lom.end(), getMethod()) == lom.end())
+        return serv->exception_processing(501, *this);
+    return 0;
+}
+
+int Header::getError( ) const {
+    return error;
+}
+
+void Header::setError( int error ) {
+    Header::error = error;
+}
+
+const std::string &Header::getQuery( ) const {
+    return query;
+}
+
+void Header::setQuery( const std::string &query ) {
+    Header::query = query;
 }

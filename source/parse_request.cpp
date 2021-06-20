@@ -2,11 +2,16 @@
 // Created by Pamula File on 6/17/21.
 //
 #include "header.h"
+#include "Number.hpp"
 
-std::string  parse_request(const std::string& string, Header &head)
+std::string  parse_request(const std::string& string, Header &head, config &conf)
 {
     if (head.empty_line)
     {
+        if (!head.getFd())
+        {
+            head.setFd(conf.find_server(head.getHost(), head.getPort()).responce(head));
+        }
         if (string.empty())
         {
             head.body_end = true;
@@ -34,7 +39,7 @@ std::string  parse_request(const std::string& string, Header &head)
     }
     else
     {
-        head.setter(string);
+        head.setter(string, conf);
     }
     return "ok";
 }

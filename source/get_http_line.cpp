@@ -3,7 +3,7 @@
 //
 #include "header.h"
 
-std::string get_http_line(std::string &buffer, Header &head)
+std::string get_http_line(std::string &buffer, Header &head, config &conf)
 {
     std::string line;
     size_t      finder;
@@ -15,5 +15,5 @@ std::string get_http_line(std::string &buffer, Header &head)
     }
     line = buffer.substr(0, finder);
     buffer.erase(0, finder + 2);
-    return parse_request(line, head);
+    return parse_request(line, head, conf);
 }

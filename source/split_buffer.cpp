@@ -3,13 +3,13 @@
 //
 #include "header.h"
 
-std::string     split_buffer(std::string &buffer, Header &head)
+std::string     split_buffer(std::string &buffer, Header &head, config &conf)
 {
     std::string     line;
 
     try
     {
-        line = get_http_line(buffer, head);
+        line = get_http_line(buffer, head, conf);
         if (line == "body_end")
             return line;
     }
@@ -17,5 +17,5 @@ std::string     split_buffer(std::string &buffer, Header &head)
     {
         return line;
     }
-    return split_buffer(buffer, head);
+    return split_buffer(buffer, head, conf);
 }
