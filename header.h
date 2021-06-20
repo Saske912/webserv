@@ -54,7 +54,7 @@ void        error_exit(const std::string& str);
 sockaddr_in init_host_addr();
 timeval     init_timevals();
 void init_serv( config &serv );
-void        loop(config conf);
+void        loop(config &conf);
 server      default_config();
 std::list<Header>::iterator& erase( std::list<Header>::iterator &it );
 //void        resetIt(std::list<Header>::iterator &it);

@@ -13,8 +13,7 @@ std::string get_http_line(std::string &buffer, Header &head)
         head.reminder = buffer;
         throw std::exception();
     }
-    line = buffer.erase(0, finder + 2);
-    line.pop_back();
-    line.pop_back();
+    line = buffer.substr(0, finder);
+    buffer.erase(0, finder + 2);
     return parse_request(line, head);
 }

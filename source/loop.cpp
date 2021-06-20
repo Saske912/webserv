@@ -16,9 +16,9 @@ std::string  receive_buffer(std::list<Header>::iterator &it)
     std::string ret;
     std::string buffer;
 
-    z = recv( it->getFd(), buf, BUFSIZE, 0 );
+    z = recv( it->client, buf, BUFSIZE, 0 );
     buffer = it->reminder + buf;
-    it->reminder.erase();
+    it->reminder.clear();
     if (z == -1)
     {
         if (errno == EAGAIN)
@@ -257,36 +257,32 @@ void response( std::list<Header>::iterator &it, config &conf)
 	}
 }
 
-static int	Select(config conf, std::list<Header> set)
+static int	Select(config &conf, std::list<Header> &set)
 {
 	if (set.empty())
-	{
         conf.max_d = conf.host;
-	}
 	else
-	{
-		set.sort(sorter);
         conf.max_d = (set.rbegin())->client > conf.host ? (set.rbegin())->client : conf.host;
-		if ((conf.ret = select(conf.max_d + 1, &conf.read, NULL, NULL, &conf.tv)) < 1)
-		{
-			if (errno != EINTR)
-                return 1;
-			else
-			{
-				return 1;//??
-			}
+    set.sort(sorter);
+    if ((conf.ret = select(conf.max_d + 1, &conf.read, NULL, NULL, &conf.tv)) < 1)
+    {
+        if (errno != EINTR)
+            return 1;
+        else
+        {
+            return 1;//??
+        }
 //                loop(tv, serv, t, cli, set);
-			return 1;
-		}
-		if (!conf.ret)
-		{
-			return 1;
-		}
-	}
+        return 1;
+    }
+    if (!conf.ret)
+    {
+        return 1;
+    }
 	return (0);
 }
 
-void    loop(config conf)
+void    loop(config &conf)
 {
     std::list<Header>           set;
     std::list<Header>::iterator it;
@@ -303,7 +299,7 @@ void    loop(config conf)
         }
         if (Select(conf, set))
             continue ;
-        if ( FD_ISSET(conf.host, &conf.read))
+        if (FD_ISSET(conf.host, &conf.read))
         {
             set.push_back(Header(conf));
         }

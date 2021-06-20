@@ -85,7 +85,7 @@ class Header
         bool                            empty_line;
         std::string                     reminder;
         bool                            body_end;
-        std::map<std::string const &, Func>    array;
+        std::map<std::string, Func>    array;
         std::string                     ip_addr;
         int                             client;
 

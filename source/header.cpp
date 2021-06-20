@@ -384,11 +384,13 @@ void Header::setter( const std::string &line )
     {
         cgi_env();
         empty_line = true;
+        return ;
     }
-    for (std::map<std::string const &, Func>::iterator it(array.begin()); it != array.end(); it++)
+    for (std::map<std::string, Func>::iterator it(array.begin()); it != array.end();)
     {
         if (line.find(it->first) != std::string::npos)
             return (this->*array[it->first])(line);
+        ++it;
     }
 }
 
@@ -449,22 +451,15 @@ void Header::cgi_env( )
 Header::Header( config &serv )
 {
     int bufer = BUFSIZE;
-//    std::vector<Func> arr;
-//    arr.push_back(&Header::http);
 
-    array.insert(std::pair<std::string const &, Func>(HTTP, &Header::http));
-    array.insert(std::pair<std::string const &, Func>(ACEPT_LANG, &Header::setContent_Language));
-    array.insert(std::pair<std::string const &, Func>(HOST, &Header::host));
-    array.insert(std::pair<std::string const &, Func>(REFERER, &Header::referer));
-    array.insert(std::pair<std::string const &, Func>(ACCEPT, &Header::accept));
-    array.insert(std::pair<std::string const &, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
-    array.insert(std::pair<std::string const &, Func>(AUTH, &Header::setAuthorization));
-//    array[ACEPT_LANG] = &Header::setContent_Language;
-//    array[HOST] = &Header::host;
-//    array[REFERER] = &Header::referer;
-//    array[ACCEPT] = &Header::accept;
-//    array[TRANS_ENC] = &Header::setTransfer_Encoding;
-//    array[AUTH] = &Header::setAuthorization;
+    array.insert(std::pair<std::string, Func>(HTTP, &Header::http));
+    array.insert(std::pair<std::string, Func>(ACEPT_LANG, &Header::setContent_Language));
+    array.insert(std::pair<std::string, Func>(HOST, &Header::host));
+    array.insert(std::pair<std::string, Func>(REFERER, &Header::referer));
+    array.insert(std::pair<std::string, Func>(ACCEPT, &Header::accept));
+    array.insert(std::pair<std::string, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
+    array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
+    Env = ft_doublecpy(serv.env);
     Fd = 0;
     is_cgi = false;
     Pid = 0;
