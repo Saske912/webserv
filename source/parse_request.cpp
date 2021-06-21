@@ -8,9 +8,9 @@ std::string  parse_request(const std::string& string, Header &head, config &conf
 {
     if (head.empty_line)
     {
-        if (!head.getFd())
+        if (!head.getFile( ))
         {
-            head.setFd(conf.find_server(head.getHost(), head.getPort()).responce(head));
+            head.setFile( conf.find_server( head.getHost( ), head.getPort( )).response( head ));
         }
         if (string.empty())
         {
@@ -21,7 +21,7 @@ std::string  parse_request(const std::string& string, Header &head, config &conf
         {
             if (string.find_last_not_of("0123456789abcdef") != std::string::npos)
             {
-                if (write(head.getFd(), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
+                if ( write( head.getFile( ), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
                 {
                     perror("write");
                     return "bad";
@@ -30,7 +30,7 @@ std::string  parse_request(const std::string& string, Header &head, config &conf
         }
         else
         {
-            if (write(head.getFd(), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
+            if ( write( head.getFile( ), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
             {
                 perror("write");
                 return "bad";

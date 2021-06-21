@@ -20,7 +20,7 @@ public:
     route &operator=(route const &src);
 
     bool check_name(std::string request);
-    std::string swap_path(std::string const &request);
+    std::string swap_path( std::string request);
     void autoindex_on();
     void autoindex_off();
 
@@ -44,7 +44,7 @@ private:
     std::string            _root;
     std::list<std::string> _http_methods;
     std::string            _default_page;
-    CgiType                _cgi; // first - extension, second - filename
+    CgiType                _cgi; // first - extension, second - extension
     std::string            _upload_location;
     bool                   _autoindex;
     long int               _client_body_size;

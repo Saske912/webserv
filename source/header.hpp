@@ -13,9 +13,47 @@ class server;
 
 class Header
 {
-public:
     typedef void (Header::*Func)(std::string const &);
+private:
     Header();
+    std::string extension;
+    route       *rout;
+    std::string real_path_to_file;
+    server      *serv;
+    int         error;
+    int         BodySize;
+    int         file;
+    char        **Env;
+    unsigned int Port;
+    std::string Request;
+    std::string Response;
+    std::string Method;
+    std::string Http;
+    std::string Accept_Charsets;
+    std::string Accept_Language;
+    std::string Allow;
+    std::string Authorization;
+    std::string Content_Language;
+    std::string Content_Length;
+    std::string Content_Location;
+    std::string Content_Type;
+    std::string Date;
+    std::string Host;
+    const static std::string Last_Modified;
+    std::string Location;
+    std::string Referer;
+    std::string Retry_after;
+    std::string Server;
+    std::string Transfer_Encoding;
+    std::string User_Agent;
+    std::string WWW_Authenticate;
+    bool        is_cgi;
+    pid_t       Pid;
+    std::string host_header_response;
+    std::string query;
+public:
+    route *getRout( ) const;
+    void setRout( route *rout );
     explicit Header(config &);
     void    setter( const std::string &line, config &conf );
     void    http( std::string const & str);
@@ -52,14 +90,12 @@ public:
     void initEnv();
     void showEnv();
     unsigned int getPort();
-    int getFd();
-//    int &getFdr();
+    int getFile();
     pid_t getPid();
     int	getBodySize();
     void setBodySize(int);
     void setPid(pid_t const &);
-//    void setFdr(int const &);
-    void setFd(int const &);
+    void setFile( int const &);
     void setEnv(char **env);
     void setPort(unsigned int const &);
     void setAccept_Charsets(std::string const &);
@@ -84,7 +120,6 @@ public:
     void setUser_Agent(std::string const &);
     void setWWW_Authenticate(std::string const &);
     void setIsCgi(bool status);
-    int     error_management();
     void eraseStruct();
     int getClient( ) const;
     void setServ( server *serv );
@@ -94,7 +129,11 @@ public:
     const std::string &getQuery( ) const;
     void setQuery( const std::string &query );
     const std::string &getHostHeaderResponse( ) const;
-    void setHostHeaderResponse( const std::string &hostHeaderResponse );
+    void setHostHeaderResponse( const std::string &host, unsigned int port);
+    const std::string &getRealPathToFile( ) const;
+    void setRealPathToFile( const std::string &realPathToFile );
+    const std::string &getExtension( ) const;
+    void setExtension( const std::string &filename );
     static std::list<std::string>   current_files_in_work;
     bool                            empty_line;
     std::string                     reminder;
@@ -104,39 +143,7 @@ public:
     int                             client;
     sockaddr_in                     ad;
     socklen_t                       adlen;
-private:
-    server      *serv;
-    int         error;
-    int         BodySize;
-    int         Fd;
-    char        **Env;
-    unsigned int Port;
-    std::string Request;
-    std::string Response;
-    std::string Method;
-    std::string Http;
-    std::string Accept_Charsets;
-    std::string Accept_Language;
-    std::string Allow;
-    std::string Authorization;
-    std::string Content_Language;
-    std::string Content_Length;
-    std::string Content_Location;
-    std::string Content_Type;
-    std::string Date;
-    std::string Host;
-    const static std::string Last_Modified;
-    std::string Location;
-    std::string Referer;
-    std::string Retry_after;
-    std::string Server;
-    std::string Transfer_Encoding;
-    std::string User_Agent;
-    std::string WWW_Authenticate;
-    bool        is_cgi;
-    pid_t       Pid;
-    std::string host_header_response;
-    std::string query;
+
 };
 
 #endif

@@ -41,23 +41,15 @@ route &route::operator=( route const &src ) {
 
 bool route::check_name( std::string request )
 {
-    return (strncmp(trim(_name, "/").c_str(), trim(request, "/").c_str(),trim(_name, "/").length()));
+    return (strncmp(rtrim(_name, "/").c_str(), rtrim(request, "/").c_str(),rtrim(_name, "/").length()));
 }
 
-std::string route::swap_path( const std::string &request ) {
-    std::string tmp;
-    if (_name.length() < request.length())
-    {
-        if (*_name.rbegin() == '/')
-            tmp = std::string(request, _name.length(), request.length() - _name.length());
-        else
-            tmp = std::string(request, _name.length() + 1, request.length() - _name.length());
-    }
-    else
-        tmp = "/";
-//    if (*_root.rbegin() != '/' and *tmp.begin() != '/')
-//        _root += '/';
-    return tmp;
+std::string route::swap_path( std::string request )
+{
+    std::string root(rtrim(_root, "/"));
+    std::string tmp(request.erase(0, root.length()));
+    std::string path(root + "/" + ltrim(tmp, "/"));
+    return path;
 }
 
 void route::set_default_page( const std::string &page ) {

@@ -71,29 +71,6 @@ server::server( const std::string  &host, unsigned int port,
 
 int server::get_path_to_request( const std::string &request, Header & head)
 {
-    std::list<route>::iterator it = _routs.begin();
-    while (it != _routs.end())
-    {
-        if (!(it->check_name(request)))
-        {
-            chdir(it->get_root().c_str());
-            if (!check_methods(head.getMethod(), it->get_http_methods()) and !is_allow(request, head.getMethod(), *it))
-            {
-                head.setAllow(get_allow(it->get_http_methods()));
-                return exception_processing(405, head);
-            }
-            else if (head.getMethod() == "GET" || head.getMethod() == "PUT" || head.getMethod() == "POST")
-                return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
-//            else if (head.getMethod() == "PUT")
-//                return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
-//            else if (head.getMethod() == "POST") {
-//                return request_processing(( *it ).swap_path( request ), ( *it ).get_default_page( ), *it, head );
-//            }
-        }
-        it++;
-    }
-    std::cerr << "Path not found: " << request << std::endl;
-    return exception_processing(404, head);
 }
 
 const std::map<int, std::string>& server::get_error_pages( ) const {
@@ -161,9 +138,30 @@ bool server::is_file_with_extension( std::string request )
     return false;
 }
 
-int    server::responce( Header & head )
+int    server::response( Header & head )
 {
-    return get_path_to_request(head.getRequest(), head);
+    std::list<std::string> lom(getListOfMethods());
+    head.setHostHeaderResponse(get_host(), get_port());
+    if (std::find(lom.begin(), lom.end(), head.getMethod()) == lom.end())
+        return exception_processing(501, head);
+    std::list<route>::iterator it = _routs.begin();
+    while (it != _routs.end())
+    {
+        if (!(it->check_name(head.getRequest())))
+        {
+            head.setRout(&(*it));
+            head.setRealPathToFile(it->swap_path(head.getRequest()));
+            chdir(it->get_root().c_str());
+            if (head.getMethod() == "PUT" || head.getMethod() == "POST")
+                return recv_processing(head);
+            else if (head.getMethod() == "GET")
+                return send_processing(head);
+//            return request_processing((*it).swap_path(head.getRequest()), (*it).get_default_page(), *it, head);
+        }
+        it++;
+    }
+    std::cerr << "Path not found: " << head.getRequest() << std::endl;
+    return exception_processing(404, head);
 }
 
 std::string server::get_error(int err, std::map<int, std::string> ers) {
@@ -337,7 +335,7 @@ int server::targeting( Header &head, const std::string& request, route const & r
             head.setResponse("HTTP/1.1 200 OK\r\n");
         }
     }
-//    std::cout << "server responce"  << std::endl;
+//    std::cout << "server response"  << std::endl;
     return fd;
 }
 
@@ -401,16 +399,6 @@ void server::set_default_pages( ) {
 
 std::map<int, std::string> server::get_def_error_pages( ) const {
     return _default_error_pages;
-}
-
-bool server::check_methods( std::string str, std::list<std::string> arr ) const {
-    std::list<std::string>::iterator it = arr.begin();
-    while (it != arr.end())
-    {
-        if (str == *it++)
-            return true;
-    }
-    return false;
 }
 
 std::string server::get_allow( std::list<std::string> arr ) {

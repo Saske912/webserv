@@ -42,9 +42,9 @@ public:
     std::string                 getCgiPath() const;
     void                        setCgiPath(const std::string &cgi_path);
     int                         exception_processing(int except, Header &head);
-    int                         responce( Header & head );
+    int                         response( Header & head );
+    int                         autoindex( Header &head, route route );
 protected:
-    int autoindex( Header &head, route route );
 	int                         request_processing(std::string const & request, \
     std::string const & def_file, route const & route, Header & head);
     static bool                 is_file_with_extension( std::string request) ;
@@ -54,7 +54,6 @@ protected:
     bool                        is_cgi(const std::string& request, route  const & route, std::string const & method, bool *flag  ) const;
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
-    bool                        check_methods(std::string str, std::list<std::string> arr) const;
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);

@@ -33,13 +33,21 @@ server &config::find_server( const std::string &host_addr, unsigned int port ) {
         }
         it++;
     }
-    return *servers.begin();
+    throw std::exception();
+}
+
+std::list<server> config::getServers( ) const {
+    return servers;
+}
+
+void config::setServers( const std::list<server> &servers ) {
+    config::servers = servers;
 }
 
 std::ostream &operator<<(std::ostream &o, const config &conf) {
 	o << "config:" << std::endl;
-	for (config::ServersType::const_iterator it = conf.servers.begin();
-		it != conf.servers.end(); ++it) {
+	for (config::ServersType::const_iterator it = conf.getServers().begin();
+		it != conf.getServers().end(); ++it) {
 		o << *it;
 	}
 	return o;

@@ -30,7 +30,7 @@ void Header::eraseStruct()
 		ft_doublefree(Env);
 	Port = 0;
 	Env = 0;
-	Fd = 0;
+    file = 0;
 //	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
@@ -152,9 +152,9 @@ void Header::setEnv(char **env)
 	Env = ft_doublecpy(env);
 }
 
-void Header::setFd(int const &fd)
+void Header::setFile( int const &fd)
 {
-	Fd = fd;
+    file = fd;
 }
 
 //void Header::setFdr(int const &fd)
@@ -192,9 +192,9 @@ char **Header::getEnv()
 	return Env;
 }
 
-int Header::getFd()
+int Header::getFile()
 {
-	return Fd;
+	return file;
 }
 //
 //int &Header::getFdr()
@@ -380,13 +380,18 @@ Header::Header()
 
 void Header::setter( const std::string &line, config &conf )
 {
+
     if (line.empty())
     {
-        setServ(&conf.find_server(getHost(), getPort()));
-        cgi_env();
-        setHostHeaderResponse("Host: " + serv->get_host() + ":" + ttostr(static_cast<int>(serv->get_port())) + '\n');
-        empty_line = true;
-        error = error_management();
+        try {
+            setServ(&conf.find_server(getHost(), getPort()));
+            cgi_env();
+            empty_line = true;
+        }
+        catch (std::exception &)
+        {
+            error = conf.getServers().front().exception_processing(502, *this);
+        }
         return ;
     }
     for (std::map<std::string, Func>::iterator it(array.begin()); it != array.end();)
@@ -484,7 +489,7 @@ Header::Header( config &serv )
     array.insert(std::pair<std::string, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
     array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
     Env = ft_doublecpy(serv.env);
-    Fd = 0;
+    file = 0;
     is_cgi = false;
     Pid = 0;
     BodySize = 0;
@@ -520,16 +525,8 @@ const std::string &Header::getHostHeaderResponse( ) const {
     return host_header_response;
 }
 
-void Header::setHostHeaderResponse( const std::string &hostHeaderResponse ) {
-    host_header_response = hostHeaderResponse;
-}
-
-int Header::error_management( ) {
-    std::list<std::string> lom(serv->getListOfMethods());
-
-    if (std::find(lom.begin(), lom.end(), getMethod()) == lom.end())
-        return serv->exception_processing(501, *this);
-    return 0;
+void Header::setHostHeaderResponse( const std::string &host, unsigned int port) {
+    host_header_response = "Host: " + host + ':' + ttostr(port);
 }
 
 int Header::getError( ) const {
@@ -546,4 +543,71 @@ const std::string &Header::getQuery( ) const {
 
 void Header::setQuery( const std::string &query ) {
     Header::query = query;
+}
+
+const std::string &Header::getRealPathToFile( ) const {
+    return real_path_to_file;
+}
+
+void Header::setRealPathToFile( const std::string &realPathToFile )
+{
+    struct stat st;
+    if (::stat(realPathToFile.c_str(), &st) == -1)
+    {
+        if (errno == EACCES)
+            error = serv->exception_processing(403, *this);
+        else
+            error = serv->exception_processing(404, *this);
+    }
+    else if (!(st.st_mode & S_IFREG))
+    {
+        if (st.st_mode & S_IFDIR)
+        {
+            if (rout->get_default_page().empty())
+            {
+                if (rout->get_autoindex())
+                    error = serv->autoindex(*this, *rout);
+            }
+            else
+                real_path_to_file = rtrim(realPathToFile, "/") + "/" + rout->get_default_page();
+        }
+    }
+    else
+        real_path_to_file = realPathToFile;
+    setExtension(realPathToFile);
+}
+
+const std::string &Header::getExtension( ) const {
+    return extension;
+}
+
+void Header::setExtension( const std::string &filename )
+{
+    size_t      finder;
+    std::string ext;
+    std::string::const_iterator it(filename.begin());
+    finder = real_path_to_file.find('.') + 1;
+    if (finder != std::string::npos)
+        extension = filename.substr(finder, filename.length() - finder);
+}
+
+route *Header::getRout( ) const {
+    return rout;
+}
+
+void Header::setRout( route *rout )
+{
+    std::list<std::string>::const_iterator it((rout->get_http_methods().begin()));
+    while (it != rout->get_http_methods().end())
+    {
+        if (*it == getMethod())
+            break;
+        it++;
+    }
+    if (it == rout->get_http_methods().end())
+    {
+        if (serv->getAllow().first != extension || serv->getAllow().second != getMethod())
+            error = serv->exception_processing(405, *this);
+    }
+    Header::rout = rout;
 }

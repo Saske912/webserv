@@ -9,6 +9,6 @@ void    tests(std::list<server> conf)
 	(void)conf;
 //    std::cout << "root: " << (*((*conf.begin()).get_routes().begin())).get_root()  << std::endl;
     std::pair<std::string, std::string>     p;
-//    p = (*conf.begin()).responce(request);
+//    p = (*conf.begin()).response(request);
 //    std::cout << p.first << " " << p.second  << std::endl;
 }
