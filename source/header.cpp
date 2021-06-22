@@ -71,7 +71,7 @@ void Header::setContent_Length(std::string const &str)
 
 void Header::setContent_Location(std::string const &str)
 {
-	Content_Location = str;
+	Content_Location = "Content-Location: " + str;
 }
 
 void Header::setContent_Type(std::string const &str)
@@ -380,18 +380,15 @@ Header::Header()
 
 void Header::setter( const std::string &line, config &conf )
 {
-
     if (line.empty())
     {
-        try {
-            setServ(&conf.find_server(getHost(), getPort()));
-            cgi_env();
-            empty_line = true;
-        }
-        catch (std::exception &)
-        {
-            error = conf.getServers().front().exception_processing(502, *this);
-        }
+        try {setServ(&conf.find_server(getHost(), getPort()));}
+        catch (std::exception &){error = conf.getServers().front().exception_processing(502, *this);return;}
+        cgi_env();
+        serv->concat( *this );
+        if (getMethod() == "GET")
+            setFile(serv->descriptorForSend( *this ));
+        empty_line = true;
         return ;
     }
     for (std::map<std::string, Func>::iterator it(array.begin()); it != array.end();)
@@ -475,6 +472,8 @@ void Header::cgi_env( )
 //        tmp = strchr(tmp, ':') + 1;
 //        head.addEnv((char *)("REMOTE_IDENT=" + std::string(tmp)).c_str());
 //    }
+//    head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') \
+//    + 1, request.length() - request.rfind('/'))).c_str());
 }
 
 Header::Header( config &serv )
@@ -490,6 +489,7 @@ Header::Header( config &serv )
     array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
     Env = ft_doublecpy(serv.env);
     file = 0;
+    error = 0;
     is_cgi = false;
     Pid = 0;
     BodySize = 0;
@@ -534,7 +534,8 @@ int Header::getError( ) const {
 }
 
 void Header::setError( int error ) {
-    Header::error = error;
+    if (!Header::error)
+        Header::error = error;
 }
 
 const std::string &Header::getQuery( ) const {
@@ -555,9 +556,9 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     if (::stat(realPathToFile.c_str(), &st) == -1)
     {
         if (errno == EACCES)
-            error = serv->exception_processing(403, *this);
+            setError(serv->exception_processing(403, *this));
         else
-            error = serv->exception_processing(404, *this);
+            setError(serv->exception_processing(404, *this));
     }
     else if (!(st.st_mode & S_IFREG))
     {
@@ -566,7 +567,7 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
             if (rout->get_default_page().empty())
             {
                 if (rout->get_autoindex())
-                    error = serv->autoindex(*this, *rout);
+                    setError(serv->autoindex(*this, *rout));
             }
             else
                 real_path_to_file = rtrim(realPathToFile, "/") + "/" + rout->get_default_page();
@@ -610,4 +611,24 @@ void Header::setRout( route *rout )
             error = serv->exception_processing(405, *this);
     }
     Header::rout = rout;
+}
+
+const std::string &Header::getReminder( ) const {
+    return reminder;
+}
+
+void Header::setReminder( const std::string &reminder ) {
+    Header::reminder = reminder;
+}
+
+bool Header::isEmptyLine( ) const {
+    return empty_line;
+}
+
+void Header::setEmptyLine( bool emptyLine ) {
+    empty_line = emptyLine;
+}
+
+void Header::setClient( int client ) {
+    Header::client = client;
 }

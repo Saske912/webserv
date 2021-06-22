@@ -10,7 +10,7 @@ std::string get_http_line(std::string &buffer, Header &head, config &conf)
 
     if ((finder = buffer.find("\r\n")) == std::string::npos)
     {
-        head.reminder = buffer;
+        head.setReminder(buffer);
         throw std::exception();
     }
     line = buffer.substr(0, finder);

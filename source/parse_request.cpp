@@ -6,11 +6,11 @@
 
 std::string  parse_request(const std::string& string, Header &head, config &conf)
 {
-    if (head.empty_line)
+    if (head.isEmptyLine())
     {
         if (!head.getFile( ))
         {
-            head.setFile( conf.find_server( head.getHost( ), head.getPort( )).response( head ));
+            head.setFile(head.getServ()->descriptorForReceive(head));
         }
         if (string.empty())
         {

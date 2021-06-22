@@ -6,7 +6,7 @@
 
 int		sorter(const Header& a, const Header& b)
 {
-	return (a.client < b.client);
+	return (a.getClient() < b.getClient());
 }
 
 std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
@@ -16,9 +16,9 @@ std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
     std::string ret;
     std::string buffer;
 
-    z = recv( it->client, buf, BUFSIZE, 0 );
-    buffer = it->reminder + buf;
-    it->reminder.clear();
+    z = recv( it->getClient(), buf, BUFSIZE, 0 );
+    buffer = it->getReminder() + buf;
+    it->setReminder(std::string());
     if (z == -1)
     {
         if (errno == EAGAIN)
@@ -43,7 +43,7 @@ std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
 
 int receive( std::list<Header>::iterator &it, config &conf)
 {
-	if ( FD_ISSET(it->client, &conf.read))
+	if ( FD_ISSET(it->getClient(), &conf.read))
 	{
         std::string str;
 
@@ -78,43 +78,33 @@ static void	communication_with_clients( std::list<Header> &set, config &conf)
     }
 }
 
-int sendFile(std::list<Header>::iterator &it, int fd, std::string &str2)
+void sendFile( int fd, Header &head )
 {
-	char str[BUFSIZE + 1];
-	int z;
+	char    str[BUFSIZE + 1];
+	size_t  z;
 
-	while ((z = read(fd, str, BUFSIZE)) > 0)
+	while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
-		str2 += str;
+        if ( send_protected( head.getReminder() + str, head))
+            return ;
 	}
-    if (send_protected(str2, it, "sendFile"))
-        return 1;
-	return 0;
 }
 
-//void noBodyResponse(std::list<Header>::iterator &it, int fd, std::list<Header> &set, std::string &str)
-//{
-//    if (send_protected(str + "\r\n", it, "noBodyResponse"))
-//        return ;//send error
-//    if (fd != -1)
-//	    erase(it, fd, true);//
-//    erase(it, it->client, true);//
-//	it = set.erase(it);
-//}
-
-std::string  sendHeader(std::list<Header>::iterator &it)
+void buildHeader( std::list<Header>::iterator &it)
 {
 	std::string str;
+	std::string end("\r\n");
 
-	str = it->getResponse();
-    str += it->getContent_Language();
-    str += it->getAllow();
+	str = it->getResponse() + end;
+    str += it->getContent_Language() + end;
+    str += it->getAllow() + end;
 	str += it->getDate();
 	str += it->getLast_Modified();
-	str += it->getContent_Location();
-	str += it->getHostHeaderResponse();
-	return str;
+	str += it->getContent_Location() + end;
+	str += it->getHostHeaderResponse() + end + end;
+	it->setEmptyLine( false);
+	it->setReminder(str);
 }
 
 int     parse_cgi(std::list<Header>::iterator &it, char *line)
@@ -166,7 +156,7 @@ std::string getBaseSixteen(unsigned int n)
 
 void clear( std::list<Header>::iterator &it)
 {
-    close(it->client);
+    close(it->getClient());
     std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
     while (iter != Header::current_files_in_work.end() and *iter != it->getRequest())
         iter++;
@@ -181,70 +171,59 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 	std::string str;
 	int z;
 
-    z = read(fd, line, BUFSIZE);
-    std::cout << "z: " << z  << std::endl;
+    z = read(fd, line, BUFSIZE - 9 - it->getReminder().length());
     if (z == 0)
     {
-		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
-			return ;
-        send_protected("0\r\n\r\n", it, "sendFileChunkedLast");
+//		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
+//			return ;
+        send_protected(it->getReminder() + "0\r\n\r\n", *it );
         clear(it);
         return ;
     }
     line[z] = 0;
     str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-    send_protected(str, it, "sendFileChunked");
+    send_protected(it->getReminder() + str, *it );
 }
 
-void cgiResponse( std::list<Header>::iterator &it, int &fd)
-{
-	char *line = 0;
-	int	 size = 0;
-	int     gnl;
-	int ret;
-	std::string string;
-
-	while ((gnl = get_next_line(fd, &line)) > 0)
-	{
-		if (line && line[0] == '\r')
-        {
-            size += 2;
-            free(line);
-            line = NULL;
-            break ;
-        }
-		ret = parse_cgi(it, line);
-		if (ret == 1)
-        {
-            lseek(fd, ((int)strlen(line) + 1) * (-1) ,SEEK_CUR);
-            break ;
-        }
-		size += strlen(line) + 1;
-		free(line);
-		line = NULL;
-	}
-	if (gnl == 0)
-    {
-	    std::cerr << "gnl = 0"  << std::endl;
-    }
-	else if (gnl == -1)
-    {
-	    std::cerr << "gnl error -1"  << std::endl;
-    }
-	string = std::string(it->getResponse() + it->getContent_Type() + it->getDate() + it->getLast_Modified() + "Transfer-Encoding: chunked\r\n\r\n");
-    if (send_protected(string, it, "sendFileChunked"))
-        return ;
-	sendFileChunked(it, fd);
-}
-
-//std::string  sendBodyHeader( std::list<Header>::iterator &it)
+//void cgiResponse( std::list<Header>::iterator &it, int &fd)
 //{
-//	std::string str;
-//	struct stat stat;
+//	char *line = 0;
+//	int	 size = 0;
+//	int     gnl;
 //	int ret;
+//	std::string string;
 //
-//	fstat(it->head.getFdr(), &stat);
-//	return std::string("Content-Length: " + ttostr(stat.st_size) + "\r\n\r\n");
+//	while ((gnl = get_next_line(fd, &line)) > 0)
+//	{
+//		if (line && line[0] == '\r')
+//        {
+//            size += 2;
+//            free(line);
+//            line = NULL;
+//            break ;
+//        }
+//		ret = parse_cgi(it, line);
+//		if (ret == 1)
+//        {
+//            lseek(fd, ((int)strlen(line) + 1) * (-1) ,SEEK_CUR);
+//            break ;
+//        }
+//		size += strlen(line) + 1;
+//		free(line);
+//		line = NULL;
+//	}
+//	if (gnl == 0)
+//    {
+//	    std::cerr << "gnl = 0"  << std::endl;
+//    }
+//	else if (gnl == -1)
+//    {
+//	    std::cerr << "gnl error -1"  << std::endl;
+//    }
+//	string = std::string(it->getResponse() + it->getContent_Type() + it->getDate() + it->getLast_Modified() + "Transfer-Encoding: chunked\r\n\r\n");
+//    if ( send_protected( string,  ))
+//        return ;
+//	sendFileChunked(it, fd);
 //}
 
 void response( std::list<Header>::iterator &it, config &conf)
@@ -252,7 +231,12 @@ void response( std::list<Header>::iterator &it, config &conf)
 	std::string string;
 	if (it->body_end)
 	{
-        sendHeader(it);
+        if (it->isEmptyLine())
+            buildHeader( it );
+        if (it->getTransfer_Encoding() == "chunked")
+            sendFileChunked(it, it->getFile());
+        else
+            sendFile(it->getFile(), *it);
 	}
 }
 
@@ -261,7 +245,7 @@ static int	Select(config &conf, std::list<Header> &set)
 	if (set.empty())
         conf.max_d = conf.host;
 	else
-        conf.max_d = (set.rbegin())->client > conf.host ? (set.rbegin())->client : conf.host;
+        conf.max_d = (set.rbegin())->getClient() > conf.host ? (set.rbegin())->getClient() : conf.host;
     set.sort(sorter);
     if ((conf.ret = select(conf.max_d + 1, &conf.read, NULL, NULL, &conf.tv)) < 1)
     {
@@ -293,7 +277,7 @@ void    loop(config &conf)
         it = set.begin();
         while ( it != set.end())
         {
-            FD_SET(it->client, &conf.read);
+            FD_SET(it->getClient(), &conf.read);
             it++;
         }
         if (Select(conf, set))

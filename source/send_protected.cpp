@@ -3,24 +3,23 @@
 //
 #include "header.h"
 
-int send_protected( std::string const & str, std::list<Header>::iterator &it, std::string str2)
+int send_protected( std::string const &str, Header &head )
 {
-    int ret;
-    int len = str.length() < BUFSIZE ? str.length() : BUFSIZE;
+    ssize_t  ret;
 
-//    std::cout << str  << std::endl;
-    ret = send(it->getClient(), str.c_str(), len, 0);
+    ret = send(head.getClient(), str.c_str(), BUFSIZE, 0);
     if (ret == -1)
     {
+        head.setReminder(str);
         perror("send");
         return 1;
     }
     else if ((size_t)ret != str.length())
     {
         std::cerr << "diff size (send)"  << std::endl;
-//        it->reminder = std::string(str, ret, str.length() - ret);
-//        it->send_error = str2;
+        head.setReminder(std::string(str, ret, str.length() - ret));
         return 1;
     }
+    head.setReminder(std::string());
     return 0;
 }

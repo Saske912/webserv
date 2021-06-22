@@ -16,6 +16,9 @@ class Header
     typedef void (Header::*Func)(std::string const &);
 private:
     Header();
+    int         client;
+    bool        empty_line;
+    std::string reminder;
     std::string extension;
     route       *rout;
     std::string real_path_to_file;
@@ -52,6 +55,11 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+    void setClient( int client );
+    bool isEmptyLine( ) const;
+    void setEmptyLine( bool emptyLine );
+    const std::string &getReminder( ) const;
+    void setReminder( const std::string &reminder );
     route *getRout( ) const;
     void setRout( route *rout );
     explicit Header(config &);
@@ -135,12 +143,9 @@ public:
     const std::string &getExtension( ) const;
     void setExtension( const std::string &filename );
     static std::list<std::string>   current_files_in_work;
-    bool                            empty_line;
-    std::string                     reminder;
     bool                            body_end;
     std::map<std::string, Func>     array;
     std::string                     ip_addr;
-    int                             client;
     sockaddr_in                     ad;
     socklen_t                       adlen;
 

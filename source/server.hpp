@@ -42,22 +42,22 @@ public:
     std::string                 getCgiPath() const;
     void                        setCgiPath(const std::string &cgi_path);
     int                         exception_processing(int except, Header &head);
-    int                         response( Header & head );
+    void                        concat( Header & head );
     int                         autoindex( Header &head, route route );
+    int                         descriptorForSend( Header &head);
+    int                         descriptorForReceive( Header &head);
 protected:
-	int                         request_processing(std::string const & request, \
-    std::string const & def_file, route const & route, Header & head);
+    int cgi_processing( Header &head, bool flag );
     static bool                 is_file_with_extension( std::string request) ;
 	bool                        is_file( const std::string& request);
     int                         get_path_to_request(std::string const & request, Header & head);
     int                         targeting(Header &head, const std::string& request, route const & route);
-    bool                        is_cgi(const std::string& request, route  const & route, std::string const & method, bool *flag  ) const;
+    int                         is_cgi( Header &head );
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
-    bool                        is_allow(std::string const & request, std::string const & method, const route& r) const;
 private:
     std::string                 _host;
     unsigned int                _port;
