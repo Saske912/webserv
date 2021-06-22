@@ -51,7 +51,7 @@ void        loop(config &conf);
 server      default_config();
 std::list<Header>::iterator& erase( std::list<Header>::iterator &it );
 //void        resetIt(std::list<Header>::iterator &it);
-int send_protected( std::string const &str, Header &head );
+int send_protected( std::string str, Header &head );
 bool        file_available(const std::string& request);
 std::string     split_buffer(std::string &buffer, Header &head, config &conf);
 std::string     get_http_line(std::string &buffer, Header &head, config &conf);

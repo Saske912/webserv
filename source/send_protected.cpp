@@ -3,10 +3,11 @@
 //
 #include "header.h"
 
-int send_protected( std::string const &str, Header &head )
+int send_protected( std::string str, Header &head )
 {
     ssize_t  ret;
 
+	str = head.getReminder() + str;
     ret = send(head.getClient(), str.c_str(), BUFSIZE, 0);
     if (ret == -1)
     {

@@ -86,7 +86,7 @@ void sendFile( int fd, Header &head )
 	while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
-        if ( send_protected( head.getReminder() + str, head))
+        if ( send_protected(str, head))
             return ;
 	}
 }
@@ -176,13 +176,13 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
     {
 //		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
 //			return ;
-        send_protected(it->getReminder() + "0\r\n\r\n", *it );
+        send_protected("0\r\n\r\n", *it );
         clear(it);
         return ;
     }
     line[z] = 0;
     str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-    send_protected(it->getReminder() + str, *it );
+    send_protected(str, *it );
 }
 
 //void cgiResponse( std::list<Header>::iterator &it, int &fd)
