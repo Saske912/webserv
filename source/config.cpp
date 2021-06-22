@@ -23,17 +23,15 @@ void config::add_server(const server &server_) {
     servers.push_back(server_);
 }
 
-server &config::find_server( const std::string &host_addr, unsigned int port ) {
+server *config::find_server( const std::string &host_addr, unsigned int port ) {
     std::list<server>::iterator it = servers.begin( );
     while (it != servers.end())
     {
         if (it->get_host() == host_addr and it->get_port() == port)
-        {
-            return *it;
-        }
+            return &(*it);
         it++;
     }
-    throw std::exception();
+    return NULL;
 }
 
 std::list<server> config::getServers( ) const {

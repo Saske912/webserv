@@ -382,12 +382,20 @@ void Header::setter( const std::string &line, config &conf )
 {
     if (line.empty())
     {
-        try {setServ(&conf.find_server(getHost(), getPort()));}
-        catch (std::exception &){error = conf.getServers().front().exception_processing(502, *this);return;}
+        server *server = conf.find_server(getHost(), getPort());
+        if (!server)
+        {
+            error = conf.getServers().front().exception_processing(502, *this);
+            return;
+        }
+        setServ(server);
         cgi_env();
         serv->concat( *this );
         if (getMethod() == "GET")
+        {
             setFile(serv->descriptorForSend( *this ));
+            body_end = true;
+        }
         empty_line = true;
         return ;
     }

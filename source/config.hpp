@@ -13,7 +13,7 @@ public:
     config(const config& other);
     config &operator=(const config &other);
     ~config();
-    server  &find_server(std::string const & host_addr, unsigned int port);
+    server * find_server( std::string const & host_addr, unsigned int port);
     void add_server(const server &server_);
 
     int                 host;
