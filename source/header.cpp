@@ -147,6 +147,10 @@ void Header::setIsCgi(bool status) {
 
 void Header::setEnv(char **env)
 {
+	ENv.clear();
+	int i = -1;
+	while (env[++i])
+		ENv.push_back(env[i]);
 	if (Env)
 		ft_doublefree(Env);
 	Env = ft_doublecpy(env);
@@ -197,6 +201,19 @@ pid_t Header::getPid()
 
 char **Header::getEnv()
 {
+	if (Env)
+		ft_doublefree(Env);
+	Env = (char **)malloc(sizeof(char *) * (ENv.size() + 1));
+	
+	std::list<std::string>::iterator it = ENv.begin();
+	int i = 0;
+	while (it != ENv.end())
+	{
+		Env[i] = strdup(it->c_str());
+		++i;
+		++it;
+	}
+	Env[i] = 0;
 	return Env;
 }
 
@@ -329,49 +346,39 @@ void Header::initEnv()
 
 }
 
+
 std::string Header::getEnvValue(char const *str)
 {
-	int i = 0;
-	char *tmp;
+	int len = strlen(str);
 
-	while (Env[i])
+
+	std::list<std::string>::iterator it = ENv.begin();
+	while (it != ENv.end())
 	{
-		if ((strstr(Env[i], str) == Env[i]))
-		{
-			tmp = Env[i] + strlen(str);
-			return std::string(tmp);
-		}
-		++i;
+		if (it->find(str) == 0)
+			return std::string(*it, len, (*it).length() - len);
+		++it;
 	}
 	return std::string();
 }
 
-void Header::addEnv(const char *str)
+void Header::addEnv(const char *str1)
 {
-	int i = 0;
-	char *tmp;
+	std::string str = std::string(str1);
+	int len = str.find('=');
+	str.erase(len, str.length() - len);
 
-	tmp = strdup(std::string(str, 0, strchr(str, '=') - str).c_str());
-	while (Env[i])
+	std::list<std::string>::iterator it = ENv.begin();
+	while (it != ENv.end())
 	{
-		if (strstr(Env[i], tmp))
+		if (it->find(str) == 0)
 		{
-			free(Env[i]);
-			Env[i] = strdup(str);
-			free(tmp);
-			return ;
+			ENv.erase(it);
+			break ;
 		}
-		++i;
+		++it;
 	}
-	free(tmp);
-	char **nu = (char **)malloc(sizeof(char *) * (i + 2));
-	i = -1;
-	while (Env[++i])
-		nu[i] = strdup(Env[i]);
-	nu[i++] = strdup(str);
-	nu[i] = 0;
-	ft_doublefree(Env);
-	Env = nu;
+	ENv.push_back(str1);
 }
 
 

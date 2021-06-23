@@ -148,7 +148,7 @@ public:
     std::string                     ip_addr;
     sockaddr_in                     ad;
     socklen_t                       adlen;
-
+	std::list<std::string>			ENv;
 };
 
 #endif
