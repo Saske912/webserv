@@ -23,11 +23,13 @@ void config::add_server(const server &server_) {
     servers.push_back(server_);
 }
 
-server *config::find_server( const std::string &host_addr, unsigned int port ) {
+server *config::find_server( unsigned int port, Header &head ) {
     std::list<server>::iterator it = servers.begin( );
+    if (head.getHost() == "localhost")
+        head.setHost("127.0.0.1");
     while (it != servers.end())
     {
-        if (it->get_host() == host_addr and it->get_port() == port)
+        if (it->get_host() == head.getHost() and it->get_port() == port)
             return &(*it);
         it++;
     }

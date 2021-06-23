@@ -157,6 +157,8 @@ void Header::setFile( int const &fd)
     struct stat st;
     std::stringstream stream;
 
+    if (file)
+        return;
     file = fd;
     fstat(getFile(), &st);
     stream << st.st_size;
@@ -389,7 +391,7 @@ void Header::setter( const std::string &line, config &conf )
     if (line.empty())
     {
         empty_line = true;
-        server *server = conf.find_server(getHost(), getPort());
+        server *server = conf.find_server( getPort( ), *this );
         if (!server)
         {
             error = conf.getServers().front().exception_processing(502, *this);
@@ -444,8 +446,9 @@ void Header::http( std::string const & str )
 
 void Header::host( const std::string &string )
 {
-    setHost(std::string(string, string.find(' ') + 1, string.find(':')));
-    setPort(atoi(std::string(string, string.find(':') + 1).c_str()));
+    size_t  finder = string.find(' ') + 1;
+    setHost(string.substr(finder, string.rfind(':') - finder));
+    setPort(atoi(std::string(string, string.rfind(':') + 1).c_str()));
 }
 
 void Header::referer( const std::string &string )
@@ -541,7 +544,7 @@ const std::string &Header::getHostHeaderResponse( ) const {
 }
 
 void Header::setHostHeaderResponse( const std::string &host, unsigned int port) {
-    host_header_response = "Host: " + host + ':' + ttostr(port);
+    host_header_response = "Host: " + host + ':' + ttostr(port) + END;
 }
 
 int Header::getError( ) const {
@@ -571,9 +574,15 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     if (::stat(realPathToFile.c_str(), &st) == -1)
     {
         if (errno == EACCES)
-            setError(serv->exception_processing(403, *this));
+        {
+            setError(403);
+            setFile(serv->exception_processing(403, *this));
+        }
         else
-            setError(serv->exception_processing(404, *this));
+        {
+            setError(404);
+            setFile(serv->exception_processing(404, *this));
+        }
     }
     else if (!(st.st_mode & S_IFREG))
     {
@@ -582,7 +591,10 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
             if (rout->get_default_page().empty())
             {
                 if (rout->get_autoindex())
-                    setError(serv->autoindex(*this, *rout));
+                {
+                    setError(1);
+                    setFile(serv->autoindex(*this, *rout));
+                }
             }
             else
                 real_path_to_file = rtrim(realPathToFile, "/") + "/" + rout->get_default_page();
@@ -590,7 +602,7 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     }
     else
         real_path_to_file = realPathToFile;
-    setExtension(realPathToFile);
+    setExtension(real_path_to_file);
 }
 
 const std::string &Header::getExtension( ) const {
@@ -604,7 +616,7 @@ void Header::setExtension( const std::string &filename )
     std::string::const_iterator it(filename.begin());
     finder = real_path_to_file.find('.') + 1;
     if (finder != std::string::npos)
-        extension = filename.substr(finder, filename.length() - finder);
+        extension = filename.substr(finder);
 }
 
 route *Header::getRout( ) const {
@@ -623,7 +635,10 @@ void Header::setRout( route *rout )
     if (it == rout->get_http_methods().end())
     {
         if (serv->getAllow().first != extension || serv->getAllow().second != getMethod())
-            error = serv->exception_processing(405, *this);
+        {
+            setError(405);
+            file = serv->exception_processing(405, *this);
+        }
     }
     Header::rout = rout;
 }

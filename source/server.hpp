@@ -47,12 +47,12 @@ public:
     int                         descriptorForSend( Header &head);
     int                         descriptorForReceive( Header &head);
 protected:
-    int cgi_processing( Header &head, bool flag );
+    void cgi_processing( Header &head, bool flag );
     static bool                 is_file_with_extension( std::string request) ;
 	bool                        is_file( const std::string& request);
     int                         get_path_to_request(std::string const & request, Header & head);
     int                         targeting(Header &head, const std::string& request, route const & route);
-    int                         is_cgi( Header &head );
+    void is_cgi( Header &head );
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
     std::string                 get_allow(std::list<std::string> arr);
