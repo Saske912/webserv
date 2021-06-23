@@ -5,10 +5,9 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define COUNT 20
-#define CNT 5000
-#define REQUEST "GET /directory/nop HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n"
-
+#define CLIENTS 1
+#define REQUESTS 1
+#define IP "127.0.0.1"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -22,14 +21,14 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = REQUEST;
+    std::string tmp = "GET / HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;
-    int cnt = CNT;
+    int cnt = REQUESTS;
     struct sockaddr_in  addr;
     socklen_t           addrlen;
-    std::string     ip = "10.21.31.71";
+    std::string     ip = IP;
     int num;
     bool flag = false;
 
@@ -44,31 +43,25 @@ void    *func(void *t)
     if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
         exit(1);
     pthread_mutex_unlock(&mutex2);
-    fd_set  fd_read;
-    FD_SET(sock, &fd_read);
-    timeval tv;
-    tv.tv_sec = 3;
-    tv.tv_usec = 0;
     while ( cnt-- )
     {
         if (!flag)
         {
             pthread_mutex_lock(&mutex);
-            std::cout << num  << std::endl;
             if (send(sock, tmp.c_str(), tmp.length(), 0) == -1)
             {
                 perror("send");
                 exit(1);
             }
+			std::cout << num << ": request(" << REQUESTS - cnt << ") sended" << std::endl;
             flag = true;
             pthread_mutex_unlock(&mutex);
         }
-        select(sock + 1, &fd_read, NULL, NULL, &tv);
-//        usleep(100000);
-        if ( FD_ISSET(sock, &fd_read))
+        if ( flag )
         {
-            pthread_mutex_lock(&mutex3);
             ret = recv(sock, buf, 32768, 0);
+               std::cout << buf  << std::endl;
+            pthread_mutex_lock(&mutex3);
             if (ret < 0)
             {
                 perror("recive");
@@ -80,12 +73,13 @@ void    *func(void *t)
                 std::cout << "ret: " << ret << " buf: " << buf  << std::endl;
                 st->err = 1;
             }
+            std::cout << num << ": response recieved" << std::endl;
             pthread_mutex_unlock(&mutex3);
             flag = false;
         }
-        else
-            ++cnt;
     }
+    std::cout << num << ": finished" << std::endl;
+
     return NULL;
 }
 
@@ -95,8 +89,8 @@ int main( )
     st.err = 0;
     st.sock = 0;
 
-    int cnt = COUNT;
-    pthread_t   tred[COUNT];
+    int cnt = CLIENTS;
+    pthread_t   tred[CLIENTS];
     while(cnt--)
     {
         if (pthread_create(&tred[cnt], NULL, func, &st))
@@ -108,7 +102,7 @@ int main( )
 
 //        sleep(1);
     }
-    cnt = COUNT;
+    cnt = CLIENTS;
     while (cnt--)
     {
         pthread_join(tred[cnt], NULL);
