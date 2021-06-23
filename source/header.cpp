@@ -382,6 +382,7 @@ void Header::setter( const std::string &line, config &conf )
 {
     if (line.empty())
     {
+        empty_line = true;
         server *server = conf.find_server(getHost(), getPort());
         if (!server)
         {
@@ -396,7 +397,6 @@ void Header::setter( const std::string &line, config &conf )
             setFile(serv->descriptorForSend( *this ));
             body_end = true;
         }
-        empty_line = true;
         return ;
     }
     for (std::map<std::string, Func>::iterator it(array.begin()); it != array.end();)
