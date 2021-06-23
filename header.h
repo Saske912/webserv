@@ -42,6 +42,7 @@
 #define ACCEPT      "Accept: "
 #define TRANS_ENC   "Transfer-Encoding: "
 #define AUTH "Authorization: "
+#define END "\r\n"
 
 void        error_exit(const std::string& str);
 sockaddr_in init_host_addr();

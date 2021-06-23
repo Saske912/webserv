@@ -61,22 +61,22 @@ void Header::setAuthorization(std::string const &str)
 
 void Header::setContent_Language(std::string const &str)
 {
-	Content_Language = "Content-Language: " + str;
+	Content_Language = "Content-Language: " + str.substr(strlen(ACEPT_LANG)) + END;
 }
 
 void Header::setContent_Length(std::string const &str)
 {
-	Content_Length = str;
+	Content_Length = "Content-Length: " + str + END;
 }
 
 void Header::setContent_Location(std::string const &str)
 {
-	Content_Location = "Content-Location: " + str;
+	Content_Location = "Content-Location: " + str + END;
 }
 
 void Header::setContent_Type(std::string const &str)
 {
-	Content_Type = "Content-Type: " + str;
+	Content_Type = "Content-Type: " + str + END;
 }
 
 void Header::setDate(std::string const &str)
@@ -111,7 +111,7 @@ void Header::setRequest(std::string const &str)
 
 void Header::setResponse(std::string const &str)
 {
-	Response = str;
+	Response = str + END;
 }
 
 void Header::setRetry_after(std::string const &str)
@@ -154,7 +154,13 @@ void Header::setEnv(char **env)
 
 void Header::setFile( int const &fd)
 {
+    struct stat st;
+    std::stringstream stream;
+
     file = fd;
+    fstat(getFile(), &st);
+    stream << st.st_size;
+    setContent_Length(stream.str());
 }
 
 //void Header::setFdr(int const &fd)
@@ -387,6 +393,8 @@ void Header::setter( const std::string &line, config &conf )
         if (!server)
         {
             error = conf.getServers().front().exception_processing(502, *this);
+            setFile(serv->descriptorForSend( *this ));
+            body_end = true;
             return;
         }
         setServ(server);
@@ -487,7 +495,6 @@ void Header::cgi_env( )
 Header::Header( config &serv )
 {
     int bufer = BUFSIZE;
-    std::pair<std::string, Func>(std::string(HTTP), &Header::http);
     array.insert(std::pair<std::string, Func>(HTTP, &Header::http));
     array.insert(std::pair<std::string, Func>(ACEPT_LANG, &Header::setContent_Language));
     array.insert(std::pair<std::string, Func>(HOST, &Header::host));

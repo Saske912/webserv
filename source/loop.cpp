@@ -78,12 +78,12 @@ static void	communication_with_clients( std::list<Header> &set, config &conf)
     }
 }
 
-void sendFile( int fd, Header &head )
+void sendFile( Header &head )
 {
 	char    str[BUFSIZE + 1];
 	size_t  z;
 
-	while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
+	while ((z = read(head.getFile(), str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
         if ( send_protected(str, head))
@@ -91,20 +91,21 @@ void sendFile( int fd, Header &head )
 	}
 }
 
-void buildHeader( std::list<Header>::iterator &it)
+void buildHeader( Header &head )
 {
 	std::string str;
-	std::string end("\r\n");
 
-	str = it->getResponse() + end;
-    str += it->getContent_Language() + end;
-    str += it->getAllow() + end;
-	str += it->getDate();
-	str += it->getLast_Modified();
-	str += it->getContent_Location() + end;
-	str += it->getHostHeaderResponse() + end + end;
-	it->setEmptyLine( false);
-	it->setReminder(str);
+	str = head.getResponse();
+	str += head.getContent_Length();
+    str += head.getContent_Language();
+    str += head.getAllow();
+	str += head.getDate();
+	str += head.getLast_Modified();
+	str += head.getContent_Location();
+	str += head.getHostHeaderResponse();
+	str += END;
+	head.setEmptyLine(false);
+	head.setReminder(str);
 }
 
 int     parse_cgi(std::list<Header>::iterator &it, char *line)
@@ -114,10 +115,10 @@ int     parse_cgi(std::list<Header>::iterator &it, char *line)
 	if ((tmp = strstr(line, "Status: ")))
 	{
 		tmp += strlen("Status: ");
-		it->setResponse("HTTP/1.1 " + std::string(tmp) + "\n");
+		it->setResponse("HTTP/1.1 " + std::string(tmp));
 	}
 	else if ((tmp = strstr(line, "Content-Type: ")))
-		it->setContent_Type(std::string(tmp) + "\n");
+		it->setContent_Type(std::string(tmp));
 	else
         return 1;
     return 0;
@@ -232,11 +233,11 @@ void response( std::list<Header>::iterator &it, config &conf)
 	if (it->body_end)
 	{
         if (it->isEmptyLine())
-            buildHeader( it );
+            buildHeader( *it );
         if (it->getTransfer_Encoding() == "chunked")
             sendFileChunked(it, it->getFile());
         else
-            sendFile(it->getFile(), *it);
+            sendFile( *it );
 	}
 }
 
