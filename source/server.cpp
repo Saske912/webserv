@@ -130,6 +130,7 @@ void server::concat( Header & head )
             head.setRout(&(*it));
             head.setRealPathToFile(it->swap_path(head.getRequest()));
             head.setContent_Location(set_location(*head.getRout(), head));
+            return ;
         }
         it++;
     }
@@ -180,7 +181,7 @@ int server::exception_processing( int except, Header &head ) {
             waitpid(pid, &stat, 0);
         if (stat == 1)
             error_exit("system error in execve");
-        head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except)\
+        head.setResponse(const_cast<char *>((head.getHttp() + " " + ttostr(except)\
         + " " + to_head).c_str()));
         return fds[0];
     }
@@ -188,15 +189,18 @@ int server::exception_processing( int except, Header &head ) {
 
 int server::descriptorForSend( Header &head )
 {
-    int     ret;
-
-    if ((ret = head.getError()))
-        return ret;
+    if (head.getError())
+        head.setResponse(head.getHttp() + " " + ttostr(head.getError()) + " " + _default_error_pages[head.getError()]);
+    else
+        head.setResponse(head.getHttp() + " 200 OK");
+    if (head.getError())
+        return head.getFile();
     chdir(head.getRout()->get_root().c_str());
-    Header::current_files_in_work.push_back(head.getRealPathToFile());
-    ret = is_cgi( head );
-    if (ret)
-        return ret;
+    is_cgi( head );
+    if (!head.getError())
+        Header::current_files_in_work.push_back(head.getRealPathToFile());
+    if (head.getFile())
+        return head.getFile();
     else
         return open(head.getRealPathToFile().c_str(), O_RDONLY);
 }
@@ -221,7 +225,7 @@ int server::descriptorForReceive( Header & head)
         return exception_processing(413, head);
 }
 
-int server::cgi_processing( Header &head, bool flag )
+void server::cgi_processing( Header &head, bool flag )
 {
     int     fd1 = dup(1);
     int     fd0 = dup(0);
@@ -237,7 +241,11 @@ int server::cgi_processing( Header &head, bool flag )
         root = _cgi_path;
     root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
     if (root.empty())
-        return exception_processing(500, head);
+    {
+        head.setError(500);
+        head.setFile(exception_processing(500, head));
+        return ;
+    }
     file = open(head.getRealPathToFile().c_str(), O_RDONLY);
     response_buffer = open((head.getRealPathToFile() + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
     if ((pid = fork()) == 0)
@@ -252,32 +260,32 @@ int server::cgi_processing( Header &head, bool flag )
         exit(1);
     }
     else if (pid == -1)
-        return exception_processing(500, head);
-    else
     {
-        close(file);
-        head.setPid(pid);
-//            close(fdset[1]);
+        head.setError(500);
+        head.setFile(exception_processing(500, head));
+        return ;
     }
+    close(file);
+    head.setPid(pid);
+//            close(fdset[1]);
     waitpid(pid, NULL, 0);
     lseek(response_buffer, 0, 0);
+    head.setFile(response_buffer);
     dup2(fd1, 1);
     dup2(fd0, 0);
     close(fd1);
     close(fd0);
-    return response_buffer;
 //        return fdset[0];
 //        dup2(fd1, 1);
 }
 
-int server::is_cgi( Header &head )
+void server::is_cgi( Header &head )
 {
     const   std::string& ext(head.getExtension());
     if (ext == head.getRout()->get_cgi().first)
-        return cgi_processing( head, false );
-    if (_allow.first == ext and _allow.second == head.getMethod())
-        return cgi_processing( head, true );
-    return 0;
+        cgi_processing( head, false );
+    else if (_allow.first == ext and _allow.second == head.getMethod())
+        cgi_processing( head, true );
 }
 
 void server::set_default_pages( ) {
@@ -346,14 +354,14 @@ std::string server::get_allow( std::list<std::string> arr ) {
 }
 
 void server::set_list_of_methods( ) {
-    _list_of_methods.push_back("OPTIONS");
+//    _list_of_methods.push_back("OPTIONS");
     _list_of_methods.push_back("GET");
-    _list_of_methods.push_back("HEAD");
+//    _list_of_methods.push_back("HEAD");
     _list_of_methods.push_back("POST");
     _list_of_methods.push_back("PUT");
     _list_of_methods.push_back("DELETE");
-    _list_of_methods.push_back("TRACE");
-    _list_of_methods.push_back("CONNECT");
+//    _list_of_methods.push_back("TRACE");
+//    _list_of_methods.push_back("CONNECT");
 }
 
 std::string server::set_location(route & route, Header & head) {
