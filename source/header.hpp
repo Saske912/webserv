@@ -69,6 +69,7 @@ class Header
 		void setIsCgi(bool status);
 		void eraseStruct();
         static std::list<std::string>  current_files_in_work;
+		std::list<std::string> ENv;
 	private:
 		int BodySize;
 		int Fd;

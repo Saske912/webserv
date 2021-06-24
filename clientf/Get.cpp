@@ -5,9 +5,9 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define CLIENTS 20
-#define REQUESTS 5000
-#define IP "127.0.0.1"
+#define CLIENTS 1
+#define REQUESTS 1
+#define IP "10.21.31.62"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -21,7 +21,7 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "GET /directory/nop HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
+    std::string tmp = "GET / HTTP/1.1\r\nHost: 10.21.31.62:1024\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;
@@ -60,6 +60,7 @@ void    *func(void *t)
         if ( flag )
         {
             ret = recv(sock, buf, 32768, 0);
+               std::cout << buf  << std::endl;
             pthread_mutex_lock(&mutex3);
             if (ret < 0)
             {
