@@ -81,7 +81,7 @@ int server::get_path_to_request( const std::string &request, Header & head) {
                 head.setAllow(get_allow(it->get_http_methods()));
                 return exception_processing(405, head);
             }
-            else if (head.getMethod() == "GET" || head.getMethod() == "PUT" || head.getMethod() == "POST")
+            else if (head.getMethod() == "GET" || head.getMethod() == "PUT" || head.getMethod() == "POST" || head.getMethod() == "DELETE")
                 return request_processing((*it).swap_path(request), (*it).get_default_page(), *it, head);
             else if (head.getMethod() == "HEAD")
                 return -1;
@@ -131,7 +131,7 @@ void server::add_route(const route &route_)
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
 //                                    std::cout << "req:" << request  << std::endl;
-	if ( is_file_with_extension( request ) or head.getMethod() == "PUT")
+	if ( is_file_with_extension( request ) or head.getMethod() == "PUT" or head.getMethod() == "DELETE")
     {
         return targeting(head, request, route);
     }
@@ -233,10 +233,14 @@ int server::exception_processing( int except, Header &head ) {
         {
             concat = "s/SWAP/";
 //            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
+            chdir(head.getEnvValue("PWD=").c_str());
             arg[0] = strdup("content/sed.sh");
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
-            arg[2] = strdup("content/error_template.html");
+            if (except == 200)
+                arg[2] = strdup("content/delete.html");
+            else
+                arg[2] = strdup("content/error_template.html");
             arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
@@ -273,7 +277,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
         return exception_processing(413, head);
-    if ((head.getMethod() == "PUT" or head.getMethod() == "POST") and head.getFd() == 1)
+    if ((head.getMethod() == "PUT" or head.getMethod() == "POST" or head.getMethod() ==  "DELETE") and head.getFd() == 1)
     {
         struct ::stat st;
         std::string part;
@@ -281,19 +285,32 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         if ((fd = open(request.c_str(), O_RDONLY)) > 0 and st.st_mode & S_IFDIR)
         {
             close(fd);
-            return -1;
+            if (head.getMethod() ==  "DELETE")
+                return exception_processing(404, head);
+            else
+                return -1;
         }
-        else if (errno == ENOENT)
-            part = "201 Created\r\n";
-        else
-            part = "204 No Content\r\n";
-        if (fd != -1)
+        if (head.getMethod() ==  "DELETE")
+        {
             close(fd);
-        if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
-            return -1;
+            head.setResponse("HTTP/1.1 200 OK");
+            remove(request.c_str());
+            return exception_processing(200, head);
+        }
         else
-            head.setResponse("HTTP/1.1 " + part);
-        Header::current_files_in_work.push_back(head.getRequest());
+        {
+            if (errno == ENOENT)
+                part = "201 Created\r\n";
+            else
+                part = "204 No Content\r\n";
+            if (fd != -1)
+                close(fd);
+            if ( (fd = open(request.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777)) == -1)
+                return -1;
+            else
+                head.setResponse("HTTP/1.1 " + part);
+            Header::current_files_in_work.push_back(head.getRequest());
+        }
     }
     else if ((is_cgi(request, route, head.getMethod(), &flag)))
     {
@@ -308,7 +325,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
         if (root.empty())
         {
-//            std::cout << "here"  << std::endl;
             return exception_processing(500, head);
         }
         if ((tmp = open(request.c_str(), O_RDONLY)) < 0)
@@ -318,22 +334,18 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             }
             else
             {
-//                std::cout << "bad request: " << request  << std::endl;
                 return exception_processing(404, head);
             }
         }
         Header::current_files_in_work.push_back(head.getRequest());
         head.setIsCgi(true);
-//        pipe(fdset);
         if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
             error_exit("open error");
         if ((pid = fork()) == 0)
         {
-//            close(fdset[0]);
             arg[0] = strdup(root.c_str());
             arg[1] = NULL;
             dup2(tmp, 0);
-//            dup2(fdset[1], 1);
             dup2(fd, 1);
             execve(arg[0], arg, head.getEnv());
             exit(1);
@@ -344,7 +356,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         {
             close(tmp);
             head.setPid(pid);
-//            close(fdset[1]);
         }
         waitpid(pid, &st, 0);
         lseek(fd, 0, 0);
@@ -353,8 +364,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 		close(fd1);
 		close(fd0);
         return fd;
-//        return fdset[0];
-//        dup2(fd1, 1);
     }
     else
     {
@@ -366,7 +375,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
                 return exception_processing(403, head);
             else
             {
-//                std::cout << "bad request:(GET) " << request  << std::endl;
                 return exception_processing(404, head);
             }
         }

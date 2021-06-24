@@ -9,23 +9,23 @@ server {
     cgi_path cgi_tester
 	route /directory/ {							    # route for file $(index)/public/index.html
        	allowed_methods GET	# allowed methods for route
-		root /Users/wpersimm/webserv/YoupiBanane/
+		root /Users/pfile/web_c/YoupiBanane/
        	index youpi.bad_extension
        	#cgi_extension bla  youpi.bla
     }
     route /put_test/ {
-        allowed_methods PUT
-        root /Users/wpersimm/webserv/YoupiBanane/put_dir/
+        allowed_methods PUT DELETE
+        root /Users/pfile/web_c/YoupiBanane/put_dir/
     }
     route /post_body {
         allowed_methods POST
-        root /Users/wpersimm/webserv/content/
+        root /Users/pfile/web_c/content/
 		index index.html
 		client_max_body_size 100
     }
 	route / {							    # route for file $(index)/public/index.html
 		allowed_methods GET					# allowed methods for route
-		root /Users/wpersimm/webserv/content/
+		root /Users/pfile/web_c/content/
 		index index.html
 	}
 }
