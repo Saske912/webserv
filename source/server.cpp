@@ -266,23 +266,22 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     tmp;
     bool    flag = false;
     int     st;
+    struct ::stat stats;
 
     if (std::find(Header::current_files_in_work.begin(), Header::current_files_in_work.end(), head.getRequest()) != Header::current_files_in_work.end())
     {
         std::cout << "ret -2" << head.getMethod() << std::endl;
         return -2;
     }
-//    std::cout << "opened " << head.getMethod()  << std::endl;
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
     head.addEnv((char *)("SCRIPT_NAME=" + std::string(request, request.rfind('/') + 1, request.length() - request.rfind('/'))).c_str());
     if (head.getBodySize() > route.get_client_max_body_size())
         return exception_processing(413, head);
     if ((head.getMethod() == "PUT" or head.getMethod() == "POST" or head.getMethod() ==  "DELETE") and head.getFd() == 1)
     {
-        struct ::stat st;
         std::string part;
-        ::stat(request.c_str(), &st);
-        if ((fd = open(request.c_str(), O_RDONLY)) > 0 and st.st_mode & S_IFDIR)
+        ::stat(request.c_str(), &stats);
+        if ((fd = open(request.c_str(), O_RDONLY)) > 0 and stats.st_mode & S_IFDIR)
         {
             close(fd);
             if (head.getMethod() ==  "DELETE")
@@ -295,6 +294,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             close(fd);
             head.setResponse("HTTP/1.1 200 OK");
             remove(request.c_str());
+            remove((request + ".cookie").c_str());
             return exception_processing(200, head);
         }
         else
@@ -339,31 +339,41 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         }
         Header::current_files_in_work.push_back(head.getRequest());
         head.setIsCgi(true);
-        if ((fd = open("tmp", O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-            error_exit("open error");
-        if ((pid = fork()) == 0)
+        int ret;
+        if ((ret = ::stat((request + ".cookie").c_str(), &stats)) == -1)
         {
-            arg[0] = strdup(root.c_str());
-            arg[1] = NULL;
-            dup2(tmp, 0);
-            dup2(fd, 1);
-            execve(arg[0], arg, head.getEnv());
-            exit(1);
+            if ((fd = open((request + ".cookie").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+                error_exit("open error");
+            if ((pid = fork()) == 0)
+            {
+                arg[0] = strdup(root.c_str());
+                arg[1] = NULL;
+                dup2(tmp, 0);
+                dup2(fd, 1);
+                execve(arg[0], arg, head.getEnv());
+                exit(1);
+            }
+            else if (pid == -1)
+                error_exit("fork_error");
+            else
+            {
+                close(tmp);
+                head.setPid(pid);
+            }
+            waitpid(pid, &st, 0);
+            lseek(fd, 0, 0);
+            dup2(fd1, 1);
+            dup2(fd0, 0);
+            close(fd1);
+            close(fd0);
+            head.setRealPathToFile(request);
+            return fd;
         }
-        else if (pid == -1)
-            error_exit("fork_error");
         else
         {
-            close(tmp);
-            head.setPid(pid);
+            head.setRealPathToFile(request);
+            return open((request + ".cookie").c_str(), O_RDONLY);
         }
-        waitpid(pid, &st, 0);
-        lseek(fd, 0, 0);
-        dup2(fd1, 1);
-        dup2(fd0, 0);
-		close(fd1);
-		close(fd0);
-        return fd;
     }
     else
     {
@@ -391,6 +401,7 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         }
     }
 //    std::cout << "server responce"  << std::endl;
+    head.setRealPathToFile(request);
     return fd;
 }
 
