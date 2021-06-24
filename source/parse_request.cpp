@@ -12,13 +12,12 @@ std::string  parse_request(const std::string& string, Header &head, config &conf
         {
             head.setFile(head.getServ()->descriptorForReceive(head));
         }
-        if (string.empty())
-        {
-            head.body_end = true;
-            return "body_end";
-        }
         if (head.getTransfer_Encoding() == "chunked")
         {
+            if (string == "0"){
+                head.setBodyEnd(true);
+                return "body_end";
+            }
             if (string.find_last_not_of("0123456789abcdef") != std::string::npos)
             {
                 if ( write( head.getFile( ), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
@@ -30,7 +29,12 @@ std::string  parse_request(const std::string& string, Header &head, config &conf
         }
         else
         {
-            if ( write( head.getFile( ), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
+            if (string.empty())
+            {
+                head.setBodyEnd(true);
+                return "body_end";
+            }
+            else if ( write( head.getFile( ), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))
             {
                 perror("write");
                 return "bad";

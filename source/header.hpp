@@ -16,6 +16,7 @@ class Header
     typedef void (Header::*Func)(std::string const &);
 private:
     Header();
+    bool        body_end;
     int         client;
     bool        empty_line;
     std::string reminder;
@@ -55,6 +56,8 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+    bool isBodyEnd( ) const;
+    void setBodyEnd( bool bodyEnd );
     void setClient( int client );
     bool isEmptyLine( ) const;
     void setEmptyLine( bool emptyLine );
@@ -143,7 +146,6 @@ public:
     const std::string &getExtension( ) const;
     void setExtension( const std::string &filename );
     static std::list<std::string>   current_files_in_work;
-    bool                            body_end;
     std::map<std::string, Func>     array;
     std::string                     ip_addr;
     sockaddr_in                     ad;

@@ -18,7 +18,7 @@ void init_serv( config &serv )
 
     serv.addr = init_host_addr();
     if ((serv.host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        error_exit("bind error");
+        error_exit("socket error");
     serv.opt = 1;
     setsockopt(serv.host, SOL_SOCKET, SO_REUSEADDR, &serv.opt, sizeof(serv.opt));
     int    buf = BUFSIZE;

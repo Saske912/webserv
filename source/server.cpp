@@ -119,9 +119,12 @@ bool server::is_file_with_extension( std::string request )
 void server::concat( Header & head )
 {
     std::list<std::string> lom(getListOfMethods());
-    head.setHostHeaderResponse(get_host(), get_port());
+//    head.setHostHeaderResponse(get_host(), get_port());
     if (std::find(lom.begin(), lom.end(), head.getMethod()) == lom.end())
-        head.setError(exception_processing(501, head));
+    {
+        head.setFile(exception_processing(501, head));
+        head.setError(501);
+    }
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
@@ -134,7 +137,10 @@ void server::concat( Header & head )
         }
         it++;
     }
-    head.setError(exception_processing(404, head));
+    {
+        head.setFile(exception_processing(404, head));
+        head.setError(404);
+    }
 }
 
 std::string server::get_error(int err, std::map<int, std::string> ers) {
@@ -190,11 +196,12 @@ int server::exception_processing( int except, Header &head ) {
 int server::descriptorForSend( Header &head )
 {
     if (head.getError())
+    {
         head.setResponse(head.getHttp() + " " + ttostr(head.getError()) + " " + _default_error_pages[head.getError()]);
+        return head.getFile();
+    }
     else
         head.setResponse(head.getHttp() + " 200 OK");
-    if (head.getError())
-        return head.getFile();
     chdir(head.getRout()->get_root().c_str());
     is_cgi( head );
     if (!head.getError())
@@ -356,7 +363,7 @@ std::string server::get_allow( std::list<std::string> arr ) {
 void server::set_list_of_methods( ) {
 //    _list_of_methods.push_back("OPTIONS");
     _list_of_methods.push_back("GET");
-//    _list_of_methods.push_back("HEAD");
+    _list_of_methods.push_back("HEAD");
     _list_of_methods.push_back("POST");
     _list_of_methods.push_back("PUT");
     _list_of_methods.push_back("DELETE");

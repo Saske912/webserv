@@ -6,11 +6,9 @@
 int send_protected( std::string str, Header &head )
 {
     ssize_t  ret;
-	size_t	 size;
 
 	str = head.getReminder() + str;
-   	size = str.length() > BUFSIZE ? BUFSIZE : str.length();
-    ret = send(head.getClient(), str.c_str(), size, 0);
+    ret = send(head.getClient(), str.c_str(), str.length(), 0);
     if (ret == -1)
     {
         head.setReminder(str);

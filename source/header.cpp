@@ -30,7 +30,11 @@ void Header::eraseStruct()
 		ft_doublefree(Env);
 	Port = 0;
 	Env = 0;
+	close(file);
     file = 0;
+    error = 0;
+    body_end = 0;
+    empty_line = 0;
 //	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
@@ -401,15 +405,15 @@ void Header::setter( const std::string &line, config &conf )
         server *server = conf.find_server( getPort( ), *this );
         if (!server)
         {
-            error = conf.getServers().front().exception_processing(502, *this);
-            setFile(serv->descriptorForSend( *this ));
+            setError(502);
+            setFile(conf.getServers().front().exception_processing(502, *this));
             body_end = true;
             return;
         }
         setServ(server);
         cgi_env();
         serv->concat( *this );
-        if (getMethod() == "GET")
+        if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
         {
             setFile(serv->descriptorForSend( *this ));
             body_end = true;
@@ -526,7 +530,7 @@ Header::Header( config &serv )
     }
     fcntl(client, F_SETFL, O_NONBLOCK);
     serv.opt = 1;
-    setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const void *>(serv.opt), sizeof(serv.opt));
+//    setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const void *>(serv.opt), sizeof(serv.opt));
     setsockopt(client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
     ip_addr = ttostr(ad.sin_addr.s_addr & 255) + '.' +
             ttostr(ad.sin_addr.s_addr >> 8 & 255) + '.' +
@@ -668,4 +672,12 @@ void Header::setEmptyLine( bool emptyLine ) {
 
 void Header::setClient( int client ) {
     Header::client = client;
+}
+
+bool Header::isBodyEnd( ) const {
+    return body_end;
+}
+
+void Header::setBodyEnd( bool bodyEnd ) {
+    body_end = bodyEnd;
 }

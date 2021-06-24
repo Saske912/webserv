@@ -3,16 +3,13 @@
 //
 #include "header.h"
 
-std::list<Header>::iterator& erase( std::list<Header>::iterator &it, std::list<Header> &set )
+void erase( std::string const &realPathToFile, Header &head)
 {
-    close(it->getClient());
     std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
-    while (iter != Header::current_files_in_work.end() and *iter != it->getRequest())
+    while (iter != Header::current_files_in_work.end() and *iter != realPathToFile)
         iter++;
     if (iter != Header::current_files_in_work.end())
         Header::current_files_in_work.erase(iter);
-    it = set.erase(it);
-    return it;
-//        it->eraseStruct();
+    head.eraseStruct();
 //        resetIt(it);
 }

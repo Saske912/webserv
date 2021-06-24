@@ -22,26 +22,17 @@ std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
     if (z == -1)
     {
         if (errno == EAGAIN)
-        {
             return std::string("wait");
-        }
         else
-        {
-            perror("errno");
             return std::string("error");
-        }
     }
     else if (z == 0)
-    {
         return std::string("connection closed");
-    }
     else
-    {
         return split_buffer(buffer, *it, conf);
-    }
 }
 
-int receive( std::list<Header>::iterator &it, config &conf)
+int receive( std::list<Header>::iterator &it, config &conf, std::list<Header> &set)
 {
 	if ( FD_ISSET(it->getClient(), &conf.read))
 	{
@@ -51,9 +42,7 @@ int receive( std::list<Header>::iterator &it, config &conf)
         if (str == "connection closed")
             return 1;
         else if (str == "body_end")
-        {
             return 0;
-        }
 	}
     return 0;
 }
@@ -61,13 +50,25 @@ int receive( std::list<Header>::iterator &it, config &conf)
 
 static void	communication_with_clients( std::list<Header> &set, config &conf)
 {
+    int             opt;
+    socklen_t len = sizeof(opt);
+
     std::list<Header>::iterator it = set.begin();
     while (it != set.end())
     {
+        getsockopt( it->getClient( ), SOL_SOCKET, SO_ERROR, &opt, &len );
+        if (opt == ECONNRESET)
+        {
+            std::cerr << "removed "  << std::endl;
+            close(it->getClient());
+            it = set.erase(it);
+            continue ;
+        }
         if (file_available(it->getRequest()))
         {
-            if (receive(it, conf))
+            if (receive(it, conf, set))
             {
+                close(it->getClient());
                 it = set.erase(it);
                 continue ;
             }
@@ -88,7 +89,9 @@ void sendFile( Header &head )
 		str[z] = 0;
         if ( send_protected(str, head))
             return ;
+        bzero(str, sizeof(str));
 	}
+    erase(head.getRealPathToFile(), head);
 }
 
 void buildHeader( Header &head )
@@ -230,11 +233,11 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 void response( std::list<Header>::iterator &it, config &conf)
 {
 	std::string string;
-	if (it->body_end)
+	if (it->isBodyEnd())
 	{
         if (it->isEmptyLine())
             buildHeader( *it );
-        if (it->getTransfer_Encoding() == "chunked")
+        if (it->getTransfer_Encoding() == "chunked" and !it->getError())
             sendFileChunked(it, it->getFile());
         else
             sendFile( *it );
@@ -251,9 +254,13 @@ static int	Select(config &conf, std::list<Header> &set)
     if ((conf.ret = select(conf.max_d + 1, &conf.read, NULL, NULL, &conf.tv)) < 1)
     {
         if (errno != EINTR)
+        {
+            perror("EINTR");
             return 1;
+        }
         else
         {
+            perror("errno");
             return 1;//??
         }
 //                loop(tv, serv, t, cli, set);
