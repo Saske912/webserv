@@ -366,12 +366,10 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             dup2(fd0, 0);
             close(fd1);
             close(fd0);
-            head.setRealPathToFile(request);
             return fd;
         }
         else
         {
-            head.setRealPathToFile(request);
             return open((request + ".cookie").c_str(), O_RDONLY);
         }
     }
@@ -401,7 +399,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         }
     }
 //    std::cout << "server responce"  << std::endl;
-    head.setRealPathToFile(request);
     return fd;
 }
 
