@@ -13,25 +13,25 @@ sockaddr_in init_host_addr( unsigned int port )
     return (addr);
 }
 
-void init_serv( config &serv )
+void init_serv( config &config )
 {
     int     sock;
 
-    std::list<server>::iterator it = serv.getServers().begin();
-    while (it != serv.getServers().end())
+    std::list<server>::iterator it = config.getServers().begin();
+    while ( it != config.getServers().end())
     {
         it->addr = (init_host_addr(it->get_port()));
         sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock == -1)
             error_exit("socket error");
         it->setHostRaw(sock);
-        serv.opt = 1;
-        setsockopt( it->getHostSock( ), SOL_SOCKET, SO_REUSEADDR, &serv.opt, sizeof(serv.opt));
-        if (serv.opt != 1)
+        config.opt = 1;
+        setsockopt( it->getHostSock( ), SOL_SOCKET, SO_REUSEADDR, &config.opt, sizeof(config.opt));
+        if ( config.opt != 1)
             error_exit("SO_REUSEADDR");
-        serv.opt = BUFSIZE;
-        setsockopt( it->getHostSock( ), SOL_SOCKET, SO_RCVBUF, &serv.opt, sizeof(serv.opt));
-        if (serv.opt != 1)
+        config.opt = BUFSIZE;
+        setsockopt( it->getHostSock( ), SOL_SOCKET, SO_RCVBUF, &config.opt, sizeof(config.opt));
+        if ( config.opt != BUFSIZE)
             error_exit("SO_RCVBUF");
         if ( bind( it->getHostSock( ), reinterpret_cast<sockaddr *>(&it->addr), sizeof(it->addr)) == -1)
             error_exit("fail to bind IP");

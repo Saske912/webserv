@@ -625,7 +625,7 @@ void Header::setExtension( const std::string &filename )
 {
     size_t      finder;
     std::string ext;
-    std::string::const_iterator it(filename.begin());
+
     finder = real_path_to_file.find('.') + 1;
     if (finder != std::string::npos)
         extension = filename.substr(finder);

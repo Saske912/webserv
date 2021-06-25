@@ -48,7 +48,7 @@
 void        error_exit(const std::string& str);
 sockaddr_in init_host_addr( unsigned int port );
 timeval     init_timevals();
-void            init_serv( config &serv );
+void            init_serv( config &config );
 void            loop(config &conf);
 server      default_config();
 void            erase( std::string const & realPathToFile, Header &head );
@@ -58,6 +58,6 @@ bool            file_available(const std::string& request);
 std::string split_buffer( std::string &buffer, Header &head, server &serv );
 std::string get_http_line( std::string &buffer, Header &head, server &serv );
 std::string parse_request( const std::string &string, Header &head, server &serv );
-void response( std::list<Header>::iterator &it, server &serv );
+void response( std::list<Header>::iterator &it );
 
 #endif //HEADER_H

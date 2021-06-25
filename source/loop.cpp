@@ -72,7 +72,7 @@ static void communication_with_clients( std::list<Header> &set, server &serv )
                 it = set.erase(it);
                 continue ;
             }
-            response( it, serv );
+            response( it );
         }
         if (it != set.end())
             it++;
@@ -230,7 +230,7 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 //	sendFileChunked(it, fd);
 //}
 
-void response( std::list<Header>::iterator &it, server &serv )
+void response( std::list<Header>::iterator &it )
 {
 	std::string string;
 	if (it->isBodyEnd())
@@ -254,7 +254,7 @@ static int Select( std::list<Header> &set, server &serv )
         set.sort(sorter);
         serv.setMaxD(set.begin()->getClient() > serv.getHostSock( ) ? set.begin()->getClient() : serv.getHostSock( ));
     }
-    if ((ret = select(serv.getMaxD() + 1, &serv.read, NULL, NULL, &serv.tv)) < 1)
+    if ((ret = select(serv.getMaxD() + 1, &serv.read, NULL, NULL, &serv.tv)) < 0)
     {
         if (errno != EINTR)
         {
@@ -298,6 +298,7 @@ void    loop(config &conf)
                 it_serv->getSet().push_back( Header( *it_serv, NULL ));
             }
             communication_with_clients( it_serv->getSet( ), *it_serv );
+            it_serv++;
         }
     }
 }

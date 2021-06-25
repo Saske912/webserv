@@ -22,7 +22,7 @@ public:
 private:
     std::list<server>   servers;
 public:
-    std::list<server> getServers( ) const;
+    std::list<server> &getServers( );
 
     void setServers( const std::list<server> &servers );
 };

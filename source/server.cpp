@@ -32,6 +32,13 @@ server &server::operator=( server const &src ) {
     this->_list_of_methods = src._list_of_methods;
     this->_allow = src._allow;
     this->_cgi_path = src._cgi_path;
+    tv.tv_sec = src.tv.tv_sec;
+    tv.tv_usec = src.tv.tv_usec;
+    _max_d = src._max_d;
+    _set = src._set;
+    _host_socket = src._host_socket;
+    read = src.read;
+    addr = src.addr;
     return *this;
 }
 
@@ -69,10 +76,8 @@ server::server( const std::string  &host, unsigned int port,
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
     set_default_pages();
     set_list_of_methods();
-}
-
-int server::get_path_to_request( const std::string &request, Header & head)
-{
+    tv.tv_usec = TVMS;
+    tv.tv_sec = TVS;
 }
 
 const std::map<int, std::string>& server::get_error_pages( ) const {
@@ -485,11 +490,11 @@ void server::setMaxD( int maxD ) {
 }
 
 int server::getHostSock( ) const {
-    return _host_raw;
+    return _host_socket;
 }
 
 void server::setHostRaw( int hostRaw ) {
-    _host_raw = hostRaw;
+    _host_socket = hostRaw;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

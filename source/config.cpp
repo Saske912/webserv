@@ -34,7 +34,7 @@ server *config::find_server( unsigned int port, Header &head ) {
     return NULL;
 }
 
-std::list<server> config::getServers( ) const {
+std::list<server> &config::getServers( ) {
     return servers;
 }
 
@@ -42,9 +42,9 @@ void config::setServers( const std::list<server> &servers ) {
     config::servers = servers;
 }
 
-std::ostream &operator<<(std::ostream &o, const config &conf) {
+std::ostream &operator<<(std::ostream &o, config &conf) {
 	o << "config:" << std::endl;
-	for (config::ServersType::const_iterator it = conf.getServers().begin();
+	for (config::ServersType::iterator it = conf.getServers().begin();
 		it != conf.getServers().end(); ++it) {
 		o << *it;
 	}
