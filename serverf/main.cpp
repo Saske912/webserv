@@ -13,6 +13,18 @@ void print_usage() {
         std::endl;
 }
 
+void deleteAllManagment(void)
+{
+	DIR *dir = opendir("managment");
+	if (dir == NULL)
+		error_exit("Please, create \"managment\" directory in the root folder");
+	struct dirent *dirent;
+
+	while ((dirent = readdir(dir)))
+		remove (("managment/" + std::string(dirent->d_name)).c_str());
+	closedir(dir);
+}
+
 int main(int ac, char *av[], char *env[])
 {
     t_data              t;
@@ -33,6 +45,7 @@ int main(int ac, char *av[], char *env[])
         print_usage();
         return 1;
     }
+	deleteAllManagment();
     serv = init_serv();
     if (!(t.env = ft_doublecpy(env)))
         error_exit("malloc error");

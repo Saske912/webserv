@@ -1,6 +1,11 @@
 .idea
 cmake-build-debug/
 **/*.swp
+**/*.cookie
+**/*.managment
+**/*.tmp
+**/*.o
+**/*.DS*
 *.dSYM
 webserv
 client

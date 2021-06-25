@@ -130,7 +130,6 @@ void server::add_route(const route &route_)
 
 int     server::request_processing( const std::string &request, \
 std::string const & def_file, route const & route, Header & head) {
-//                                    std::cout << "req:" << request  << std::endl;
 	if ( is_file_with_extension( request ) or head.getMethod() == "PUT" or head.getMethod() == "DELETE")
     {
         return targeting(head, request, route);
@@ -152,20 +151,14 @@ std::string const & def_file, route const & route, Header & head) {
 
 bool server::is_file_with_extension( std::string request )
 {
-//    int ret = static_cast<int>(request.rfind('/'));
-//    if (ret == -1)
-//        return false;
-//    else
-    {
-        std::string::reverse_iterator it = request.rbegin();
-        while(it != request.rend() and *it != '/')
-        {
-            if (*it == '.')
-                return true;
-            it++;
-        }
-        return false;
-    }
+	std::string::reverse_iterator it = request.rbegin();
+	while(it != request.rend() and *it != '/')
+	{
+		if (*it == '.')
+			return true;
+		it++;
+	}
+	return false;
 }
 
 int    server::responce( Header & head )
@@ -185,7 +178,6 @@ int    server::responce( Header & head )
     if (head.getHost() == "400" || head.getHost().empty())
     {
         std::cout << "HOST ERROR ACCEPT |"  << head.getHost().empty() << "| get host: " << head.getHost() << std::endl;
-//        sleep(4);
         return exception_processing(400, head);
     }
     if (std::find(_list_of_methods.begin(), _list_of_methods.end(), head.getMethod()) == _list_of_methods.end())
@@ -232,7 +224,6 @@ int server::exception_processing( int except, Header &head ) {
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
-//            arg = reinterpret_cast<char **>(ft_calloc(4, sizeof(char **)));
             chdir(head.getEnvValue("PWD=").c_str());
             arg[0] = strdup("content/sed.sh");
             concat += to_head + "/";
@@ -262,7 +253,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
     int     fd;
     int     pid;
     char    *arg[3];
-//    int     fdset[2];
     int     tmp;
     bool    flag = false;
     int     st;
@@ -270,7 +260,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
 
     if (std::find(Header::current_files_in_work.begin(), Header::current_files_in_work.end(), head.getRequest()) != Header::current_files_in_work.end())
     {
-        std::cout << "ret -2" << head.getMethod() << std::endl;
         return -2;
     }
     head.setContent_Location("Content-Location: " + set_location(const_cast<class route &>(route), head) + "\r\n");
@@ -340,10 +329,19 @@ int server::targeting( Header &head, std::string request, route const & route ) 
         Header::current_files_in_work.push_back(head.getRequest());
         head.setIsCgi(true);
         int ret;
-        if ((ret = ::stat((request + ".cookie").c_str(), &stats)) == -1)
+        if (head.getMethod() == "GET" && (ret = ::stat((request + ".cookie").c_str(), &stats)) != -1)
         {
-            if ((fd = open((request + ".cookie").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+            return open((request + ".cookie").c_str(), O_RDONLY);
+        }
+		else
+        {
+           if (head.getMethod() == "GET")
+		   {
+		   	if ((fd = open((request + ".cookie").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
                 error_exit("open error");
+		   }
+		   else
+			   fd = open((request + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
             if ((pid = fork()) == 0)
             {
                 arg[0] = strdup(root.c_str());
@@ -367,10 +365,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             close(fd1);
             close(fd0);
             return fd;
-        }
-        else
-        {
-            return open((request + ".cookie").c_str(), O_RDONLY);
         }
     }
     else
@@ -398,7 +392,6 @@ int server::targeting( Header &head, std::string request, route const & route ) 
             head.setResponse("HTTP/1.1 200 OK\r\n");
         }
     }
-//    std::cout << "server responce"  << std::endl;
     return fd;
 }
 

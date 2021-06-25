@@ -278,6 +278,34 @@ int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t
 	return 0;
 }
 
+std::string createManagmentName(std::string str)
+{
+	size_t i = 0;
+
+	if ((i = str.find('?')) != std::string::npos)
+		str.erase(i, str.length());
+	while ((i = str.find('/')) != std::string::npos)
+		str[i] = 'X';
+	return str;
+}
+
+
+int sendManagment(std::list<t_write>::iterator &it, int fd)
+{
+	char str[32769];
+	int z;
+	std::string str2;
+
+	while ((z = read(fd, str, 32768)) > 0)
+	{
+		str[z] = 0;
+		str2 += str;
+	}
+    if (send_protected(str2, it, "sendFile"))
+        return 1;
+	return 0;
+}
+
 void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
 {
 	char    *line = 0;
@@ -325,7 +353,22 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
                 return ;
             }
             if (!line[0]) {
+				struct stat st;
                 it->head_readed = true;
+				if (it->head.getMethod() == "GET")
+				{
+					std::string man = "managment/" + createManagmentName(it->head.getRequest() + ".managment"); 
+					if (stat(man.c_str(), &st) != -1)
+					{
+						free(line);
+						int FileD = open(man.c_str(), O_RDONLY);
+						it->head.setFdr(FileD);
+						sendManagment(it, FileD);
+						if (it->reminder.empty())
+                			erase(it, FileD, true);
+						return ;
+					}
+				}
             }
             else if ( !it->first_line )
             {
@@ -334,9 +377,6 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
             }
             else
                 parse_request(line, (*it).head);
-            if (line) {
-             //   std::cout << line << std::endl;
-            }
                 if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
                     && it->head.getMethod() != "PUT")
                 (*it).flag = true;
@@ -346,19 +386,22 @@ void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &
 	}
 }
 
+
 int sendFile(std::list<t_write>::iterator &it, int fd, std::string &str2)
 {
 	char str[32769];
 	int z;
-    int ret;
 
-    std::cout << "fd: " << it->fd  << std::endl;
-//    if ( send_protected(str2, it, "sendFile"))
-//        return 1;
 	while ((z = read(fd, str, 32768)) > 0)
 	{
 		str[z] = 0;
 		str2 += str;
+	}
+	if (it->head.getMethod() == "GET")
+	{
+		int mng = open(("managment/" + createManagmentName(it->head.getRequest()) + ".managment").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		write(mng, str2.c_str(), str2.length());
+		close(mng);
 	}
     if (send_protected(str2, it, "sendFile"))
         return 1;
@@ -373,14 +416,11 @@ void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write>
 	    erase(it, fd, false);
     erase(it, it->fd, false);
 	it = set.erase(it);
-//    std::cout << "NoBody"  << std::endl;
-//all right
 }
 
 std::string  sendHeader(std::list<t_write>::iterator &it)
 {
 	std::string str;
-	int    ret;
 
 	str = (*it).head.getResponse();
 	if (!((*it).head.getContent_Language().empty()))	
@@ -512,7 +552,6 @@ std::string  sendBodyHeader(std::list<t_write>::iterator &it)
 {
 	std::string str;
 	struct stat stat;
-	int ret;
 
 	fstat(it->head.getFdr(), &stat);
 	return std::string("Content-Length: " + ttostr(stat.st_size) + "\r\n\r\n");
@@ -523,11 +562,8 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 	int fd;
 	std::string string;
 	std::string string2;
-	char *str;
-	int z;
 
 	if ( FD_ISSET((*it).fd, &t.write))
-//	if (it->flag)
 	{
 		if (!it->reminder.empty())
 		{
@@ -568,8 +604,6 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 		if (it->head.getMethod() == "PUT" || it->head.getFdr() == -1)
 			return (noBodyResponse(it, it->head.getFdr(), set, string2));
 		string2 += sendBodyHeader(it);
-//        if (send_protected(string2, it, "sendFile"))
-//            return ;
 		if (sendFile(it, it->head.getFdr(), string2))
 			return ;
 		erase(it, it->head.getFdr(), true);
@@ -578,9 +612,19 @@ void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &co
 
 static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
 {
+	int opt = 0;
+	socklen_t opt_len = sizeof(opt);
+
 	std::list<t_write>::iterator it = set.begin();
 	while (it != set.end())
 	{
+		getsockopt(it->fd, SOL_SOCKET, SO_ERROR, &opt, &opt_len);
+		if (opt == 54)
+		{
+			close(it->fd);
+			it = set.erase(it);
+			continue ;
+		}
 		recive(set, it, t, conf);
         if (it == set.end())
             continue;
@@ -605,16 +649,10 @@ static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
 			if (errno != EINTR)
                 return 1;
 			else
-			{
-				return 1;//??
-			}
-//                loop(tv, serv, t, cli, set);
-			return 1;
+				return 1;
 		}
 		if (!t.ret)
-		{
 			return 1;
-		}
 	}
 	return (0);
 }
@@ -649,8 +687,6 @@ void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
             fcntl( cli.client, F_SETFL, O_NONBLOCK);
             serv.opt = 1;
             setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-//            int bufer = 1048576;
-//            setsockopt(cli.client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
             ipstr = ttostr(cli.ad.sin_addr.s_addr & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 8 & 255) + '.' +
                     ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +

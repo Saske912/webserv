@@ -7,7 +7,6 @@ int send_protected(std::string const & str, std::list<t_write>::iterator &it, st
 {
     int ret;
 
-    std::cout << str  << std::endl;
     ret = send(it->fd, str.c_str(), str.length(), 0);
     if (ret == -1)
     {
