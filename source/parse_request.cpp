@@ -4,7 +4,7 @@
 #include "header.h"
 #include "Number.hpp"
 
-std::string  parse_request(const std::string& string, Header &head, config &conf)
+std::string parse_request( const std::string &string, Header &head, server &serv )
 {
     if (head.isEmptyLine())
     {
@@ -43,7 +43,7 @@ std::string  parse_request(const std::string& string, Header &head, config &conf
     }
     else
     {
-        head.setter(string, conf);
+        head.setter( string, serv );
     }
     return "ok";
 }

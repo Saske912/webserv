@@ -26,6 +26,6 @@ server {
 	route / {							    # route for file $(index)/public/index.html
 		allowed_methods GET					# allowed methods for route
 		root /Users/pfile/web_c/content/
-		index index.html
+		index hack.html
 	}
 }

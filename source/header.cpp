@@ -397,25 +397,25 @@ Header::Header()
 {
 }
 
-void Header::setter( const std::string &line, config &conf )
+void Header::setter( const std::string &line, server &serv )
 {
     if (line.empty())
     {
         empty_line = true;
-        server *server = conf.find_server( getPort( ), *this );
-        if (!server)
-        {
-            setError(502);
-            setFile(conf.getServers().front().exception_processing(502, *this));
-            body_end = true;
-            return;
-        }
-        setServ(server);
+//        server *server = conf.find_server( getPort( ), *this );
+//        if (!server)
+//        {
+//            setError(502);
+//            setFile(conf.getServers().front().exception_processing(502, *this));
+//            body_end = true;
+//            return;
+//        }
+        setServ(&serv);
         cgi_env();
-        serv->concat( *this );
+        serv.concat( *this );
         if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
         {
-            setFile(serv->descriptorForSend( *this ));
+            setFile(serv.descriptorForSend( *this ));
             body_end = true;
         }
         return ;
@@ -506,8 +506,9 @@ void Header::cgi_env( )
 //    + 1, request.length() - request.rfind('/'))).c_str());
 }
 
-Header::Header( config &serv )
+Header::Header( server &serv, char **env )
 {
+    int opt;
     int bufer = BUFSIZE;
     array.insert(std::pair<std::string, Func>(HTTP, &Header::http));
     array.insert(std::pair<std::string, Func>(ACEPT_LANG, &Header::setContent_Language));
@@ -516,7 +517,7 @@ Header::Header( config &serv )
     array.insert(std::pair<std::string, Func>(ACCEPT, &Header::accept));
     array.insert(std::pair<std::string, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
     array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
-    Env = ft_doublecpy(serv.env);
+    Env = ft_doublecpy(env);
     file = 0;
     error = 0;
     is_cgi = false;
@@ -524,12 +525,12 @@ Header::Header( config &serv )
     BodySize = 0;
     empty_line = false;
     body_end = false;
-    if (( client = ::accept( serv.host, reinterpret_cast<sockaddr *>(&ad), &adlen)) == -1)
+    if (( client = ::accept( serv.getHostSock( ), reinterpret_cast<sockaddr *>(&ad), &adlen)) == -1)
     {
         perror("accept");
     }
     fcntl(client, F_SETFL, O_NONBLOCK);
-    serv.opt = 1;
+    opt = 1;
 //    setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const void *>(serv.opt), sizeof(serv.opt));
     setsockopt(client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
     ip_addr = ttostr(ad.sin_addr.s_addr & 255) + '.' +

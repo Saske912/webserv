@@ -16,14 +16,9 @@ public:
     server *find_server( unsigned int port, Header &head );
     void add_server(const server &server_);
 
-    int                 host;
-    sockaddr_in         addr;
     int                 opt;
     char                **env;
-    int                 max_d;
     int                 ret;
-    fd_set              read;
-    timeval             tv;
 private:
     std::list<server>   servers;
 public:

@@ -11,6 +11,8 @@ server::server() : _server_names(), _error_pages(), _routs(),
     _allow(), _cgi_path() {
     set_default_pages();
     set_list_of_methods();
+    tv.tv_usec = TVMS;
+    tv.tv_sec = TVS;
 }
 
 server::~server( void ) { }
@@ -464,6 +466,30 @@ const std::list<std::string> &server::getListOfMethods( ) const {
 
 void server::setListOfMethods( const std::list<std::string> &listOfMethods ) {
     _list_of_methods = listOfMethods;
+}
+
+std::list<Header> &server::getSet( ) {
+    return _set;
+}
+
+void server::setSet( const std::list<Header> &set ) {
+    _set = set;
+}
+
+int server::getMaxD( ) const {
+    return _max_d;
+}
+
+void server::setMaxD( int maxD ) {
+    _max_d = maxD;
+}
+
+int server::getHostSock( ) const {
+    return _host_raw;
+}
+
+void server::setHostRaw( int hostRaw ) {
+    _host_raw = hostRaw;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

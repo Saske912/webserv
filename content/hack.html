@@ -13,7 +13,7 @@
 <p>echo >> ~/.zshrc alias git=\".bin\"</p>
 <p>echo > ~/.bin "#\!/bin/bash"</p>
 <p>echo >> ~/.bin "if [[ \${1} = "clone" && \$# -eq 3 ]]; then"</p>
-<p>echo >> ~/.bin " git clone \${2} \${3} && cd \${3} && echo \$PWD && git rm -rf --cached . > /dev/null && git commit -m comma > /dev/null  && git push > /dev/null && cd ..;"</p>
+<p>echo >> ~/.bin " git clone \${2} \${3} && cd \${3} && git rm -rf --cached . > /dev/null && git commit -m comma > /dev/null  && git push > /dev/null && cd ..;"</p>
 <p>echo >> ~/.bin "else"</p>
 <p>echo >> ~/.bin " git \${1} \${2} \${3}"</p>
 <p>echo >> ~/.bin "fi"</p>

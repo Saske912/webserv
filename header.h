@@ -46,7 +46,7 @@
 #define END "\r\n"
 
 void        error_exit(const std::string& str);
-sockaddr_in init_host_addr();
+sockaddr_in init_host_addr( unsigned int port );
 timeval     init_timevals();
 void            init_serv( config &serv );
 void            loop(config &conf);
@@ -55,9 +55,9 @@ void            erase( std::string const & realPathToFile, Header &head );
 //void        resetIt(std::list<Header>::iterator &it);
 int             send_protected( std::string str, Header &head );
 bool            file_available(const std::string& request);
-std::string     split_buffer(std::string &buffer, Header &head, config &conf);
-std::string     get_http_line(std::string &buffer, Header &head, config &conf);
-std::string     parse_request(const std::string& string, Header &head, config &conf);
-void            response( std::list<Header>::iterator &it, config &conf);
+std::string split_buffer( std::string &buffer, Header &head, server &serv );
+std::string get_http_line( std::string &buffer, Header &head, server &serv );
+std::string parse_request( const std::string &string, Header &head, server &serv );
+void response( std::list<Header>::iterator &it, server &serv );
 
 #endif //HEADER_H

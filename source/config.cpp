@@ -2,8 +2,6 @@
 #include "header.h"
 
 config::config() : servers() {
-    tv.tv_usec = TVMS;
-    tv.tv_sec = TVS;
 }
 
 config::config(const config &other) : servers(other.servers) {

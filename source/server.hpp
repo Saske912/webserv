@@ -46,6 +46,17 @@ public:
     int                         autoindex( Header &head, route route );
     int                         descriptorForSend( Header &head);
     int                         descriptorForReceive( Header &head);
+    const std::list<std::string> &getListOfMethods( ) const;
+    void setListOfMethods( const std::list<std::string> &listOfMethods );
+    std::list<Header> &getSet( );
+    void setSet( const std::list<Header> &set );
+    int getMaxD( ) const;
+    void setMaxD( int maxD );
+    int getHostSock( ) const;
+    void setHostRaw( int hostRaw );
+    timeval                     tv;
+    fd_set                      read;
+    sockaddr_in                 addr;
 protected:
     void cgi_processing( Header &head, bool flag );
     static bool                 is_file_with_extension( std::string request) ;
@@ -59,6 +70,8 @@ protected:
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
 private:
+    int                         _max_d;
+    std::list<Header>           _set;
     std::string                 _host;
     unsigned int                _port;
     std::list<std::string>      _server_names;
@@ -67,14 +80,9 @@ private:
     std::list<route>            _routs;
     long int                    _client_body_size;
     std::list<std::string>      _list_of_methods;
-public:
-    const std::list<std::string> &getListOfMethods( ) const;
-
-    void setListOfMethods( const std::list<std::string> &listOfMethods );
-
-private:
     std::pair<std::string, std::string> _allow;
     std::string                 _cgi_path;
+    int                         _host_raw;
 };
 
 std::ostream &operator<<(std::ostream &o, const server &serv);

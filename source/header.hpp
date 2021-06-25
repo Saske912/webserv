@@ -65,8 +65,8 @@ public:
     void setReminder( const std::string &reminder );
     route *getRout( ) const;
     void setRout( route *rout );
-    explicit Header(config &);
-    void    setter( const std::string &line, config &conf );
+    explicit Header( server &serv, char **env );
+    void setter( const std::string &line, server &serv );
     void    http( std::string const & str);
     void    host(std::string const & string);
     void    referer(std::string const & string);

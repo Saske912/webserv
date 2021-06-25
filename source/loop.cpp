@@ -9,7 +9,7 @@ int		sorter(const Header& a, const Header& b)
 	return (a.getClient() < b.getClient());
 }
 
-std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
+std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
 {
     int         z;
     char        buf[BUFSIZE + 1];
@@ -29,16 +29,16 @@ std::string  receive_buffer(std::list<Header>::iterator &it, config &conf)
     else if (z == 0)
         return std::string("connection closed");
     else
-        return split_buffer(buffer, *it, conf);
+        return split_buffer( buffer, *it, serv );
 }
 
-int receive( std::list<Header>::iterator &it, config &conf, std::list<Header> &set)
+int receive( std::list<Header>::iterator &it, server &serv )
 {
-	if ( FD_ISSET(it->getClient(), &conf.read))
+	if ( FD_ISSET(it->getClient(), &serv.read))
 	{
         std::string str;
 
-        str = receive_buffer( it, conf );
+        str = receive_buffer( it, serv );
         if (str == "connection closed")
             return 1;
         else if (str == "body_end")
@@ -48,7 +48,7 @@ int receive( std::list<Header>::iterator &it, config &conf, std::list<Header> &s
 }
 
 
-static void	communication_with_clients( std::list<Header> &set, config &conf)
+static void communication_with_clients( std::list<Header> &set, server &serv )
 {
     int             opt;
     socklen_t len = sizeof(opt);
@@ -66,13 +66,13 @@ static void	communication_with_clients( std::list<Header> &set, config &conf)
         }
         if (file_available(it->getRequest()))
         {
-            if (receive(it, conf, set))
+            if ( receive( it, serv ))
             {
                 close(it->getClient());
                 it = set.erase(it);
                 continue ;
             }
-            response(it, conf);
+            response( it, serv );
         }
         if (it != set.end())
             it++;
@@ -230,7 +230,7 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 //	sendFileChunked(it, fd);
 //}
 
-void response( std::list<Header>::iterator &it, config &conf)
+void response( std::list<Header>::iterator &it, server &serv )
 {
 	std::string string;
 	if (it->isBodyEnd())
@@ -244,14 +244,17 @@ void response( std::list<Header>::iterator &it, config &conf)
 	}
 }
 
-static int	Select(config &conf, std::list<Header> &set)
+static int Select( std::list<Header> &set, server &serv )
 {
+    int ret;
 	if (set.empty())
-        conf.max_d = conf.host;
+        serv.setMaxD( serv.getHostSock( ));
 	else
-        conf.max_d = (set.rbegin())->getClient() > conf.host ? (set.rbegin())->getClient() : conf.host;
-    set.sort(sorter);
-    if ((conf.ret = select(conf.max_d + 1, &conf.read, NULL, NULL, &conf.tv)) < 1)
+    {
+        set.sort(sorter);
+        serv.setMaxD(set.begin()->getClient() > serv.getHostSock( ) ? set.begin()->getClient() : serv.getHostSock( ));
+    }
+    if ((ret = select(serv.getMaxD() + 1, &serv.read, NULL, NULL, &serv.tv)) < 1)
     {
         if (errno != EINTR)
         {
@@ -261,12 +264,10 @@ static int	Select(config &conf, std::list<Header> &set)
         else
         {
             perror("errno");
-            return 1;//??
+            return 1;
         }
-//                loop(tv, serv, t, cli, set);
-        return 1;
     }
-    if (!conf.ret)
+    if (!ret)
     {
         return 1;
     }
@@ -275,25 +276,28 @@ static int	Select(config &conf, std::list<Header> &set)
 
 void    loop(config &conf)
 {
-    std::list<Header>           set;
     std::list<Header>::iterator it;
 
     while (true)
     {
-        FD_ZERO(&conf.read);
-        FD_SET(conf.host, &conf.read);
-        it = set.begin();
-        while ( it != set.end())
+        std::list<server>::iterator it_serv = conf.getServers().begin();
+        while (it_serv != conf.getServers().end())
         {
-            FD_SET(it->getClient(), &conf.read);
-            it++;
+            FD_ZERO(&it_serv->read);
+            FD_SET( it_serv->getHostSock( ), &it_serv->read);
+            it = it_serv->getSet().begin();
+            while ( it != it_serv->getSet().end())
+            {
+                FD_SET(it->getClient(), &it_serv->read);
+                it++;
+            }
+            if ( Select( it_serv->getSet( ), *it_serv ))
+                continue ;
+            if (FD_ISSET( it_serv->getHostSock( ), &it_serv->read))
+            {
+                it_serv->getSet().push_back( Header( *it_serv, NULL ));
+            }
+            communication_with_clients( it_serv->getSet( ), *it_serv );
         }
-        if (Select(conf, set))
-            continue ;
-        if (FD_ISSET(conf.host, &conf.read))
-        {
-            set.push_back(Header(conf));
-        }
-        communication_with_clients(set, conf);
     }
 }
