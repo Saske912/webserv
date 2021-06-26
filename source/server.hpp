@@ -50,11 +50,8 @@ public:
     void setListOfMethods( const std::list<std::string> &listOfMethods );
     std::list<Header> &getSet( );
     void setSet( const std::list<Header> &set );
-    int getMaxD( ) const;
-    void setMaxD( int maxD );
     int getHostSock( ) const;
     void setHostRaw( int hostRaw );
-    timeval                     tv;
     fd_set                      read;
     sockaddr_in                 addr;
 protected:
@@ -68,7 +65,6 @@ protected:
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
 private:
-    int                         _max_d;
     std::list<Header>           _set;
     std::string                 _host;
     unsigned int                _port;

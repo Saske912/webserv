@@ -11,8 +11,6 @@ server::server() : _server_names(), _error_pages(), _routs(),
     _allow(), _cgi_path() {
     set_default_pages();
     set_list_of_methods();
-    tv.tv_usec = TVMS;
-    tv.tv_sec = TVS;
 }
 
 server::~server( void ) { }
@@ -32,9 +30,6 @@ server &server::operator=( server const &src ) {
     this->_list_of_methods = src._list_of_methods;
     this->_allow = src._allow;
     this->_cgi_path = src._cgi_path;
-    tv.tv_sec = src.tv.tv_sec;
-    tv.tv_usec = src.tv.tv_usec;
-    _max_d = src._max_d;
     _set = src._set;
     _host_socket = src._host_socket;
     read = src.read;
@@ -76,8 +71,6 @@ server::server( const std::string  &host, unsigned int port,
      _host(host), _port(port), _error_pages(error_pages), _routs(routs), _client_body_size(client_body_size) {
     set_default_pages();
     set_list_of_methods();
-    tv.tv_usec = TVMS;
-    tv.tv_sec = TVS;
 }
 
 const std::map<int, std::string>& server::get_error_pages( ) const {
@@ -505,14 +498,6 @@ std::list<Header> &server::getSet( ) {
 
 void server::setSet( const std::list<Header> &set ) {
     _set = set;
-}
-
-int server::getMaxD( ) const {
-    return _max_d;
-}
-
-void server::setMaxD( int maxD ) {
-    _max_d = maxD;
 }
 
 int server::getHostSock( ) const {

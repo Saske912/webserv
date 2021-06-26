@@ -2,14 +2,18 @@
 #include "header.h"
 
 config::config() : servers() {
+    tv.tv_usec = TVMS;
+    tv.tv_sec = TVS;
 }
 
-config::config(const config &other) : servers(other.servers) {
-
+config::config(const config &other) {
+    *this = other;
 }
 
 config &config::operator=(const config &other) {
     servers = other.servers;
+    tv.tv_sec = other.tv.tv_sec;
+    tv.tv_usec = other.tv.tv_usec;
     return *this;
 }
 
