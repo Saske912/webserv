@@ -32,9 +32,9 @@ std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
         return split_buffer( buffer, *it, serv );
 }
 
-int receive( std::list<Header>::iterator &it, server &serv )
+int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with_data )
 {
-	if ( FD_ISSET(it->getClient(), &serv.read))
+	if ( FD_ISSET(it->getClient(), clients_with_data))
 	{
         std::string str;
 
@@ -46,7 +46,7 @@ int receive( std::list<Header>::iterator &it, server &serv )
 }
 
 
-static void communication_with_clients( std::list<Header> &set, server &serv )
+static void communication_with_clients( std::list<Header> &set, server &serv, fd_set *clients_with_data )
 {
     int             opt;
     socklen_t len = sizeof(opt);
@@ -64,7 +64,7 @@ static void communication_with_clients( std::list<Header> &set, server &serv )
         }
         if (file_available(it->getRequest()))
         {
-            if ( receive( it, serv ))
+            if ( receive( it, serv, clients_with_data ))
             {
                 close(it->getClient());
                 it = set.erase(it);
@@ -242,17 +242,10 @@ void response( std::list<Header>::iterator &it )
 	}
 }
 
-static int Select( std::list<Header> &set, server &serv )
+static int Select( int max_fd, config &conf )
 {
     int ret;
-	if (set.empty())
-        serv.setMaxD( serv.getHostSock( ));
-	else
-    {
-        set.sort(sorter);
-        serv.setMaxD(set.begin()->getClient() > serv.getHostSock( ) ? set.begin()->getClient() : serv.getHostSock( ));
-    }
-    if ((ret = select(serv.getMaxD() + 1, &serv.read, NULL, NULL, &serv.tv)) < 0)
+    if ((ret = select( max_fd, &conf.conf_set, NULL, NULL, &conf.tv)) < 0)
     {
         if (errno != EINTR)
         {
@@ -275,27 +268,45 @@ static int Select( std::list<Header> &set, server &serv )
 void    loop(config &conf)
 {
     std::list<Header>::iterator it;
+    std::list<Header>::iterator ite;
+    std::list<server>::iterator it_serv;
+    std::list<server>::iterator ite_serv;
+    int                         temp_sock;
 
     while (true)
     {
-        std::list<server>::iterator it_serv = conf.getServers().begin();
-        while (it_serv != conf.getServers().end())
+        it_serv = conf.getServers().begin();
+        ite_serv = conf.getServers().end();
+        FD_ZERO(&conf.conf_set);
+        conf.sockets.clear();
+        while (it_serv != ite_serv)
         {
-            FD_ZERO(&it_serv->read);
-            FD_SET( it_serv->getHostSock( ), &it_serv->read);
+            temp_sock = it_serv->getHostSock( );
+            FD_SET( temp_sock, &conf.conf_set );
+            conf.sockets.push_back(temp_sock);
             it = it_serv->getSet().begin();
-            while ( it != it_serv->getSet().end())
+            ite = it_serv->getSet().end();
+            while ( it != ite)
             {
-                FD_SET(it->getClient(), &it_serv->read);
+                temp_sock = it->getClient();
+                FD_SET(temp_sock, &conf.conf_set);
+                conf.sockets.push_back(temp_sock);
                 it++;
             }
-
-
-            if (FD_ISSET( it_serv->getHostSock( ), &it_serv->read))
+            it_serv++;
+        }
+        conf.sockets.sort();
+        if ( Select( conf.sockets.back() + 1, conf ))
+            continue ;
+        it_serv = conf.getServers().begin();
+        ite_serv = conf.getServers().end();
+        while (it_serv != ite_serv)
+        {
+            if (FD_ISSET( it_serv->getHostSock( ), &conf.conf_set))
             {
                 it_serv->getSet().push_back( Header( *it_serv, conf.getEnv() ));
             }
-            communication_with_clients( it_serv->getSet( ), *it_serv );
+            communication_with_clients( it_serv->getSet( ), *it_serv, &conf.conf_set );
             it_serv++;
         }
     }

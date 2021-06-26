@@ -22,6 +22,9 @@ public:
 
     int                 opt;
     int                 ret;
+    fd_set              conf_set;
+    std::list<int>      sockets;
+    timeval             tv;
 private:
     std::list<std::string>  env;
     std::list<server>       servers;
