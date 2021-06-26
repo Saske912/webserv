@@ -6,7 +6,6 @@
 # include <unistd.h>
 # include <stdlib.h>
 
-char	**ft_doublecpy(char **);
 void	ft_doublefree(void *);
 int		get_next_line(int fd, char **line);
 int		ft_bufersize(long int i);

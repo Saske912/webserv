@@ -52,12 +52,12 @@ void            init_serv( config &config );
 void            loop(config &conf);
 server      default_config();
 void            erase( std::string const & realPathToFile, Header &head );
-//void        resetIt(std::list<Header>::iterator &it);
 int             send_protected( std::string str, Header &head );
 bool            file_available(const std::string& request);
 std::string split_buffer( std::string &buffer, Header &head, server &serv );
 std::string get_http_line( std::string &buffer, Header &head, server &serv );
 std::string parse_request( const std::string &string, Header &head, server &serv );
 void response( std::list<Header>::iterator &it );
+void    set_env( char **double_array, config &object );
 
 #endif //HEADER_H

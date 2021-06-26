@@ -42,6 +42,15 @@ void config::setServers( const std::list<server> &servers ) {
     config::servers = servers;
 }
 
+const std::list<std::string> & config::getEnv( ) const
+{
+    return env;
+}
+
+void config::setEnv( const std::list<std::string> &env ) {
+    config::env = env;
+}
+
 std::ostream &operator<<(std::ostream &o, config &conf) {
 	o << "config:" << std::endl;
 	for (config::ServersType::iterator it = conf.getServers().begin();

@@ -30,8 +30,7 @@ int main(int ac, char *av[], char *env[])
         return 1;
     }
     init_serv(config_class);
-    if (!(config_class.env = ft_doublecpy(env)))
-        error_exit("malloc error");
+    set_env(env, config_class);
     loop(config_class);
     return (0);
 }

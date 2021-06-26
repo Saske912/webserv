@@ -27,7 +27,7 @@ private:
     int         error;
     int         BodySize;
     int         file;
-    char        **Env;
+    std::list<std::string> env;
     unsigned int Port;
     std::string Request;
     std::string Response;
@@ -56,6 +56,7 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+    char **env_to_char();
     bool isBodyEnd( ) const;
     void setBodyEnd( bool bodyEnd );
     void setClient( int client );
@@ -65,7 +66,7 @@ public:
     void setReminder( const std::string &reminder );
     route *getRout( ) const;
     void setRout( route *rout );
-    explicit Header( server &serv, char **env );
+    explicit Header( server &serv, const std::list<std::string> &env );
     void setter( const std::string &line, server &serv );
     void    http( std::string const & str);
     void    host(std::string const & string);
@@ -95,7 +96,7 @@ public:
     std::string &getUser_Agent();
     std::string &getWWW_Authenticate();
     bool &getIsCgi();
-    char **getEnv();
+    const std::list<std::string> & getEnv();
     std::string getEnvValue(char const *);
     void addEnv(const char *);
     void initEnv();
@@ -103,11 +104,11 @@ public:
     unsigned int getPort();
     int getFile();
     pid_t getPid();
-    int	getBodySize();
+    int	getBodySize() const;
     void setBodySize(int);
     void setPid(pid_t const &);
     void setFile( int const &);
-    void setEnv(char **env);
+    void setEnv( const std::list<std::string> &env);
     void setPort(unsigned int const &);
     void setAccept_Charsets(std::string const &);
     void setAccept_Language(std::string const &);
@@ -150,7 +151,8 @@ public:
     std::string                     ip_addr;
     sockaddr_in                     ad;
     socklen_t                       adlen;
-	std::list<std::string>			ENv;
+protected:
+    void    put_string( std::string );
 };
 
 #endif

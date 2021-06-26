@@ -15,16 +15,16 @@ public:
     ~config();
     server *find_server( unsigned int port, Header &head );
     void add_server(const server &server_);
+    const std::list<std::string> & getEnv( ) const;
+    void setEnv( const std::list<std::string> &env );
+    std::list<server> &getServers( );
+    void setServers( const std::list<server> &servers );
 
     int                 opt;
-    char                **env;
     int                 ret;
 private:
-    std::list<server>   servers;
-public:
-    std::list<server> &getServers( );
-
-    void setServers( const std::list<server> &servers );
+    std::list<std::string>  env;
+    std::list<server>       servers;
 };
 
 std::ostream &operator<<(std::ostream &o, const config &conf);

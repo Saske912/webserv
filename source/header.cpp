@@ -26,15 +26,13 @@ void Header::eraseStruct()
 	Transfer_Encoding.erase();
 	User_Agent.erase();
 	WWW_Authenticate.erase();
-	if (Env)
-		ft_doublefree(Env);
 	Port = 0;
-	Env = 0;
+	env.clear();
 	close(file);
     file = 0;
     error = 0;
-    body_end = 0;
-    empty_line = 0;
+    body_end = false;
+    empty_line = false;
 //	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
@@ -149,15 +147,9 @@ void Header::setIsCgi(bool status) {
     is_cgi = status;
 }
 
-void Header::setEnv(char **env)
+void Header::setEnv( const std::list<std::string> &env)
 {
-	ENv.clear();
-	int i = -1;
-	while (env[++i])
-		ENv.push_back(env[i]);
-	if (Env)
-		ft_doublefree(Env);
-	Env = ft_doublecpy(env);
+	Header::env = env;
 }
 
 void Header::setFile( int const &fd)
@@ -193,7 +185,7 @@ void Header::setBodySize(int bodySize)
 	BodySize = bodySize;
 }
 
-int	Header::getBodySize()
+int	Header::getBodySize() const
 {
 	return BodySize;
 }
@@ -203,22 +195,9 @@ pid_t Header::getPid()
 	return Pid;
 }
 
-char **Header::getEnv()
+const std::list<std::string> & Header::getEnv()
 {
-	if (Env)
-		ft_doublefree(Env);
-	Env = (char **)malloc(sizeof(char *) * (ENv.size() + 1));
-	
-	std::list<std::string>::iterator it = ENv.begin();
-	int i = 0;
-	while (it != ENv.end())
-	{
-		Env[i] = strdup(it->c_str());
-		++i;
-		++it;
-	}
-	Env[i] = 0;
-	return Env;
+    return env;
 }
 
 int Header::getFile()
@@ -356,8 +335,8 @@ std::string Header::getEnvValue(char const *str)
 	int len = strlen(str);
 
 
-	std::list<std::string>::iterator it = ENv.begin();
-	while (it != ENv.end())
+	std::list<std::string>::iterator it = env.begin();
+	while (it != env.end())
 	{
 		if (it->find(str) == 0)
 			return std::string(*it, len, (*it).length() - len);
@@ -372,25 +351,31 @@ void Header::addEnv(const char *str1)
 	int len = str.find('=');
 	str.erase(len, str.length() - len);
 
-	std::list<std::string>::iterator it = ENv.begin();
-	while (it != ENv.end())
+	std::list<std::string>::iterator it = env.begin();
+	while (it != env.end())
 	{
 		if (it->find(str) == 0)
 		{
-			ENv.erase(it);
+			env.erase(it);
 			break ;
 		}
 		++it;
 	}
-	ENv.push_back(str1);
+	env.push_back(str1);
 }
 
+void Header::put_string( std::string str ) {
+    std::cout << str  << std::endl;
+}
 
 void Header::showEnv()
 {
-	int i = -1;
-	while (Env[++i])
-		printf("%s\n", Env[i]);
+//	std::for_each(env.begin(), env.end(), std::mem_fun_ref(&Header::put_string));
+    std::list<std::string>::iterator it_env(env.begin());
+    std::list<std::string>::iterator ite_env(env.end());
+
+    while (it_env != ite_env)
+        put_string(*it_env);
 }
 
 Header::Header()
@@ -506,7 +491,7 @@ void Header::cgi_env( )
 //    + 1, request.length() - request.rfind('/'))).c_str());
 }
 
-Header::Header( server &serv, char **env )
+Header::Header( server &serv, const std::list<std::string> &env ) : rout(), serv(), Port(), ad(), adlen()
 {
     int opt;
     int bufer = BUFSIZE;
@@ -517,7 +502,7 @@ Header::Header( server &serv, char **env )
     array.insert(std::pair<std::string, Func>(ACCEPT, &Header::accept));
     array.insert(std::pair<std::string, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
     array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
-    Env = ft_doublecpy(env);
+    Header::env = env;
     file = 0;
     error = 0;
     is_cgi = false;
@@ -681,4 +666,22 @@ bool Header::isBodyEnd( ) const {
 
 void Header::setBodyEnd( bool bodyEnd ) {
     body_end = bodyEnd;
+}
+
+char **Header::env_to_char( )
+{
+    char                                **ret = (char **)malloc(env.size() + 1 * sizeof(char *));
+    std::list<std::string>::iterator    it(env.begin());
+    size_t                              i = 0;
+
+    if (!ret)
+        throw std::exception();
+    while (it != env.end())
+    {
+        ret[i] = strdup(it->c_str());
+        if (!ret[i++])
+            throw std::exception();
+    }
+    ret[i] = NULL;
+    return ret;
 }
