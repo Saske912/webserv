@@ -27,7 +27,7 @@ void Header::eraseStruct()
 	User_Agent.erase();
 	WWW_Authenticate.erase();
 	Port = 0;
-	env.clear();
+//	env.clear();
 	close(file);
     file = 0;
     error = 0;
@@ -387,14 +387,6 @@ void Header::setter( const std::string &line, server &serv )
     if (line.empty())
     {
         empty_line = true;
-//        server *server = conf.find_server( getPort( ), *this );
-//        if (!server)
-//        {
-//            setError(502);
-//            setFile(conf.getServers().front().exception_processing(502, *this));
-//            body_end = true;
-//            return;
-//        }
         setServ(&serv);
         cgi_env();
         serv.concat( *this );
