@@ -164,18 +164,27 @@ int server::exception_processing( int except, Header &head ) {
     int     fds[2];
     std::string concat;
     std::string to_head;
+    int     ret;
 
     try
     {
+        ret = chdir(head.getRout()->get_root().c_str());
+        if (ret == -1)
+            error_exit("chdir in exception_processing");
         to_head = get_error(except, _error_pages);
         head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except) + " "\
         + get_error(except, _default_error_pages)).c_str()));
-        return open(to_head.c_str(), O_RDONLY);
+        ret = open(to_head.c_str(), O_RDONLY);
+        if (ret == -1)
+            error_exit("open in exception_processing");
+        return ret;
     }
     catch (std::exception &)
     {
         to_head = get_error(except, _default_error_pages);
-        pipe(fds);
+        ret = pipe(fds);
+        if (ret == -1)
+            error_exit("pipe in exception_processing");
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
@@ -186,9 +195,11 @@ int server::exception_processing( int except, Header &head ) {
             arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
-            execve(arg[0], arg, head.getEnv());
+            execve(arg[0], arg, head.env_to_char());
             exit(1);
         }
+        else if (pid == -1)
+            error_exit("fork error in exception_processing");
         close(fds[1]);
         if (pid > 0)
             waitpid(pid, &stat, 0);
@@ -202,6 +213,7 @@ int server::exception_processing( int except, Header &head ) {
 
 int server::descriptorForSend( Header &head )
 {
+    int     ret;
     if (head.getError())
     {
         head.setResponse(head.getHttp() + " " + ttostr(head.getError()) + " " + _default_error_pages[head.getError()]);
@@ -209,14 +221,21 @@ int server::descriptorForSend( Header &head )
     }
     else
         head.setResponse(head.getHttp() + " 200 OK");
-    chdir(head.getRout()->get_root().c_str());
+    ret = chdir(head.getEnvValue("PWD=").c_str());
+    if (ret == -1)
+        error_exit("chdir in server::descriptorForSend");
     is_cgi( head );
     if (!head.getError())
         Header::current_files_in_work.push_back(head.getRealPathToFile());
     if (head.getFile())
         return head.getFile();
     else
-        return open(head.getRealPathToFile().c_str(), O_RDONLY);
+    {
+        ret = open(head.getRealPathToFile().c_str(), O_RDONLY);
+        if (ret == -1)
+            error_exit("open in server::descriptorForSend");
+        return ret;
+    }
 }
 
 int server::descriptorForReceive( Header & head)
@@ -224,9 +243,15 @@ int server::descriptorForReceive( Header & head)
     std::string real_path(head.getRealPathToFile());
     std::string part;
     int     fd;
+    int     ret;
 
     if (head.getError())
-        return open((real_path + ".rec").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
+    {
+        ret = open((real_path + ".rec").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
+        if (ret == -1)
+            error_exit("open 1 in server::descriptorForReceive");
+        return ret;
+    }
     Header::current_files_in_work.push_back(real_path);
     if ((fd = open(real_path.c_str(), O_RDONLY)) == -1)
         part = "201 Created";
@@ -234,9 +259,10 @@ int server::descriptorForReceive( Header & head)
         part = "204 No Content";
     head.setResponse(head.getHttp() + " " + part);
     close(fd);
-    return open(real_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
-    if (head.getBodySize() > head.getRout()->get_client_max_body_size())
-        return exception_processing(413, head);
+    ret = open(real_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
+    if (ret == -1)
+        error_exit("open 2 in server::descriptorForReceive");
+    return ret;
 }
 
 void server::cgi_processing( Header &head, bool flag )
@@ -270,7 +296,7 @@ void server::cgi_processing( Header &head, bool flag )
         dup2(file, 0);
 //            dup2(fdset[1], 1);
         dup2(response_buffer, 1);
-        execve(arg[0], arg, head.getEnv());
+        execve(arg[0], arg, head.env_to_char());
         exit(1);
     }
     else if (pid == -1)

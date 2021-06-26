@@ -41,8 +41,6 @@ int receive( std::list<Header>::iterator &it, server &serv )
         str = receive_buffer( it, serv );
         if (str == "connection closed")
             return 1;
-        else if (str == "body_end")
-            return 0;
 	}
     return 0;
 }
@@ -291,11 +289,11 @@ void    loop(config &conf)
                 FD_SET(it->getClient(), &it_serv->read);
                 it++;
             }
-            if ( Select( it_serv->getSet( ), *it_serv ))
-                continue ;
+
+
             if (FD_ISSET( it_serv->getHostSock( ), &it_serv->read))
             {
-                it_serv->getSet().push_back( Header( *it_serv, NULL ));
+                it_serv->getSet().push_back( Header( *it_serv, conf.getEnv() ));
             }
             communication_with_clients( it_serv->getSet( ), *it_serv );
             it_serv++;
