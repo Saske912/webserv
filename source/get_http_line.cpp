@@ -11,7 +11,7 @@ std::string get_http_line( std::string &buffer, Header &head, server &serv )
     if ((finder = buffer.find("\r\n")) == std::string::npos)
     {
         head.setReminder(head.getReminder() + buffer);
-        throw std::exception();
+        return std::string();
     }
     line = head.getReminder() + buffer.substr(0, finder);
     head.setReminder(std::string());

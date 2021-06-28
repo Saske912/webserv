@@ -11,6 +11,7 @@
 #include "route.hpp"
 #include "../wpersimm.h"
 #include <fcntl.h>
+#include <queue>
 class Header;
 
 class server {
@@ -44,7 +45,7 @@ public:
     int                         exception_processing(int except, Header &head);
     void                        concat( Header & head );
     int                         autoindex( Header &head, route route );
-    int                         descriptorForSend( Header &head);
+    void descriptorForSend( Header &head);
     int                         descriptorForReceive( Header &head);
     const std::list<std::string> &getListOfMethods( ) const;
     void setListOfMethods( const std::list<std::string> &listOfMethods );
@@ -52,6 +53,7 @@ public:
     void setSet( const std::list<Header> &set );
     int getHostSock( ) const;
     void setHostRaw( int hostRaw );
+    void                        moveToWait(Header &head);
     fd_set                      read;
     sockaddr_in                 addr;
 protected:
@@ -64,19 +66,22 @@ protected:
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
+    std::list<std::queue<Header> > & getWait( );
+    void                        setWait( const std::list<std::queue<Header> > &wait );
 private:
-    std::list<Header>           _set;
-    std::string                 _host;
-    unsigned int                _port;
-    std::list<std::string>      _server_names;
-    std::map<int, std::string>  _error_pages;
-    std::map<int, std::string>  _default_error_pages;
-    std::list<route>            _routs;
-    long int                    _client_body_size;
-    std::list<std::string>      _list_of_methods;
+    std::list<std::queue<Header> >      _wait;
+    std::list<Header>                   _set;
+    std::string                         _host;
+    unsigned int                        _port;
+    std::list<std::string>              _server_names;
+    std::map<int, std::string>          _error_pages;
+    std::map<int, std::string>          _default_error_pages;
+    std::list<route>                    _routs;
+    long int                            _client_body_size;
+    std::list<std::string>              _list_of_methods;
     std::pair<std::string, std::string> _allow;
-    std::string                 _cgi_path;
-    int                         _host_socket;
+    std::string                         _cgi_path;
+    int                                 _host_socket;
 };
 
 std::ostream &operator<<(std::ostream &o, const server &serv);

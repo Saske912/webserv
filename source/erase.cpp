@@ -3,13 +3,40 @@
 //
 #include "header.h"
 
-void erase( std::string const &realPathToFile, Header &head)
+std::list<Header>::iterator
+update_descriptors( std::string const &realPathToFile, std::list<Header>::iterator &it, std::list<Header> &set )
 {
     std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
-    while (iter != Header::current_files_in_work.end() and *iter != realPathToFile)
+    std::list<std::string >::iterator iter_end = Header::current_files_in_work.end();
+
+    while (iter != iter_end)
+    {
+        if (*iter == realPathToFile)
+        {
+            Header::current_files_in_work.erase(iter);
+            break ;
+        }
         iter++;
-    if (iter != Header::current_files_in_work.end())
-        Header::current_files_in_work.erase(iter);
+    }
+    it->eraseStruct();
+    close(it->getClient());
+    it = set.erase(it);
+    return it;
+}
+
+void    update_descriptors( std::string const &realPathToFile, Header &head)
+{
+    std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
+    std::list<std::string >::iterator iter_end = Header::current_files_in_work.end();
+
+    while (iter != iter_end)
+    {
+        if (*iter == realPathToFile)
+        {
+            Header::current_files_in_work.erase(iter);
+            break ;
+        }
+        iter++;
+    }
     head.eraseStruct();
-//        resetIt(it);
 }

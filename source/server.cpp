@@ -121,14 +121,11 @@ void server::concat( Header & head )
     std::list<std::string> lom(getListOfMethods());
 //    head.setHostHeaderResponse(get_host(), get_port());
     if (std::find(lom.begin(), lom.end(), head.getMethod()) == lom.end())
-    {
         head.setFile(exception_processing(501, head));
-        head.setError(501);
-    }
     std::list<route>::iterator it = _routs.begin();
     while (it != _routs.end())
     {
-        if (!(it->check_name(head.getRequest())))
+        if (it->check_name(head.getRequest()))
         {
             head.setRout(&(*it));
             head.setRealPathToFile(it->swap_path(head.getRequest()));
@@ -137,34 +134,32 @@ void server::concat( Header & head )
         }
         it++;
     }
-    {
-        head.setFile(exception_processing(404, head));
-        head.setError(404);
-    }
+    head.setFile(exception_processing(404, head));
 }
 
 std::string server::get_error(int err, std::map<int, std::string> ers) {
-    std::string tmp = ers[err];
-    if (tmp.empty())
-        throw std::exception();
-    return tmp;
+    return ers[err];
 }
 
-int server::exception_processing( int except, Header &head ) {
+int server::exception_processing( int except, Header &head )
+{
     int     pid;
-    int     stat = 0;
-    char    *arg[4];
+    char    **arg = (char **) malloc(sizeof(char *) * 4 + 1);
     int     fds[2];
     std::string concat;
     std::string to_head;
     int     ret;
+    char    **env;
 
-    try
+    if (!arg)
+        error_exit("server::exception_processing malloc 1");
+    to_head = get_error(except, _error_pages);
+    head.setError(except);
+    if (to_head.length())
     {
-        ret = chdir(head.getRout()->get_root().c_str());
+        ret = chdir(head.getEnvValue("PWD=").c_str());
         if (ret == -1)
             error_exit("chdir in exception_processing");
-        to_head = get_error(except, _error_pages);
         head.setResponse(const_cast<char *>(("HTTP/1.1 " + ttostr(except) + " "\
         + get_error(except, _default_error_pages)).c_str()));
         ret = open(to_head.c_str(), O_RDONLY);
@@ -172,62 +167,84 @@ int server::exception_processing( int except, Header &head ) {
             error_exit("open in exception_processing");
         return ret;
     }
-    catch (std::exception &)
+    else
     {
         to_head = get_error(except, _default_error_pages);
         ret = pipe(fds);
+        try{env = head.env_to_char();}
+        catch(std::exception &e){std::cout << e.what() << std::endl;}
         if (ret == -1)
             error_exit("pipe in exception_processing");
         if ((pid = fork()) == 0)
         {
             concat = "s/SWAP/";
             arg[0] = strdup("content/sed.sh");
+            if (!arg[0])
+                exit(2);
             concat += to_head + "/";
             arg[1] = strdup(concat.c_str());
+            if (!arg[1])
+                exit(2);
             arg[2] = strdup("content/error_template.html");
+            if (!arg[2])
+                exit(2);
             arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
-            execve(arg[0], arg, head.env_to_char());
-            exit(1);
+            if (!env)
+                exit(2);
+            if (execve(arg[0], arg, env) == -1)
+                perror("execve");
+            exit(3);
         }
         else if (pid == -1)
             error_exit("fork error in exception_processing");
         close(fds[1]);
+        int     stat;
         if (pid > 0)
             waitpid(pid, &stat, 0);
-        if (stat == 1)
-            error_exit("system error in execve");
+        if ( WIFSIGNALED(stat))
+        {
+            std::cerr << "WTERMSIG: " << WTERMSIG(stat) << std::endl;
+            std::cerr << "WCOREDUMP: " << WCOREDUMP(stat) << std::endl;
+        }
+        else if (WIFSTOPPED(stat))
+            std::cerr << "WSTOPSIG: " << WSTOPSIG(stat) << std::endl;
+//            error_exit("system error in fork");
         head.setResponse(const_cast<char *>((head.getHttp() + " " + ttostr(except)\
         + " " + to_head).c_str()));
         return fds[0];
     }
 }
 
-int server::descriptorForSend( Header &head )
+void server::descriptorForSend( Header &head )
 {
     int     ret;
-    if (head.getError())
+
+    if ( file_available(head.getRealPathToFile()))
     {
-        head.setResponse(head.getHttp() + " " + ttostr(head.getError()) + " " + _default_error_pages[head.getError()]);
-        return head.getFile();
-    }
-    else
-        head.setResponse(head.getHttp() + " 200 OK");
-    ret = chdir(head.getEnvValue("PWD=").c_str());
-    if (ret == -1)
-        error_exit("chdir in server::descriptorForSend");
-    is_cgi( head );
-    if (!head.getError())
-        Header::current_files_in_work.push_back(head.getRealPathToFile());
-    if (head.getFile())
-        return head.getFile();
-    else
-    {
-        ret = open(head.getRealPathToFile().c_str(), O_RDONLY);
+        if (head.getError())
+        {
+            head.setResponse(head.getHttp() + " " + ttostr(head.getError()) + " " + _default_error_pages[head.getError()]);
+            return ;
+        }
+        else
+            head.setResponse(head.getHttp() + " 200 OK");
+        ret = chdir(head.getEnvValue("PWD=").c_str());
         if (ret == -1)
-            error_exit("open in server::descriptorForSend");
-        return ret;
+            error_exit("chdir in server::descriptorForSend");
+        is_cgi( head );
+        if (!head.getError())
+            Header::current_files_in_work.push_back(head.getRealPathToFile());
+        if (head.getFile())
+            return ;
+        else
+        {
+            ret = open(head.getRealPathToFile().c_str(), O_RDONLY);
+            if (ret == -1)
+                error_exit("open in server::descriptorForSend");
+            head.setFile(ret);
+        }
     }
 }
 
@@ -238,24 +255,28 @@ int server::descriptorForReceive( Header & head)
     int     fd;
     int     ret;
 
-    if (head.getError())
+    if ( file_available(real_path))
     {
-        ret = open((real_path + ".rec").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
+        if (head.getError())
+        {
+            ret = open((real_path + ".rec").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
+            if (ret == -1)
+                error_exit("open 1 in server::descriptorForReceive");
+            return ret;
+        }
+        if ((fd = open(real_path.c_str(), O_RDONLY)) == -1)
+            part = "201 Created";
+        else
+            part = "204 No Content";
+        head.setResponse(head.getHttp() + " " + part);
+        close(fd);
+        ret = open(real_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
         if (ret == -1)
-            error_exit("open 1 in server::descriptorForReceive");
+            error_exit("open 2 in server::descriptorForReceive");
         return ret;
     }
-    Header::current_files_in_work.push_back(real_path);
-    if ((fd = open(real_path.c_str(), O_RDONLY)) == -1)
-        part = "201 Created";
     else
-        part = "204 No Content";
-    head.setResponse(head.getHttp() + " " + part);
-    close(fd);
-    ret = open(real_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
-    if (ret == -1)
-        error_exit("open 2 in server::descriptorForReceive");
-    return ret;
+        return 0;
 }
 
 void server::cgi_processing( Header &head, bool flag )
@@ -267,6 +288,8 @@ void server::cgi_processing( Header &head, bool flag )
     int     response_buffer;
     pid_t   pid;
     char    *arg[2];
+    char    **env;
+    int     stat = 0;
 
     if (!flag)
         root = head.getRout()->get_cgi().second;
@@ -275,12 +298,18 @@ void server::cgi_processing( Header &head, bool flag )
     root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
     if (root.empty())
     {
-        head.setError(500);
         head.setFile(exception_processing(500, head));
         return ;
     }
     file = open(head.getRealPathToFile().c_str(), O_RDONLY);
     response_buffer = open((head.getRealPathToFile() + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
+    if (response_buffer == -1)
+        head.setFile(exception_processing(500, head));
+    else
+        head.setFile(response_buffer);
+    env = head.env_to_char();
+    if (!env)
+        throw std::exception();
     if ((pid = fork()) == 0)
     {
 //            close(fdset[0]);
@@ -289,21 +318,31 @@ void server::cgi_processing( Header &head, bool flag )
         dup2(file, 0);
 //            dup2(fdset[1], 1);
         dup2(response_buffer, 1);
-        execve(arg[0], arg, head.env_to_char());
+        execve(arg[0], arg, env);
         exit(1);
     }
     else if (pid == -1)
     {
-        head.setError(500);
         head.setFile(exception_processing(500, head));
         return ;
     }
-    close(file);
     head.setPid(pid);
 //            close(fdset[1]);
-    waitpid(pid, NULL, 0);
+    waitpid(pid, &stat, 0);
+    close(file);
+    if ( WIFSIGNALED(stat))
+    {
+        std::cerr << "WTERMSIG: " << WTERMSIG(stat) << std::endl;
+        std::cerr << "WCOREDUMP: " << WCOREDUMP(stat) << std::endl;
+    }
+    else if (WIFSTOPPED(stat))
+        std::cerr << "WSTOPSIG: " << WSTOPSIG(stat) << std::endl;
+    else if ( WIFEXITED(stat) and WEXITSTATUS(stat))
+    {
+        std::cerr << WEXITSTATUS(stat)  << std::endl;
+        error_exit("error in fork");
+    }
     lseek(response_buffer, 0, 0);
-    head.setFile(response_buffer);
     dup2(fd1, 1);
     dup2(fd0, 0);
     close(fd1);
@@ -506,6 +545,47 @@ int server::getHostSock( ) const {
 
 void server::setHostRaw( int hostRaw ) {
     _host_socket = hostRaw;
+}
+
+std::list<std::queue<Header> > & server::getWait( ) {
+    return _wait;
+}
+
+void server::setWait( const std::list<std::queue<Header> > &wait ) {
+    _wait = wait;
+}
+
+void server::moveToWait( Header &head ) {
+    std::list<std::queue<Header> >::iterator    it(_wait.begin());
+    std::list<std::queue<Header> >::iterator    ite(_wait.end());
+    std::list<Header>::iterator                 it_set(_set.begin());
+    std::list<Header>::iterator                 ite_set(_set.end());
+    std::queue<Header>                          temp;
+
+    while (it != ite)
+    {
+        if (it->back().getRealPathToFile() == head.getRealPathToFile())
+        {
+            it->push(head);
+            break;
+        }
+        it++;
+    }
+    if (it == ite)
+    {
+        temp.push(head);
+        _wait.push_back(temp);
+    }
+    while (it_set != ite_set)
+    {
+        if (*it_set == head)
+        {
+            _set.erase(it_set);
+            break;
+        }
+        it_set++;
+    }
+    throw std::exception();
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

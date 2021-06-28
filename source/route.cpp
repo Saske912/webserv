@@ -41,6 +41,7 @@ route &route::operator=( route const &src ) {
 
 bool route::check_name( std::string request )
 {
+    return rtrim(_name, "/") == rtrim(request.substr(0, _name.length()), "/");
     return (strncmp(rtrim(_name, "/").c_str(), rtrim(request, "/").c_str(),rtrim(_name, "/").length()));
 }
 

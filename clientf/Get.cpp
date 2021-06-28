@@ -5,9 +5,9 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define CLIENTS 1
-#define REQUESTS 1
-#define IP "127.0.0.1"
+#define CLIENTS 100
+#define REQUESTS 1000
+#define IP "10.21.31.71"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -60,7 +60,7 @@ void    *func(void *t)
         if ( flag )
         {
             ret = recv(sock, buf, 32768, 0);
-               std::cout << buf  << std::endl;
+//               std::cout << buf  << std::endl;
             pthread_mutex_lock(&mutex3);
             if (ret < 0)
             {
@@ -70,7 +70,7 @@ void    *func(void *t)
             buf[ret] = 0;
             if (ret == -1)
             {
-                std::cout << "ret: " << ret << " buf: " << buf  << std::endl;
+//                std::cout << "ret: " << ret << " buf: " << buf  << std::endl;
                 st->err = 1;
             }
             std::cout << num << ": response recieved" << std::endl;

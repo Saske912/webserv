@@ -5,6 +5,7 @@
 #include <list>
 #include "server.hpp"
 #include "header.hpp"
+#include <semaphore.h>
 
 class config {
 public:
