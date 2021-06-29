@@ -106,7 +106,7 @@ public:
     std::string getEnvValue(char const *);
     void addEnv( const std::string& str );
     void showEnv();
-    unsigned int getPort();
+    unsigned int getPort() const;
     int getFile();
     pid_t getPid();
     int	getBodySize() const;

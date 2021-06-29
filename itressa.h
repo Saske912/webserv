@@ -26,6 +26,6 @@ struct ContextInfo {
 };
 
 config parse(int fd);
-config parse(const char *filename);
+config * parse( const char *filename);
 
 #endif

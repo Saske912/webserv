@@ -5,6 +5,7 @@
 #include "../header.h"
 #include "server.hpp"
 #include "Number.hpp"
+#include "header.hpp"
 
 server::server() : _server_names(), _error_pages(), _routs(),
     _client_body_size(~0 ^ long(1L << (sizeof(long) * 8 - 1))),
@@ -222,7 +223,7 @@ void server::descriptorForSend( Header &head )
 {
     int     ret;
 
-    if ( file_available(head.getRealPathToFile()))
+    if ( head_in_set(head))
     {
         if (head.getError())
         {
@@ -235,8 +236,8 @@ void server::descriptorForSend( Header &head )
         if (ret == -1)
             error_exit("chdir in server::descriptorForSend");
         is_cgi( head );
-        if (!head.getError())
-            Header::current_files_in_work.push_back(head.getRealPathToFile());
+//        if (!head.getError())
+//            Header::current_files_in_work.push_back(head.getRealPathToFile());
         if (head.getFile())
             return ;
         else
@@ -256,7 +257,7 @@ int server::descriptorForReceive( Header & head)
     int     fd;
     int     ret;
 
-    if ( file_available(real_path))
+    if ( head_in_set(head))
     {
         if (head.getError())
         {
@@ -554,6 +555,23 @@ config *server::getConf( ) const {
 
 void server::setConf( config *conf ) {
     _conf = conf;
+}
+
+bool server::head_in_set(Header &head) {
+    std::list<Header>::iterator it(_set.begin());
+    std::list<Header>::iterator ite(_set.end());
+
+    while (it != ite)
+    {
+        if (*it == head)
+            return true;
+        it++;
+    }
+    return false;
+}
+
+bool server::operator==(Header const & head) const {
+    return _port == head.getPort();
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

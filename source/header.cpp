@@ -214,7 +214,7 @@ int Header::getFile()
 //	return Fdr;
 //}
 
-unsigned int Header::getPort()
+unsigned int Header::getPort() const
 {
 	return Port;
 }
@@ -586,7 +586,11 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     setExtension(real_path_to_file);
     check_rout();
     if ( file_available(real_path_to_file))
+    {
+//        if (getMethod() == "POST" or getMethod() == "PUT")
+//            setReceiveFile(getServ()->descriptorForReceive(*this));
         Header::current_files_in_work.push_back(real_path_to_file);
+    }
     else
     {
         serv->getConf()->moveToWait(*this, serv->getSet());
@@ -705,7 +709,6 @@ Header &Header::operator=(Header const & src) {
     BodySize = src.BodySize;
     file = src.file;
     receive_file = src.receive_file;
-    env = src.env;
     Port = src.Port;
     Request = src.Request;
     Response = src.Response;
@@ -736,6 +739,7 @@ Header &Header::operator=(Header const & src) {
     ip_addr = src.ip_addr;
     ad = src.ad;
     adlen = src.adlen;
+    env = src.env;
     return *this;
 }
 

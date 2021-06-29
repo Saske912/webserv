@@ -14,6 +14,12 @@ config &config::operator=(const config &other) {
     servers = other.servers;
     tv.tv_sec = other.tv.tv_sec;
     tv.tv_usec = other.tv.tv_usec;
+    env = other.env;
+    conf_set = other.conf_set;
+    sockets = other.sockets;
+    opt = other.opt;
+    ret = other.ret;
+    _wait = other._wait;
     return *this;
 }
 
@@ -110,14 +116,25 @@ void config::setWait( const std::list<std::queue<Header> > &wait ) {
 void config::moveFromWait( const std::string &rpf ) {
     std::list<std::queue<Header> >::iterator it(_wait.begin());
     std::list<std::queue<Header> >::iterator ite(_wait.end());
+    std::list<server>::iterator it_serv(servers.begin());
+    std::list<server>::iterator ite_serv(servers.end());
 
     while(it != ite)
     {
         if (it->back().getRealPathToFile() == rpf)
         {
-            std::cerr << "client from server with port " << it->front().getServ()->get_port();
-            std::cerr << " coming back for file " << rpf << std::endl;
-            it->front().getServ()->getSet().push_back(it->front());
+            Header  tmp = it->front();
+            while (it_serv != ite_serv)
+            {
+                if (*it_serv == it->front())
+                {
+                    std::cerr << "client from server with port " << it->front().getServ()->get_port();
+                    std::cerr << " coming back for file " << rpf << std::endl;
+                    it_serv->getSet().push_back(it->front());
+                    break ;
+                }
+                it_serv++;
+            }
             it->pop();
             break ;
         }

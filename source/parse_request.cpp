@@ -9,7 +9,7 @@ std::string parse_request( const std::string &string, Header &head, server &serv
     int fd_receive;
     if (head.isEmptyLine())
     {
-        if (!head.getReceiveFile( ))
+        if (serv.head_in_set(head) and !head.getReceiveFile())
         {
             fd_receive = head.getServ()->descriptorForReceive(head);
             if (!fd_receive)
