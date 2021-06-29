@@ -95,9 +95,9 @@ void config::moveToWait( Header &head, std::list<Header> &_set ) {
     {
         if (*it_set == head)
         {
-            _set.erase(it_set);
             std::cerr << "client from server with port " << it_set->getServ()->get_port();
             std::cerr << " move to queue with path " << it_set->getRealPathToFile() << std::endl;
+            head.setClientNowInQueue(true);
             return;
         }
         it_set++;
@@ -129,8 +129,10 @@ void config::moveFromWait( const std::string &rpf ) {
                 if (*it_serv == it->front())
                 {
                     std::cerr << "client from server with port " << it->front().getServ()->get_port();
+                    std::list<std::string>  env = it->front().getEnv();
                     std::cerr << " coming back for file " << rpf << std::endl;
                     it_serv->getSet().push_back(it->front());
+
                     break ;
                 }
                 it_serv++;
@@ -140,4 +142,19 @@ void config::moveFromWait( const std::string &rpf ) {
         }
         it++;
     }
+}
+
+server &config::get_serv( unsigned int port)
+{
+    std::list<server>::iterator it(servers.begin());
+    std::list<server>::iterator ite(servers.end());
+
+    while (it != ite)
+    {
+        if (it->get_port() == port)
+            return *it;
+        it++;
+    }
+    std::cerr << "no server with port " << port  << std::endl;
+    throw std::exception();
 }

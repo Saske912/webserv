@@ -37,6 +37,7 @@ void Header::eraseStruct()
     error = 0;
     body_end = false;
     empty_line = false;
+    client_now_in_queue = false;
 //	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
@@ -491,6 +492,7 @@ Header::Header( server &serv, const std::list<std::string> &env ) : rout(), serv
     array.insert(std::pair<std::string, Func>(ACCEPT, &Header::accept));
     array.insert(std::pair<std::string, Func>(TRANS_ENC, &Header::setTransfer_Encoding));
     array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
+    client_now_in_queue = false;
     Header::env = env;
     file = 0;
     receive_file = 0;
@@ -697,6 +699,7 @@ bool Header::operator==( const Header &head ) const {
 }
 
 Header &Header::operator=(Header const & src) {
+    client_now_in_queue = src.client_now_in_queue;
     body_end = src.body_end;
     client = src.client;
     empty_line = src.empty_line;
@@ -745,4 +748,12 @@ Header &Header::operator=(Header const & src) {
 
 Header::Header( const Header & src ) {
     *this = src;
+}
+
+bool Header::isClientNowInQueue( ) const {
+    return client_now_in_queue;
+}
+
+void Header::setClientNowInQueue( bool clientNowInQueue ) {
+    client_now_in_queue = clientNowInQueue;
 }

@@ -65,8 +65,14 @@ static void communication_with_clients( std::list<Header> &set, server &serv, fd
             it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
             continue ;
         }
+        if (it->isClientNowInQueue()) {
+            it = set.erase( it );
+            continue;
+        }
         response( it, conf );
-        if (it != set.end())
+        if (it->isClientNowInQueue())
+            it = set.erase(it);
+        else if (it != set.end())
             it++;
     }
 }
@@ -204,8 +210,8 @@ void sendFileChunked( std::list<Header>::iterator &it, int fd, config &conf )
 void response( std::list<Header>::iterator &it, config &conf )
 {
 	std::string string;
-
-	if (it->isBodyEnd() and it->getServ()->head_in_set(*it))
+//conf.get_serv(it->getPort()).head_in_set(*it)
+	if (it->isBodyEnd() and !it->isClientNowInQueue())
 	{
         if (it->isEmptyLine())
             buildHeader( *it );

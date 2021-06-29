@@ -223,7 +223,7 @@ void server::descriptorForSend( Header &head )
 {
     int     ret;
 
-    if ( head_in_set(head))
+    if ( !head.isClientNowInQueue())
     {
         if (head.getError())
         {
@@ -257,7 +257,7 @@ int server::descriptorForReceive( Header & head)
     int     fd;
     int     ret;
 
-    if ( head_in_set(head))
+    if ( !head.isClientNowInQueue())
     {
         if (head.getError())
         {
@@ -557,13 +557,14 @@ void server::setConf( config *conf ) {
     _conf = conf;
 }
 
-bool server::head_in_set(Header &head) {
+bool server::head_in_set(Header &head)
+{
     std::list<Header>::iterator it(_set.begin());
     std::list<Header>::iterator ite(_set.end());
 
     while (it != ite)
     {
-        if (*it == head)
+        if (&(*it) == &head)
             return true;
         it++;
     }
