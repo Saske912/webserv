@@ -23,6 +23,7 @@ public:
     void moveFromWait(std::string const & rpf);
     std::list<std::queue<Header> > &getWait( );
     void setWait( const std::list<std::queue<Header> > &wait );
+    server &get_serv(unsigned int port);
 
     int                 opt;
     int                 ret;
