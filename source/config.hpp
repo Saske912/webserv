@@ -19,6 +19,10 @@ public:
     void setEnv( const std::list<std::string> &env );
     std::list<server> &getServers( );
     void setServers( const std::list<server> &servers );
+    void moveToWait( Header &head, std::list<Header> &_set );
+    void moveFromWait(std::string const & rpf);
+    std::list<std::queue<Header> > &getWait( );
+    void setWait( const std::list<std::queue<Header> > &wait );
 
     int                 opt;
     int                 ret;
@@ -26,6 +30,7 @@ public:
     std::list<int>      sockets;
     timeval             tv;
 private:
+    std::list<std::queue<Header> >      _wait;
     std::list<std::string>  env;
     std::list<server>       servers;
 };

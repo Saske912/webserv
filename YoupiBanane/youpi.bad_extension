@@ -1,1 +1,1 @@
-text
+/ HTTP/1.1Host: 10.21.31.83:1024User-Agent: Go-http-client/1.1Accept-Encoding: gzipchunkedContent-Type: test/file

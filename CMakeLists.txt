@@ -10,7 +10,7 @@ include_directories(webserv source source/config .)
 add_compile_options(-g -Wall -Wextra)
 
 add_executable(webserv
-        source/erase.cpp
+        source/update_descriptors.cpp
         header.h
         itressa.h
         wpersimm.h

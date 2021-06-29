@@ -7,10 +7,10 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <fcntl.h>
-#define IP "127.0.0.1"
+#define IP "10.21.34.44"
 #define CLIENTS 100
-#define REQUESTS 200
-#define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 127.0.0.1:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
+#define REQUESTS 500
+#define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 10.21.34.44:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
 #define FILE_TO_OPEN "youpi.bla"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -83,8 +83,8 @@ void    *func(void *t)
                 exit(1);
             }
             buf[ret] = 0;
-	//		std::cout << buf << std::endl;
-			if (strstr(buf, "0\r\n\r\n"))
+			std::cout << buf << std::endl;
+			if (strstr(buf, "\r\n\r\n"))
 			{
 				std::cout << num << ": file recieved" << std::endl;
 				file_sended = false;
@@ -108,7 +108,7 @@ void    *func(void *t)
 			while ((ret = read(fd, buf, rand() % 32768)) > 0)
 			{
 				buf[ret] = 0;
-				str = getBaseSixteen(ret) + "\r\n" + buf; 
+				str = getBaseSixteen(ret) + "\r\n" + buf + "\r\n";
 				send(sock, str.c_str(), str.length(), 0);
 	//			std::cout << getBaseSixteen(ret) << std::endl;
 				bzero(buf, 32768);

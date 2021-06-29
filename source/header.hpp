@@ -27,6 +27,7 @@ private:
     int         error;
     int         BodySize;
     int         file;
+    int         receive_file;
     std::list<std::string> env;
     unsigned int Port;
     std::string Request;
@@ -56,6 +57,11 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+    bool operator==(Header const & head) const;
+    Header & operator=(Header const & src);
+    Header(Header const & src);
+    int getReceiveFile( ) const;
+    void setReceiveFile( int receiveFile );
     char **env_to_char();
     bool isBodyEnd( ) const;
     void setBodyEnd( bool bodyEnd );
@@ -66,7 +72,7 @@ public:
     void setReminder( const std::string &reminder );
     route *getRout( ) const;
     void setRout( route *rout );
-    explicit Header( server &serv, const std::list<std::string> &env );
+    Header( server &serv, const std::list<std::string> &env);
     void setter( const std::string &line, server &serv );
     void    http( std::string const & str);
     void    host(std::string const & string);
@@ -98,8 +104,7 @@ public:
     bool &getIsCgi();
     const std::list<std::string> & getEnv();
     std::string getEnvValue(char const *);
-    void addEnv(const char *);
-    void initEnv();
+    void addEnv( const std::string& str );
     void showEnv();
     unsigned int getPort();
     int getFile();
@@ -153,6 +158,7 @@ public:
     socklen_t                       adlen;
 protected:
     void    put_string( std::string );
+    void    check_rout();
 };
 
 #endif

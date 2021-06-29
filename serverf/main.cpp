@@ -3,6 +3,7 @@
 //
 #include "../header.h"
 #include "config.hpp"
+#include <semaphore.h>
 
 void print_usage() {
     std::cerr << std::endl << "usage: webserv [file]" <<

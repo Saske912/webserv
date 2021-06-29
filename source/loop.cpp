@@ -57,21 +57,15 @@ static void communication_with_clients( std::list<Header> &set, server &serv, fd
         getsockopt( it->getClient( ), SOL_SOCKET, SO_ERROR, &opt, &len );
         if (opt == ECONNRESET)
         {
-            std::cerr << "removed "  << std::endl;
-            close(it->getClient());
-            it = set.erase(it);
+            it = update_descriptors( it->getRealPathToFile( ), it, set );
             continue ;
         }
-        if (file_available(it->getRequest()))
+        if ( receive( it, serv, clients_with_data ))
         {
-            if ( receive( it, serv, clients_with_data ))
-            {
-                close(it->getClient());
-                it = set.erase(it);
-                continue ;
-            }
-            response( it );
+            it = update_descriptors( it->getRealPathToFile( ), it, set );
+            continue ;
         }
+        response( it );
         if (it != set.end())
             it++;
     }
@@ -81,15 +75,16 @@ void sendFile( Header &head )
 {
 	char    str[BUFSIZE + 1];
 	size_t  z;
+    int fd = head.getFile();
 
-	while ((z = read(head.getFile(), str, BUFSIZE - head.getReminder().length())) > 0)
+	while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
         if ( send_protected(str, head))
             return ;
         bzero(str, sizeof(str));
 	}
-    erase(head.getRealPathToFile(), head);
+    update_descriptors( head.getRealPathToFile( ), head);
 }
 
 void buildHeader( Header &head )
@@ -144,28 +139,6 @@ std::string getBaseSixteen(unsigned int n)
 	}
 	return str;
 }
-//
-//void resetIt(std::list<Header>::iterator &it)
-//{
-//	it->first_line = false;
-//	it->head_readed = false;
-//	it->eshe_odin_flag = false;
-//	it->flag = false;
-//	it->bytes = 0;
-//	it->count = 0;
-//	it->ct = 0;
-//}
-
-void clear( std::list<Header>::iterator &it)
-{
-    close(it->getClient());
-    std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
-    while (iter != Header::current_files_in_work.end() and *iter != it->getRequest())
-        iter++;
-    if (iter != Header::current_files_in_work.end())
-        Header::current_files_in_work.erase(iter);
-    it->eraseStruct();
-}
 
 void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 {
@@ -179,7 +152,7 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 //		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
 //			return ;
         send_protected("0\r\n\r\n", *it );
-        clear(it);
+        update_descriptors(it->getRealPathToFile(), *it);
         return ;
     }
     line[z] = 0;
@@ -231,7 +204,8 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 void response( std::list<Header>::iterator &it )
 {
 	std::string string;
-	if (it->isBodyEnd())
+
+	if (it->isBodyEnd() and it->getFile())
 	{
         if (it->isEmptyLine())
             buildHeader( *it );
@@ -304,7 +278,7 @@ void    loop(config &conf)
         {
             if (FD_ISSET( it_serv->getHostSock( ), &conf.conf_set))
             {
-                it_serv->getSet().push_back( Header( *it_serv, conf.getEnv() ));
+                it_serv->getSet().push_back( Header( *it_serv, conf.getEnv()));
             }
             communication_with_clients( it_serv->getSet( ), *it_serv, &conf.conf_set );
             it_serv++;

@@ -28,8 +28,12 @@ void Header::eraseStruct()
 	WWW_Authenticate.erase();
 	Port = 0;
 //	env.clear();
-	close(file);
+    if (file)
+	    close(file);
+	if (receive_file)
+	    close(receive_file);
     file = 0;
+    receive_file = 0;
     error = 0;
     body_end = false;
     empty_line = false;
@@ -324,12 +328,6 @@ bool &Header::getIsCgi() {
     return is_cgi;
 }
 
-void Header::initEnv()
-{
-
-}
-
-
 std::string Header::getEnvValue(char const *str)
 {
 	int len = strlen(str);
@@ -345,23 +343,21 @@ std::string Header::getEnvValue(char const *str)
 	return std::string();
 }
 
-void Header::addEnv(const char *str1)
+void Header::addEnv( const std::string& str)
 {
-	std::string str = std::string(str1);
-	int len = str.find('=');
-	str.erase(len, str.length() - len);
-
+    std::string temp(str.substr(0, str.find('=')));
 	std::list<std::string>::iterator it = env.begin();
-	while (it != env.end())
+    std::list<std::string>::iterator ite = env.end();
+	while (it != ite)
 	{
-		if (it->find(str) == 0)
+		if (it->find(temp) != std::string::npos)
 		{
 			env.erase(it);
 			break ;
 		}
 		++it;
 	}
-	env.push_back(str1);
+	env.push_back( str);
 }
 
 void Header::put_string( std::string str ) {
@@ -370,7 +366,6 @@ void Header::put_string( std::string str ) {
 
 void Header::showEnv()
 {
-//	std::for_each(env.begin(), env.end(), std::mem_fun_ref(&Header::put_string));
     std::list<std::string>::iterator it_env(env.begin());
     std::list<std::string>::iterator ite_env(env.end());
 
@@ -392,8 +387,9 @@ void Header::setter( const std::string &line, server &serv )
         serv.concat( *this );
         if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
         {
-            setFile(serv.descriptorForSend( *this ));
-            body_end = true;
+            serv.descriptorForSend( *this );
+            if (getMethod() == "GET" || getMethod() == "HEAD")
+                body_end = true;
         }
         return ;
     }
@@ -454,24 +450,25 @@ void Header::cgi_env( )
     std::string str;
     size_t      pos;
 
-    addEnv((char *)("REQUEST_URI=" + getRequest()).c_str());
-    addEnv((char *)("REQUEST_METHOD=" + getMethod()).c_str());
-    addEnv((char *)("SERVER_PROTOCOL=" + getHttp()).c_str());
-    addEnv((char *)("PATH_INFO=" + getRequest()).c_str());
-    addEnv((char *)("PATH_TRANSLATED=" + getRequest()).c_str());
+    addEnv("REQUEST_URI=" + getRequest());
+    addEnv("REQUEST_METHOD=" + getMethod());
+    addEnv("SERVER_PROTOCOL=" + getHttp());
+    addEnv("PATH_INFO=" + getRequest());
+    addEnv("PATH_TRANSLATED=" + getRequest());
     str = getRequest();
     if ((pos = str.find('?')) != std::string::npos)
-        addEnv((char *)(("QUERY_STRING=" + std::string(str, pos + 1)).c_str()));
-    //
-    addEnv((char *)("CONTENT_TYPE=" + std::string(getContent_Type(), 0, getContent_Type().find(','))).c_str());
-    addEnv((char *)("AUTH_TYPE=" + std::string(getAuthorization(), 0, getAuthorization().find(' '))).c_str());
-    addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
-    addEnv((char *)("REMOTE_ADDR=" + ip_addr).c_str());
-    addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
-    addEnv((char *)("PATH_INFO=" + getRequest()).c_str());
-    addEnv((char *)"HTTP_X_SECRET_HEADER_FOR_TEST=1");
-    addEnv(const_cast<char *>(("SERVER_NAME=" + getServ()->get_server_names().front()).c_str()));
-    addEnv(const_cast<char *>(("SERVER_PORT=" + ttostr(static_cast<int>(getServ()->get_port()))).c_str()));
+        addEnv("QUERY_STRING=" + std::string(str, pos + 1));
+    if (getContent_Type().find(',') != std::string::npos)
+        addEnv("CONTENT_TYPE=" + std::string(getContent_Type(), 0, getContent_Type().find(',')));
+    if (getAuthorization().find(' ') != std::string::npos)
+        addEnv("AUTH_TYPE=" + std::string(getAuthorization(), 0, getAuthorization().find(' ')));
+    addEnv("GATEWAY_INTERFACE=CGI/0.9");
+    addEnv("REMOTE_ADDR=" + ip_addr);
+    addEnv("SERVER_SOFTWARE=webserv/1.0 (Unix)");
+    addEnv("PATH_INFO=" + getRequest());
+    addEnv("HTTP_X_SECRET_HEADER_FOR_TEST=1");
+    addEnv("SERVER_NAME=" + getServ()->get_server_names().front());
+    addEnv("SERVER_PORT=" + ttostr(static_cast<int>(getServ()->get_port())));
 //    if (std::string(getEnvValue("AUTH_TYPE=")) == "BASIC" || std::string(getEnvValue("AUTH_TYPE=")) == "DIGEST")
 //    {
 //        tmp = strchr(tmp, ' ') + 1;
@@ -496,6 +493,7 @@ Header::Header( server &serv, const std::list<std::string> &env ) : rout(), serv
     array.insert(std::pair<std::string, Func>(AUTH, &Header::setAuthorization));
     Header::env = env;
     file = 0;
+    receive_file = 0;
     error = 0;
     is_cgi = false;
     Pid = 0;
@@ -563,15 +561,9 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     if (::stat(realPathToFile.c_str(), &st) == -1)
     {
         if (errno == EACCES)
-        {
-            setError(403);
             setFile(serv->exception_processing(403, *this));
-        }
         else
-        {
-            setError(404);
             setFile(serv->exception_processing(404, *this));
-        }
     }
     else if (!(st.st_mode & S_IFREG))
     {
@@ -592,6 +584,13 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     else
         real_path_to_file = realPathToFile;
     setExtension(real_path_to_file);
+    check_rout();
+    if ( file_available(real_path_to_file))
+        Header::current_files_in_work.push_back(real_path_to_file);
+    else
+    {
+        serv->getConf()->moveToWait(*this, serv->getSet());
+    }
 }
 
 const std::string &Header::getExtension( ) const {
@@ -614,21 +613,6 @@ route *Header::getRout( ) const {
 
 void Header::setRout( route *rout )
 {
-    std::list<std::string>::const_iterator it((rout->get_http_methods().begin()));
-    while (it != rout->get_http_methods().end())
-    {
-        if (*it == getMethod())
-            break;
-        it++;
-    }
-    if (it == rout->get_http_methods().end())
-    {
-        if (serv->getAllow().first != extension || serv->getAllow().second != getMethod())
-        {
-            setError(405);
-            file = serv->exception_processing(405, *this);
-        }
-    }
     Header::rout = rout;
 }
 
@@ -662,18 +646,99 @@ void Header::setBodyEnd( bool bodyEnd ) {
 
 char **Header::env_to_char( )
 {
-    char                                **ret = (char **)malloc(env.size() + 1 * sizeof(char *));
+    char                                **ret = (char **)malloc((env.size() + 1) * sizeof(char *));
     std::list<std::string>::iterator    it(env.begin());
+    std::list<std::string>::iterator    ite(env.end());
     size_t                              i = 0;
 
     if (!ret)
         throw std::exception();
-    while (it != env.end())
+    while (it != ite)
     {
-        ret[i] = strdup(it->c_str());
+        ret[i] = strdup(const_cast<char *>(it->c_str()));
         if (!ret[i++])
             throw std::exception();
+        it++;
     }
     ret[i] = NULL;
     return ret;
+}
+
+int Header::getReceiveFile( ) const {
+    return receive_file;
+}
+
+void Header::setReceiveFile( int receiveFile ) {
+    receive_file = receiveFile;
+}
+
+void Header::check_rout( )
+{
+    std::list<std::string>::const_iterator it((rout->get_http_methods().begin()));
+    while (it != rout->get_http_methods().end())
+    {
+        if (*it == getMethod())
+            break;
+        it++;
+    }
+    if (it == rout->get_http_methods().end())
+    {
+        if (serv->getAllow().first != extension || serv->getAllow().second != getMethod())
+            setFile(serv->exception_processing(405, *this));
+    }
+}
+
+bool Header::operator==( const Header &head ) const {
+    return real_path_to_file == head.getRealPathToFile();
+}
+
+Header &Header::operator=(Header const & src) {
+    body_end = src.body_end;
+    client = src.client;
+    empty_line = src.empty_line;
+    reminder = src.reminder;
+    extension = src.extension;
+    rout = src.rout;
+    real_path_to_file = src.real_path_to_file;
+    serv = src.serv;
+    error = src.error;
+    BodySize = src.BodySize;
+    file = src.file;
+    receive_file = src.receive_file;
+    env = src.env;
+    Port = src.Port;
+    Request = src.Request;
+    Response = src.Response;
+    Method = src.Method;
+    Http = src.Http;
+    Accept_Charsets = src.Accept_Charsets;
+    Accept_Language = src.Accept_Language;
+    Allow = src.Allow;
+    Authorization = src.Authorization;
+    Content_Language = src.Content_Language;
+    Content_Length = src.Content_Length;
+    Content_Location = src.Content_Location;
+    Content_Type = src.Content_Type;
+    Date = src.Date;
+    Host = src.Host;
+    Location = src.Location;
+    Referer = src.Referer;
+    Retry_after = src.Retry_after;
+    Server = src.Server;
+    Transfer_Encoding = src.Transfer_Encoding;
+    User_Agent = src.User_Agent;
+    WWW_Authenticate = src.WWW_Authenticate;
+    is_cgi = src.is_cgi;
+    Pid = src.Pid;
+    host_header_response = src.host_header_response;
+    query = src.query;
+    array = src.array;
+    ip_addr = src.ip_addr;
+    ad = src.ad;
+    adlen = src.adlen;
+    return *this;
+}
+
+Header::Header( const Header & src ) {
+    *this = src;
 }
