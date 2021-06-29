@@ -1,5 +1,5 @@
 server {
-	host 10.21.31.71										# host address
+	host 10.21.34.44										# host address
 	port 1024									        # port to listen
 	server_names hostname.local hostname.test			# server names
 	#error_page 404 error_404.html						# error page for 404
@@ -31,7 +31,7 @@ server {
 }
 
 server {
-	host 10.21.31.71									# host address
+	host 10.21.34.44									# host address
 	port 1025									        # port to listen
 	server_names hostname.local hostname.test			# server names
 	#error_page 404 error_404.html						# error page for 404

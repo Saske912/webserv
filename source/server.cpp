@@ -34,6 +34,7 @@ server &server::operator=( server const &src ) {
     _host_socket = src._host_socket;
     read = src.read;
     addr = src.addr;
+    _conf = src._conf;
     return *this;
 }
 
@@ -547,45 +548,12 @@ void server::setHostRaw( int hostRaw ) {
     _host_socket = hostRaw;
 }
 
-std::list<std::queue<Header> > & server::getWait( ) {
-    return _wait;
+config *server::getConf( ) const {
+    return _conf;
 }
 
-void server::setWait( const std::list<std::queue<Header> > &wait ) {
-    _wait = wait;
-}
-
-void server::moveToWait( Header &head ) {
-    std::list<std::queue<Header> >::iterator    it(_wait.begin());
-    std::list<std::queue<Header> >::iterator    ite(_wait.end());
-    std::list<Header>::iterator                 it_set(_set.begin());
-    std::list<Header>::iterator                 ite_set(_set.end());
-    std::queue<Header>                          temp;
-
-    while (it != ite)
-    {
-        if (it->back().getRealPathToFile() == head.getRealPathToFile())
-        {
-            it->push(head);
-            break;
-        }
-        it++;
-    }
-    if (it == ite)
-    {
-        temp.push(head);
-        _wait.push_back(temp);
-    }
-    while (it_set != ite_set)
-    {
-        if (*it_set == head)
-        {
-            _set.erase(it_set);
-            break;
-        }
-        it_set++;
-    }
-    throw std::exception();
+void server::setConf( config *conf ) {
+    _conf = conf;
 }
 
 std::ostream &operator<<(std::ostream &o, const server &serv) {

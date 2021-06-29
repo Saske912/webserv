@@ -12,6 +12,8 @@
 #include "../wpersimm.h"
 #include <fcntl.h>
 #include <queue>
+
+class config;
 class Header;
 
 class server {
@@ -53,7 +55,8 @@ public:
     void setSet( const std::list<Header> &set );
     int getHostSock( ) const;
     void setHostRaw( int hostRaw );
-    void                        moveToWait(Header &head);
+    config *getConf( ) const;
+    void setConf( config *conf );
     fd_set                      read;
     sockaddr_in                 addr;
 protected:
@@ -66,10 +69,8 @@ protected:
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
-    std::list<std::queue<Header> > & getWait( );
-    void                        setWait( const std::list<std::queue<Header> > &wait );
 private:
-    std::list<std::queue<Header> >      _wait;
+    config                              *_conf;
     std::list<Header>                   _set;
     std::string                         _host;
     unsigned int                        _port;

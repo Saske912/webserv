@@ -58,6 +58,8 @@ private:
     std::string query;
 public:
     bool operator==(Header const & head) const;
+    Header & operator=(Header const & src);
+    Header(Header const & src);
     int getReceiveFile( ) const;
     void setReceiveFile( int receiveFile );
     char **env_to_char();

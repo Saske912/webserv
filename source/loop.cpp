@@ -75,8 +75,9 @@ void sendFile( Header &head )
 {
 	char    str[BUFSIZE + 1];
 	size_t  z;
+    int fd = head.getFile();
 
-	while ((z = read(head.getFile(), str, BUFSIZE - head.getReminder().length())) > 0)
+	while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
         if ( send_protected(str, head))
@@ -204,7 +205,7 @@ void response( std::list<Header>::iterator &it )
 {
 	std::string string;
 
-	if (it->isBodyEnd())
+	if (it->isBodyEnd() and it->getFile())
 	{
         if (it->isEmptyLine())
             buildHeader( *it );

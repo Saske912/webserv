@@ -589,7 +589,7 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
         Header::current_files_in_work.push_back(real_path_to_file);
     else
     {
-        serv->moveToWait(*this);
+        serv->getConf()->moveToWait(*this, serv->getSet());
     }
 }
 
@@ -690,4 +690,55 @@ void Header::check_rout( )
 
 bool Header::operator==( const Header &head ) const {
     return real_path_to_file == head.getRealPathToFile();
+}
+
+Header &Header::operator=(Header const & src) {
+    body_end = src.body_end;
+    client = src.client;
+    empty_line = src.empty_line;
+    reminder = src.reminder;
+    extension = src.extension;
+    rout = src.rout;
+    real_path_to_file = src.real_path_to_file;
+    serv = src.serv;
+    error = src.error;
+    BodySize = src.BodySize;
+    file = src.file;
+    receive_file = src.receive_file;
+    env = src.env;
+    Port = src.Port;
+    Request = src.Request;
+    Response = src.Response;
+    Method = src.Method;
+    Http = src.Http;
+    Accept_Charsets = src.Accept_Charsets;
+    Accept_Language = src.Accept_Language;
+    Allow = src.Allow;
+    Authorization = src.Authorization;
+    Content_Language = src.Content_Language;
+    Content_Length = src.Content_Length;
+    Content_Location = src.Content_Location;
+    Content_Type = src.Content_Type;
+    Date = src.Date;
+    Host = src.Host;
+    Location = src.Location;
+    Referer = src.Referer;
+    Retry_after = src.Retry_after;
+    Server = src.Server;
+    Transfer_Encoding = src.Transfer_Encoding;
+    User_Agent = src.User_Agent;
+    WWW_Authenticate = src.WWW_Authenticate;
+    is_cgi = src.is_cgi;
+    Pid = src.Pid;
+    host_header_response = src.host_header_response;
+    query = src.query;
+    array = src.array;
+    ip_addr = src.ip_addr;
+    ad = src.ad;
+    adlen = src.adlen;
+    return *this;
+}
+
+Header::Header( const Header & src ) {
+    *this = src;
 }

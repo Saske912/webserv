@@ -14,6 +14,7 @@ update_descriptors( std::string const &realPathToFile, std::list<Header>::iterat
         if (*iter == realPathToFile)
         {
             Header::current_files_in_work.erase(iter);
+            it->getServ()->getConf()->moveFromWait(realPathToFile);
             break ;
         }
         iter++;
@@ -34,6 +35,7 @@ void    update_descriptors( std::string const &realPathToFile, Header &head)
         if (*iter == realPathToFile)
         {
             Header::current_files_in_work.erase(iter);
+            head.getServ()->getConf()->moveFromWait(realPathToFile);
             break ;
         }
         iter++;
