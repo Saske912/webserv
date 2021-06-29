@@ -57,11 +57,13 @@ public:
     void setHostRaw( int hostRaw );
     config *getConf( ) const;
     void setConf( config *conf );
+    bool head_in_set(Header &head);
+    bool operator==(Header const & head) const;
     fd_set                      read;
     sockaddr_in                 addr;
 protected:
     void cgi_processing( Header &head, bool flag );
-    static bool                 is_file_with_extension( std::string request) ;
+    static bool                 is_file_with_extension( std::string request);
 	bool                        is_file( const std::string& request);
     void is_cgi( Header &head );
     std::string                 get_error(int, std::map<int, std::string> ers);

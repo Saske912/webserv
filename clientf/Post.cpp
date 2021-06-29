@@ -8,8 +8,8 @@
 #include <pthread.h>
 #include <fcntl.h>
 #define IP "10.21.34.44"
-#define CLIENTS 100
-#define REQUESTS 500
+#define CLIENTS 10
+#define REQUESTS 10
 #define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 10.21.34.44:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
 #define FILE_TO_OPEN "youpi.bla"
 
@@ -83,7 +83,7 @@ void    *func(void *t)
                 exit(1);
             }
             buf[ret] = 0;
-			std::cout << buf << std::endl;
+//			std::cout << buf << std::endl;
 			if (strstr(buf, "\r\n\r\n"))
 			{
 				std::cout << num << ": file recieved" << std::endl;

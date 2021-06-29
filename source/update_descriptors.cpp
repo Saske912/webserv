@@ -4,7 +4,8 @@
 #include "header.h"
 
 std::list<Header>::iterator
-update_descriptors( std::string const &realPathToFile, std::list<Header>::iterator &it, std::list<Header> &set )
+update_descriptors( std::string const &realPathToFile, std::list<Header>::iterator &it, std::list<Header> &set,
+                    config &conf )
 {
     std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
     std::list<std::string >::iterator iter_end = Header::current_files_in_work.end();
@@ -14,18 +15,18 @@ update_descriptors( std::string const &realPathToFile, std::list<Header>::iterat
         if (*iter == realPathToFile)
         {
             Header::current_files_in_work.erase(iter);
-            it->getServ()->getConf()->moveFromWait(realPathToFile);
+            conf.moveFromWait(realPathToFile);
             break ;
         }
         iter++;
     }
-    it->eraseStruct();
     close(it->getClient());
+    it->eraseStruct();
     it = set.erase(it);
     return it;
 }
 
-void    update_descriptors( std::string const &realPathToFile, Header &head)
+void update_descriptors( std::string const &realPathToFile, Header &head, config &conf )
 {
     std::list<std::string >::iterator iter = Header::current_files_in_work.begin();
     std::list<std::string >::iterator iter_end = Header::current_files_in_work.end();
@@ -35,7 +36,8 @@ void    update_descriptors( std::string const &realPathToFile, Header &head)
         if (*iter == realPathToFile)
         {
             Header::current_files_in_work.erase(iter);
-            head.getServ()->getConf()->moveFromWait(realPathToFile);
+            conf.moveFromWait(realPathToFile);
+//            head.getServ()->getConf()->moveFromWait(realPathToFile);
             break ;
         }
         iter++;

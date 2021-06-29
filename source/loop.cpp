@@ -46,7 +46,7 @@ int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with
 }
 
 
-static void communication_with_clients( std::list<Header> &set, server &serv, fd_set *clients_with_data )
+static void communication_with_clients( std::list<Header> &set, server &serv, fd_set *clients_with_data, config &conf )
 {
     int             opt;
     socklen_t len = sizeof(opt);
@@ -57,21 +57,21 @@ static void communication_with_clients( std::list<Header> &set, server &serv, fd
         getsockopt( it->getClient( ), SOL_SOCKET, SO_ERROR, &opt, &len );
         if (opt == ECONNRESET)
         {
-            it = update_descriptors( it->getRealPathToFile( ), it, set );
+            it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
             continue ;
         }
         if ( receive( it, serv, clients_with_data ))
         {
-            it = update_descriptors( it->getRealPathToFile( ), it, set );
+            it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
             continue ;
         }
-        response( it );
+        response( it, conf );
         if (it != set.end())
             it++;
     }
 }
 
-void sendFile( Header &head )
+void sendFile( Header &head, config &conf )
 {
 	char    str[BUFSIZE + 1];
 	size_t  z;
@@ -84,7 +84,7 @@ void sendFile( Header &head )
             return ;
         bzero(str, sizeof(str));
 	}
-    update_descriptors( head.getRealPathToFile( ), head);
+    update_descriptors( head.getRealPathToFile( ), head, conf );
 }
 
 void buildHeader( Header &head )
@@ -140,7 +140,7 @@ std::string getBaseSixteen(unsigned int n)
 	return str;
 }
 
-void  sendFileChunked( std::list<Header>::iterator &it, int fd)
+void sendFileChunked( std::list<Header>::iterator &it, int fd, config &conf )
 {
 	char line[BUFSIZE + 1];
 	std::string str;
@@ -152,7 +152,7 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 //		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
 //			return ;
         send_protected("0\r\n\r\n", *it );
-        update_descriptors(it->getRealPathToFile(), *it);
+        update_descriptors( it->getRealPathToFile( ), *it, conf );
         return ;
     }
     line[z] = 0;
@@ -201,18 +201,18 @@ void  sendFileChunked( std::list<Header>::iterator &it, int fd)
 //	sendFileChunked(it, fd);
 //}
 
-void response( std::list<Header>::iterator &it )
+void response( std::list<Header>::iterator &it, config &conf )
 {
 	std::string string;
 
-	if (it->isBodyEnd() and it->getFile())
+	if (it->isBodyEnd() and it->getServ()->head_in_set(*it))
 	{
         if (it->isEmptyLine())
             buildHeader( *it );
         if (it->getTransfer_Encoding() == "chunked" and !it->getError())
-            sendFileChunked(it, it->getFile());
+            sendFileChunked( it, it->getFile( ), conf );
         else
-            sendFile( *it );
+            sendFile( *it, conf );
 	}
 }
 
@@ -280,7 +280,7 @@ void    loop(config &conf)
             {
                 it_serv->getSet().push_back( Header( *it_serv, conf.getEnv()));
             }
-            communication_with_clients( it_serv->getSet( ), *it_serv, &conf.conf_set );
+            communication_with_clients( it_serv->getSet( ), *it_serv, &conf.conf_set, conf );
             it_serv++;
         }
     }

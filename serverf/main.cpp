@@ -16,7 +16,7 @@ void print_usage() {
 
 int main(int ac, char *av[], char *env[])
 {
-    config              config_class;
+    config              *config_class;
 
     if (ac == 2) {
         config_class = parse(av[1]);
@@ -30,8 +30,9 @@ int main(int ac, char *av[], char *env[])
         print_usage();
         return 1;
     }
-    init_serv(config_class);
-    set_env(env, config_class);
-    loop(config_class);
+    init_serv(*config_class);
+    set_env(env, *config_class);
+    loop(*config_class);
+    delete config_class;
     return (0);
 }
