@@ -8,7 +8,9 @@ std::string parse_request( const std::string &string, Header &head, server &serv
 {
     int fd_receive;
     if (head.isClientNowInQueue())
+    {
         return std::string();
+    }
     if (head.isEmptyLine() and head.isPermission())
     {
         if (!head.getReceiveFile())

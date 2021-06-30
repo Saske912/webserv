@@ -587,12 +587,14 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
     }
     else
         real_path_to_file = realPathToFile;
+    if (real_path_to_file[0] != '/')
+    {
+        real_path_to_file = rtrim(getEnvValue("PWD="), "/") + '/' + real_path_to_file;
+    }
     setExtension(real_path_to_file);
     check_rout();
     if ( file_available(real_path_to_file))
     {
-//        if (getMethod() == "POST" or getMethod() == "PUT")
-//            setReceiveFile(getServ()->descriptorForReceive(*this));
         Header::current_files_in_work.push_back(real_path_to_file);
         permission = true;
     }
@@ -625,7 +627,7 @@ void Header::setRout( route *rout )
     Header::rout = rout;
 }
 
-const std::string &Header::getReminder( ) const {
+std::string &Header::getReminder( ) {
     return reminder;
 }
 
@@ -747,6 +749,7 @@ Header &Header::operator=(Header const & src) {
     adlen = src.adlen;
     env = src.env;
     permission = src.permission;
+    buffer = src.buffer;
     return *this;
 }
 
@@ -764,4 +767,16 @@ void Header::setClientNowInQueue( bool clientNowInQueue ) {
 
 bool Header::isPermission( ) const {
     return permission;
+}
+
+void Header::setPermission( bool permission ) {
+    Header::permission = permission;
+}
+
+std::string &Header::getBuffer( ) {
+    return buffer;
+}
+
+void Header::setBuffer( const std::string &buffer ) {
+    Header::buffer = buffer;
 }

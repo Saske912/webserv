@@ -112,7 +112,8 @@ void config::setWait( const std::list<std::queue<Header> > &wait ) {
     _wait = wait;
 }
 
-void config::moveFromWait( const std::string &rpf ) {
+void config::moveFromWait( const std::string &rpf )
+{
     std::list<std::queue<Header> >::iterator it(_wait.begin());
     std::list<std::queue<Header> >::iterator ite(_wait.end());
     std::list<server>::iterator it_serv(servers.begin());
@@ -129,6 +130,7 @@ void config::moveFromWait( const std::string &rpf ) {
                     std::cerr << "coming back for file " << rpf << std::endl;
                     it_serv->getSet().push_back(it->front());
                     it_serv->getSet().back().setClientNowInQueue(false);
+                    communication_with_client(it_serv->getSet().back(), *it_serv, *this);
                     break ;
                 }
                 it_serv++;

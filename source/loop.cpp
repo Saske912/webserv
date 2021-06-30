@@ -14,10 +14,9 @@ std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
     int         z;
     char        buf[BUFSIZE + 1];
     std::string ret;
-    std::string buffer;
 
     z = recv( it->getClient(), buf, BUFSIZE, 0 );
-    buffer = it->getReminder() + buf;
+    it->setBuffer(it->getReminder() + buf);
     it->setReminder(std::string());
     if (z == -1)
     {
@@ -29,7 +28,7 @@ std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
     else if (z == 0)
         return std::string("connection closed");
     else
-        return split_buffer( buffer, *it, serv );
+        return split_buffer( it->getBuffer(), *it, serv );
 }
 
 int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with_data )
@@ -43,34 +42,6 @@ int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with
             return 1;
 	}
     return 0;
-}
-
-
-static void communication_with_clients( std::list<Header> &set, server &serv, fd_set *clients_with_data, config &conf )
-{
-    int             opt;
-    socklen_t len = sizeof(opt);
-
-    std::list<Header>::iterator it = set.begin();
-    while (it != set.end())
-    {
-        getsockopt( it->getClient( ), SOL_SOCKET, SO_ERROR, &opt, &len );
-        if (opt == ECONNRESET)
-        {
-            it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
-            continue ;
-        }
-        if ( receive( it, serv, clients_with_data ))
-        {
-            it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
-            continue ;
-        }
-        response( it, conf );
-        if (it->isClientNowInQueue())
-            it = set.erase(it);
-        else if (it != set.end())
-            it++;
-    }
 }
 
 void sendFile( Header &head, config &conf )
@@ -142,24 +113,24 @@ std::string getBaseSixteen(unsigned int n)
 	return str;
 }
 
-void sendFileChunked( std::list<Header>::iterator &it, int fd, config &conf )
+void sendFileChunked( int fd, config &conf, Header &head )
 {
 	char line[BUFSIZE + 1];
 	std::string str;
 	int z;
 
-    z = read(fd, line, BUFSIZE - 9 - it->getReminder().length());
+    z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
     if (z == 0)
     {
 //		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
 //			return ;
-        send_protected("0\r\n\r\n", *it );
-        update_descriptors( it->getRealPathToFile( ), *it, conf );
+        send_protected("0\r\n\r\n",  head );
+        update_descriptors(  head.getRealPathToFile( ),  head, conf );
         return ;
     }
     line[z] = 0;
     str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-    send_protected(str, *it );
+    send_protected(str,  head );
 }
 
 //void cgiResponse( std::list<Header>::iterator &it, int &fd)
@@ -202,21 +173,6 @@ void sendFileChunked( std::list<Header>::iterator &it, int fd, config &conf )
 //        return ;
 //	sendFileChunked(it, fd);
 //}
-
-void response( std::list<Header>::iterator &it, config &conf )
-{
-	std::string string;
-//conf.get_serv(it->getPort()).head_in_set(*it)
-	if (it->isBodyEnd() and !it->isClientNowInQueue() and it->isPermission())
-	{
-        if (it->isEmptyLine())
-            buildHeader( *it );
-        if (it->getTransfer_Encoding() == "chunked" and !it->getError())
-            sendFileChunked( it, it->getFile( ), conf );
-        else
-            sendFile( *it, conf );
-	}
-}
 
 static int Select( int max_fd, config &conf )
 {

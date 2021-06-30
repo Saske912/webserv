@@ -16,6 +16,7 @@ class Header
     typedef void (Header::*Func)(std::string const &);
 private:
     Header();
+    std::string buffer;
     bool        permission;
     bool        client_now_in_queue;
     bool        body_end;
@@ -59,6 +60,9 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+    std::string &getBuffer( );
+    void setBuffer( const std::string &buffer );
+    void setPermission( bool permission );
     bool isPermission( ) const;
     bool isClientNowInQueue( ) const;
     void setClientNowInQueue( bool clientNowInQueue );
@@ -73,7 +77,7 @@ public:
     void setClient( int client );
     bool isEmptyLine( ) const;
     void setEmptyLine( bool emptyLine );
-    const std::string &getReminder( ) const;
+    std::string &getReminder( );
     void setReminder( const std::string &reminder );
     route *getRout( ) const;
     void setRout( route *rout );
