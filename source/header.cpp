@@ -38,6 +38,7 @@ void Header::eraseStruct()
     body_end = false;
     empty_line = false;
     client_now_in_queue = false;
+    permission = false;
 //	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
@@ -502,6 +503,7 @@ Header::Header( server &serv, const std::list<std::string> &env ) : rout(), serv
     BodySize = 0;
     empty_line = false;
     body_end = false;
+    permission = false;
     if (( client = ::accept( serv.getHostSock( ), reinterpret_cast<sockaddr *>(&ad), &adlen)) == -1)
     {
         perror("accept");
@@ -592,6 +594,7 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
 //        if (getMethod() == "POST" or getMethod() == "PUT")
 //            setReceiveFile(getServ()->descriptorForReceive(*this));
         Header::current_files_in_work.push_back(real_path_to_file);
+        permission = true;
     }
     else
     {
@@ -743,6 +746,7 @@ Header &Header::operator=(Header const & src) {
     ad = src.ad;
     adlen = src.adlen;
     env = src.env;
+    permission = src.permission;
     return *this;
 }
 
@@ -756,4 +760,8 @@ bool Header::isClientNowInQueue( ) const {
 
 void Header::setClientNowInQueue( bool clientNowInQueue ) {
     client_now_in_queue = clientNowInQueue;
+}
+
+bool Header::isPermission( ) const {
+    return permission;
 }

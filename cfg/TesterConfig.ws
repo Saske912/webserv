@@ -31,8 +31,8 @@ server {
 }
 
 server {
-	host 127.0.0.1										# host address
-	port 1025									# port to listen
+	host 127.0.0.1								# host address
+	port 1025									        # port to listen
 	server_names hostname.local hostname.test			# server names
 	#error_page 404 error_404.html						# error page for 404
 	#error_page 401 error_401.html						# error page for 401
