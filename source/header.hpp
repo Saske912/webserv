@@ -16,6 +16,7 @@ class Header
     typedef void (Header::*Func)(std::string const &);
 private:
     Header();
+    bool        permission;
     bool        client_now_in_queue;
     bool        body_end;
     int         client;
@@ -58,6 +59,7 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+    bool isPermission( ) const;
     bool isClientNowInQueue( ) const;
     void setClientNowInQueue( bool clientNowInQueue );
     bool operator==(Header const & head) const;

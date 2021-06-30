@@ -34,7 +34,7 @@ std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
 
 int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with_data )
 {
-	if ( FD_ISSET(it->getClient(), clients_with_data))
+	if ( FD_ISSET(it->getClient(), clients_with_data) and !it->isBodyEnd())
 	{
         std::string str;
 
@@ -64,10 +64,6 @@ static void communication_with_clients( std::list<Header> &set, server &serv, fd
         {
             it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
             continue ;
-        }
-        if (it->isClientNowInQueue()) {
-            it = set.erase( it );
-            continue;
         }
         response( it, conf );
         if (it->isClientNowInQueue())
@@ -211,7 +207,7 @@ void response( std::list<Header>::iterator &it, config &conf )
 {
 	std::string string;
 //conf.get_serv(it->getPort()).head_in_set(*it)
-	if (it->isBodyEnd() and !it->isClientNowInQueue())
+	if (it->isBodyEnd() and !it->isClientNowInQueue() and it->isPermission())
 	{
         if (it->isEmptyLine())
             buildHeader( *it );

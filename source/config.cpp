@@ -132,7 +132,7 @@ void config::moveFromWait( const std::string &rpf ) {
                     std::list<std::string>  env = it->front().getEnv();
                     std::cerr << " coming back for file " << rpf << std::endl;
                     it_serv->getSet().push_back(it->front());
-
+                    it_serv->getSet().back().setClientNowInQueue(false);
                     break ;
                 }
                 it_serv++;
