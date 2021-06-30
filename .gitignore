@@ -8,3 +8,6 @@ client
 cfg/*
 libft/*.a
 libft/*.o
+clientf/*
+cfg
+clientf

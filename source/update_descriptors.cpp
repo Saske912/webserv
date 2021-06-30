@@ -37,7 +37,6 @@ void update_descriptors( std::string const &realPathToFile, Header &head, config
         {
             Header::current_files_in_work.erase(iter);
             conf.moveFromWait(realPathToFile);
-//            head.getServ()->getConf()->moveFromWait(realPathToFile);
             break ;
         }
         iter++;

@@ -56,4 +56,5 @@ add_executable(webserv
         source/send_protected.cpp source/file_available.cpp
         source/get_http_line.cpp source/split_buffer.cpp
         source/parse_request.cpp
-        source/templates.cpp)
+        source/templates.cpp
+        source/update_descriptors.cpp)
