@@ -61,7 +61,14 @@ bool                        file_available(const std::string& request);
 std::string                 split_buffer( std::string &buffer, Header &head, server &serv );
 std::string                 get_http_line( std::string &buffer, Header &head, server &serv );
 std::string                 parse_request( const std::string &string, Header &head, server &serv );
-void response( std::list<Header>::iterator &it, config &conf );
+//void response( std::list<Header>::iterator &it, config &conf );
 void                        set_env( char **double_array, config &object );
+void communication_with_clients( std::list<Header> &set, server &serv, fd_set *clients_with_data, config &conf );
+int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with_data );
+void communication_with_client(Header &head, server &serv, config & conf);
+void sendFile( Header &head, config &conf );
+void buildHeader( Header &head );
+void sendFileChunked( int fd, config &conf, Header &head );
+void response( Header &head, config &conf );
 
 #endif //HEADER_H

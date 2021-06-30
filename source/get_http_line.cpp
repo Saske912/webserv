@@ -16,5 +16,6 @@ std::string get_http_line( std::string &buffer, Header &head, server &serv )
     line = head.getReminder() + buffer.substr(0, finder);
     head.setReminder(std::string());
     buffer.erase(0, finder + 2);
+//    head.setBuffer(buffer);
     return parse_request( line, head, serv );
 }
