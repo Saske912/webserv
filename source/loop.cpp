@@ -57,6 +57,10 @@ void sendFile( Header &head, config &conf )
             return ;
         bzero(str, sizeof(str));
 	}
+	struct stat st;
+	::fstat(fd, &st);
+	if (st.st_size == 0)
+        send_protected("", head);
     update_descriptors( head.getRealPathToFile( ), head, conf );
 }
 
