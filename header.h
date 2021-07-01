@@ -29,8 +29,8 @@
 #include <iomanip>
 #include <semaphore.h>
 
-#define QUEUE 16
-#define TVS 320000
+#define QUEUE 128
+#define TVS 3
 #define TVMS 0
 #define BUFSIZE 1048576
 
