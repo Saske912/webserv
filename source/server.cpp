@@ -167,6 +167,7 @@ int server::exception_processing( int except, Header &head )
         ret = open(to_head.c_str(), O_RDONLY);
         if (ret == -1)
             error_exit("open in exception_processing");
+        free(arg);
         return ret;
     }
     else
@@ -197,6 +198,7 @@ int server::exception_processing( int except, Header &head )
                 exit(2);
             if (execve(arg[0], arg, env) == -1)
                 perror("execve");
+            free(arg);
             exit(3);
         }
         else if (pid == -1)
@@ -215,6 +217,7 @@ int server::exception_processing( int except, Header &head )
 //            error_exit("system error in fork");
         head.setResponse(const_cast<char *>((head.getHttp() + " " + ttostr(except)\
         + " " + to_head).c_str()));
+        free(arg);
         return fds[0];
     }
 }
@@ -293,18 +296,17 @@ void server::handle_cgi_response_headers(int fd, Header &head) {
         if (status == -1)
             break;
         status = parse_cgi(head, line);
-        std::cout << line << std::endl;
-        std::cout << "skipped line len: " << strlen(line) + 1 << std::endl;
         if (!status) {
             skip += strlen(line) + 1;
         }
         if (status && std::string("\r") == line) {
             skip += 2;
+            free(line);
             break;
         }
+        free(line);
         status = 1;
     }
-    std::cout << "skipped " << skip << std::endl;
     lseek(fd, 0, skip);
 }
 
