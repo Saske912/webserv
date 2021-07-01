@@ -141,18 +141,30 @@ void sendFileChunked( int fd, config &conf, Header &head )
     }
 	else
     {
-        z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
-        if (z == 0)
+	    if (head.getReminder().length() >= BUFSIZE)
         {
-//		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
-//			return ;
-            send_protected("0\r\n\r\n",  head );
-            update_descriptors(  head.getRealPathToFile( ),  head, conf );
-            return ;
+            send_protected("", head);
         }
-        line[z] = 0;
-        str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-        send_protected(str,  head );
+	    else
+        {
+            z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
+            if (z == 0)
+            {
+                if (head.getReminder().length())
+                {
+                    send_protected("", head);
+                    if (head.getReminder().length())
+                        return ;
+                }
+                send_protected("0\r\n\r\n",  head );
+                update_descriptors(  head.getRealPathToFile( ),  head, conf );
+            }
+            line[z] = 0;
+            str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
+            if (head.getMethod() == "POST")
+            {}
+            send_protected(str,  head );
+        }
     }
 }
 
@@ -200,7 +212,7 @@ void sendFileChunked( int fd, config &conf, Header &head )
 static int Select( int max_fd, config &conf )
 {
     int ret;
-    if ((ret = select( max_fd, &conf.conf_set, NULL, NULL, &conf.tv)) < 0)
+    if ((ret = select( max_fd, &conf.conf_set, &conf.write_set, NULL, &conf.tv)) < 0)
     {
         if (errno != EINTR)
         {
@@ -233,6 +245,7 @@ void    loop(config &conf)
         it_serv = conf.getServers().begin();
         ite_serv = conf.getServers().end();
         FD_ZERO(&conf.conf_set);
+        FD_ZERO(&conf.write_set);
         conf.sockets.clear();
         while (it_serv != ite_serv)
         {
@@ -246,6 +259,8 @@ void    loop(config &conf)
                 temp_sock = it->getClient();
                 FD_SET(temp_sock, &conf.conf_set);
                 conf.sockets.push_back(temp_sock);
+                if (it->getFile())
+                    FD_SET(temp_sock, &conf.write_set);
                 it++;
             }
             it_serv++;
