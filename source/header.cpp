@@ -516,6 +516,7 @@ Header::Header( server &serv, const std::list<std::string> &env ) : rout(), serv
     opt = 1;
 //    setsockopt( client, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<const void *>(serv.opt), sizeof(serv.opt));
     setsockopt(client, SOL_SOCKET, SO_SNDBUF, &bufer, sizeof(bufer));
+    setsockopt(client, SOL_SOCKET, SO_RCVBUF, &bufer, sizeof(bufer));
     ip_addr = ttostr(ad.sin_addr.s_addr & 255) + '.' +
             ttostr(ad.sin_addr.s_addr >> 8 & 255) + '.' +
             ttostr(ad.sin_addr.s_addr >> 16 & 255) + '.' +

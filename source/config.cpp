@@ -20,6 +20,7 @@ config &config::operator=(const config &other) {
     opt = other.opt;
     ret = other.ret;
     _wait = other._wait;
+    write_set = other.write_set;
     return *this;
 }
 
