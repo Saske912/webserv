@@ -55,7 +55,7 @@ void sendFile( Header &head, config &conf )
 
     struct stat st;
     ::fstat(fd, &st);
-    if (st.st_size == 0)
+    if (st.st_size == 0 || head.getMethod() == "HEAD")
         send_protected("", head);
     else while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
@@ -71,6 +71,8 @@ void buildHeader( Header &head )
 {
 	std::string str;
 
+	if (head.getMethod() == "HEAD")
+	    head.setContent_Length("0");
 	str = head.getResponse();
 	str += head.getContent_Length();
     str += head.getContent_Language();
