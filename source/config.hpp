@@ -28,6 +28,7 @@ public:
     int                 opt;
     int                 ret;
     fd_set              conf_set;
+    fd_set              write_set;
     std::list<int>      sockets;
     timeval             tv;
 private:
