@@ -283,6 +283,31 @@ int server::descriptorForReceive( Header & head)
         return 0;
 }
 
+void server::handle_cgi_response_headers(int fd, Header &head) {
+    char *line;
+    int status = 1;
+    int skip = 0;
+
+    while (status == 1) {
+        status = get_next_line(fd, &line);
+        if (status == -1)
+            break;
+        status = parse_cgi(head, line);
+        std::cout << line << std::endl;
+        std::cout << "skipped line len: " << strlen(line) + 1 << std::endl;
+        if (!status) {
+            skip += strlen(line) + 1;
+        }
+        if (status && std::string("\r") == line) {
+            skip += 2;
+            break;
+        }
+        status = 1;
+    }
+    std::cout << "skipped " << skip << std::endl;
+    lseek(fd, 0, skip);
+}
+
 void server::cgi_processing( Header &head, bool flag )
 {
     int     fd1 = dup(1);
@@ -348,6 +373,7 @@ void server::cgi_processing( Header &head, bool flag )
         error_exit("error in fork");
     }
     lseek(response_buffer, 0, 0);
+    handle_cgi_response_headers(response_buffer, head);
     dup2(fd1, 1);
     dup2(fd0, 0);
     close(fd1);

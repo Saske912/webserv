@@ -63,6 +63,7 @@ public:
     sockaddr_in                 addr;
 protected:
     void cgi_processing( Header &head, bool flag );
+    void handle_cgi_response_headers(int fd, Header &head);
     static bool                 is_file_with_extension( std::string request);
 	bool                        is_file( const std::string& request);
     void is_cgi( Header &head );

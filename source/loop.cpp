@@ -74,7 +74,13 @@ void buildHeader( Header &head )
 	if (head.getMethod() == "HEAD")
 	    head.setContent_Length("0");
 	str = head.getResponse();
-	str += head.getContent_Length();
+	if (!head.getIsCgi())
+	    str += head.getContent_Length();
+	else {
+//	    head.setTransfer_Encoding("Transfer-Encoding: Transfer-Encoding: chunked");
+//        str += head.getTransfer_Encoding();
+        str += "Transfer-Encoding: chunked" END;
+    }
     str += head.getContent_Language();
     str += head.getAllow();
 	str += head.getDate();
@@ -86,17 +92,17 @@ void buildHeader( Header &head )
 	head.setReminder(str);
 }
 
-int     parse_cgi(std::list<Header>::iterator &it, char *line)
+int     parse_cgi(Header &head, char *line)
 {
 	char *tmp;
 
 	if ((tmp = strstr(line, "Status: ")))
 	{
 		tmp += strlen("Status: ");
-		it->setResponse("HTTP/1.1 " + std::string(tmp));
+		head.setResponse("HTTP/1.1 " + std::string(tmp));
 	}
 	else if ((tmp = strstr(line, "Content-Type: ")))
-		it->setContent_Type(std::string(tmp));
+		head.setContent_Type(std::string(tmp));
 	else
         return 1;
     return 0;

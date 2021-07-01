@@ -28,4 +28,6 @@ struct ContextInfo {
 config parse(int fd);
 config * parse( const char *filename);
 
+int     parse_cgi(Header &head, char *line);
+
 #endif

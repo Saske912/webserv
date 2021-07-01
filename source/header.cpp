@@ -383,7 +383,7 @@ Header::Header()
 
 void Header::setter( const std::string &line, server &serv )
 {
-    if (line.empty())
+    if (line.empty() && !getMethod().empty())
     {
         empty_line = true;
         setServ(&serv);
