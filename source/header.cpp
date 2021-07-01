@@ -389,8 +389,6 @@ void Header::setter( const std::string &line, server &serv )
         setServ(&serv);
         cgi_env();
         serv.concat( *this );
-        if (getMethod() == "PUT")
-            sleep(1);
         if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
         {
             serv.descriptorForSend( *this );
@@ -413,6 +411,8 @@ void Header::http( std::string const & str )
     std::string string(str);
 
     setDate(get_current_date());
+    if (string[0] == '\n')
+        string.erase(0, 1);
     finder = string.find( ' ' );
     setMethod( string.substr( 0, finder));
     string.erase( 0, finder + 1);

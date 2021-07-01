@@ -158,11 +158,10 @@ void sendFileChunked( int fd, config &conf, Header &head )
                 }
                 send_protected("0\r\n\r\n",  head );
                 update_descriptors(  head.getRealPathToFile( ),  head, conf );
+                return;
             }
             line[z] = 0;
             str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-            if (head.getMethod() == "POST")
-            {}
             send_protected(str,  head );
         }
     }
