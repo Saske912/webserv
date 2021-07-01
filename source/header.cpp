@@ -389,6 +389,8 @@ void Header::setter( const std::string &line, server &serv )
         setServ(&serv);
         cgi_env();
         serv.concat( *this );
+        if (getMethod() == "PUT")
+            sleep(1);
         if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
         {
             serv.descriptorForSend( *this );

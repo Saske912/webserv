@@ -29,7 +29,7 @@ std::string parse_request( const std::string &string, Header &head, server &serv
                 serv.descriptorForSend( head );
                 return "body_end";
             }
-            if (string.find_last_not_of("0123456789abcdef") != std::string::npos)
+            if (string.find_last_not_of("0123456789abcdef") != std::string::npos or string.length() > 6)
             {
                 head.setBodySize(head.getBodySize() + static_cast<int>(string.length()));
                 if ( write( head.getReceiveFile( ), string.c_str(), string.length()) != static_cast<ssize_t>(string.length()))

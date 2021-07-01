@@ -128,18 +128,26 @@ void sendFileChunked( int fd, config &conf, Header &head )
 	std::string str;
 	int z;
 
-    z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
-    if (z == 0)
+	if ((head.getMethod() == "POST" or head.getMethod() == "PUT") and !head.getIsCgi())
     {
+        send_protected("", head);
+        update_descriptors(  head.getRealPathToFile( ),  head, conf );
+    }
+	else
+    {
+        z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
+        if (z == 0)
+        {
 //		if (waitpid(it->getPid(), 0, WNOHANG) == 0)
 //			return ;
-        send_protected("0\r\n\r\n",  head );
-        update_descriptors(  head.getRealPathToFile( ),  head, conf );
-        return ;
+            send_protected("0\r\n\r\n",  head );
+            update_descriptors(  head.getRealPathToFile( ),  head, conf );
+            return ;
+        }
+        line[z] = 0;
+        str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
+        send_protected(str,  head );
     }
-    line[z] = 0;
-    str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-    send_protected(str,  head );
 }
 
 //void cgiResponse( std::list<Header>::iterator &it, int &fd)

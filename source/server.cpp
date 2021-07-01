@@ -240,13 +240,15 @@ void server::descriptorForSend( Header &head )
 //            Header::current_files_in_work.push_back(head.getRealPathToFile());
         if (head.getFile())
             return ;
-        else
+        else if (head.getMethod() == "GET" or head.getMethod() == "HEAD")
         {
             ret = open(head.getRealPathToFile().c_str(), O_RDONLY);
             if (ret == -1)
                 error_exit("open in server::descriptorForSend");
             head.setFile(ret);
         }
+        else
+            head.setContent_Length("0");
     }
 }
 
@@ -293,6 +295,7 @@ void server::cgi_processing( Header &head, bool flag )
     char    **env;
     int     stat = 0;
 
+    head.setIsCgi(true);
     if (!flag)
         root = head.getRout()->get_cgi().second;
     else
