@@ -21,6 +21,7 @@ std::string get_current_date()
             "April",
             "May",
             "June",
+            "July",
             "August",
             "September",
             "October",
