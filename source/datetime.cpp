@@ -21,10 +21,10 @@ std::string get_current_date()
             "April",
             "May",
             "June",
-            "August"
-            "September"
-            "October"
-            "November"
+            "August",
+            "September",
+            "October",
+            "November",
             "December"
     };
     time_t rawtime;
