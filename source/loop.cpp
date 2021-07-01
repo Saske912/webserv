@@ -16,8 +16,6 @@ std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
     std::string ret;
 
     z = recv( it->getClient(), buf, BUFSIZE, 0 );
-    it->setBuffer(it->getReminder() + buf);
-    it->setReminder(std::string());
     if (z == -1)
     {
         if (errno == EAGAIN)
@@ -28,7 +26,12 @@ std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
     else if (z == 0)
         return std::string("connection closed");
     else
+    {
+        buf[z] = '\0';
+        it->setBuffer(it->getReminder() + buf);
+        it->setReminder(std::string());
         return split_buffer( it->getBuffer(), *it, serv );
+    }
 }
 
 int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with_data )
@@ -50,17 +53,17 @@ void sendFile( Header &head, config &conf )
 	size_t  z;
     int fd = head.getFile();
 
-	while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
+    struct stat st;
+    ::fstat(fd, &st);
+    if (st.st_size == 0)
+        send_protected("", head);
+    else while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
         if ( send_protected(str, head))
             return ;
         bzero(str, sizeof(str));
 	}
-	struct stat st;
-	::fstat(fd, &st);
-	if (st.st_size == 0)
-        send_protected("", head);
     update_descriptors( head.getRealPathToFile( ), head, conf );
 }
 

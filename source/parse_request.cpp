@@ -11,7 +11,7 @@ std::string parse_request( const std::string &string, Header &head, server &serv
     {
         return std::string();
     }
-    if (head.isEmptyLine() and head.isPermission())
+    if (head.isEmptyLine() and head.isPermission() and (head.getMethod() == "POST" or head.getMethod() == "PUT"))
     {
         if (!head.getReceiveFile())
         {

@@ -5,8 +5,8 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define CLIENTS 1
-#define REQUESTS 1
+#define CLIENTS 100
+#define REQUESTS 10000
 #define IP "127.0.0.1"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;

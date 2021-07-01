@@ -520,9 +520,9 @@ bool server::is_file( std::string const & request ) {
     struct ::stat st;
     std::string part;
     ::stat(request.c_str(), &st);
-    if (st.st_mode & S_IFDIR)
-        return false;
-    return true;
+    if (st.st_mode & S_IFREG)
+        return true;
+    return false;
 }
 
 const std::list<std::string> &server::getListOfMethods( ) const {

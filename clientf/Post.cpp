@@ -8,9 +8,9 @@
 #include <pthread.h>
 #include <fcntl.h>
 #define IP "127.0.0.1"
-#define CLIENTS 10
-#define REQUESTS 10
-#define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 127.0.0.1:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
+#define CLIENTS 100
+#define REQUESTS 10000
+#define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 127.0.0.1:1025\r\nTransfer-Encoding: chunked\r\n\r\n"
 #define FILE_TO_OPEN "youpi.bla"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

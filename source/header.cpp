@@ -43,6 +43,8 @@ void Header::eraseStruct()
 	is_cgi = false;
 	Pid = 0;
 	BodySize = 0;
+	buffer.clear();
+	reminder.clear();
 }
 
 void Header::setAccept_Charsets(std::string const &str)
