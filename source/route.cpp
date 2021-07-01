@@ -48,7 +48,7 @@ bool route::check_name( std::string request )
 std::string route::swap_path( std::string request )
 {
     std::string root(rtrim(_root, "/"));
-    std::string tmp(request.erase(0, root.length()));
+    std::string tmp(request.erase(0, _name.length()));
     std::string path(root + "/" + ltrim(tmp, "/"));
     return path;
 }

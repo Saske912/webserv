@@ -8,8 +8,8 @@
 #include <pthread.h>
 #include <fcntl.h>
 #define IP "127.0.0.1"
-#define CLIENTS 100
-#define REQUESTS 2000
+#define CLIENTS 1
+#define REQUESTS 1
 #define HEADER "PUT /put_test/file_should_exist_after HTTP/1.1\r\nHost: 127.0.0.1:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
 #define FILE_TO_OPEN "youpi.bla"
 
@@ -109,7 +109,7 @@ void    *func(void *t)
                 exit(1);
             }
             buf[ret] = 0;
-	//		std::cout << buf << std::endl;
+			std::cout << buf << std::endl;
 			if (strstr(buf, "\n\r\n"))
 			{
 				std::cout << num << ": response recieved" << std::endl;

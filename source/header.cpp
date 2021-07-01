@@ -564,12 +564,32 @@ const std::string &Header::getRealPathToFile( ) const {
 void Header::setRealPathToFile( const std::string &realPathToFile )
 {
     struct stat st;
+    std::string temp;
+    size_t      finder;
     if (::stat(realPathToFile.c_str(), &st) == -1)
     {
-        if (errno == EACCES)
-            setFile(serv->exception_processing(403, *this));
+        if (Method == "PUT" or Method == "POST")
+        {
+            temp = trim(realPathToFile, "/");
+            finder = temp.rfind('/');
+            if (finder == std::string::npos)
+                setFile(serv->exception_processing(404, *this));
+            else
+            {
+                temp = temp.substr(0, finder);
+                if (::stat(temp.c_str(), &st) == -1)
+                    setFile(serv->exception_processing(404, *this));
+                else
+                    real_path_to_file = realPathToFile;
+            }
+        }
         else
-            setFile(serv->exception_processing(404, *this));
+        {
+            if (errno == EACCES)
+                setFile(serv->exception_processing(403, *this));
+            else
+                setFile(serv->exception_processing(404, *this));
+        }
     }
     else if (!(st.st_mode & S_IFREG))
     {
@@ -584,7 +604,16 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
                 }
             }
             else
+            {
                 real_path_to_file = rtrim(realPathToFile, "/") + "/" + rout->get_default_page();
+                if (::stat(real_path_to_file.c_str(), &st) == -1)
+                {
+                    if (errno == EACCES)
+                        setFile(serv->exception_processing(403, *this));
+                    else
+                        setFile(serv->exception_processing(404, *this));
+                }
+            }
         }
     }
     else
