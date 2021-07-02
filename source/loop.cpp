@@ -50,21 +50,22 @@ int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with
 void sendFile( Header &head, config &conf )
 {
 	char    str[BUFSIZE + 1];
-	size_t  z;
+	size_t  z = 0;
     int fd = head.getFile();
-
     struct stat st;
+
     ::fstat(fd, &st);
     if (st.st_size == 0 || head.getMethod() == "HEAD")
         send_protected("", head);
-    else while ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
+    else if ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
 	{
 		str[z] = 0;
         if ( send_protected(str, head))
             return ;
         bzero(str, sizeof(str));
 	}
-    update_descriptors( head.getRealPathToFile( ), head, conf );
+    if (z < BUFSIZE - head.getReminder().length() and head.getReminder().empty())
+        update_descriptors( head.getRealPathToFile( ), head, conf );
 }
 
 void buildHeader( Header &head )
