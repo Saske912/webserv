@@ -5,8 +5,9 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define CLIENTS 100
-#define REQUESTS 10000
+#define CLIENTS 10
+#define REQUESTS 150
+#define RN "\r\n\r\n"
 #define IP "127.0.0.1"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
@@ -21,7 +22,7 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "GET /directory HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
+    std::string tmp = "GET /content HTTP/1.1\r\nHost: 127.0.0.1:1026\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;
@@ -31,12 +32,13 @@ void    *func(void *t)
     std::string     ip = IP;
     int num;
     bool flag = false;
+    bool flag2 = false;
 
     pthread_mutex_lock(&mutex2);
     num = st->sock;
     st->sock++;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1024);
+    addr.sin_port = htons(1026);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
     addrlen = sizeof(addr);
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -55,6 +57,7 @@ void    *func(void *t)
             }
 			std::cout << num << ": request(" << REQUESTS - cnt << ") sended" << std::endl;
             flag = true;
+            flag2 = false;
             pthread_mutex_unlock(&mutex);
         }
         if ( flag )
@@ -75,7 +78,11 @@ void    *func(void *t)
             }
             std::cout << num << ": response recieved" << std::endl;
             pthread_mutex_unlock(&mutex3);
-            flag = false;
+            if (strstr(buf, RN) && flag2 == true)
+                flag = false;
+            else if (strstr(buf, RN))
+                flag2 = true;
+
         }
     }
     std::cout << num << ": finished" << std::endl;
