@@ -609,7 +609,7 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
             }
             else
             {
-                real_path_to_file = rtrim(realPathToFile, "/") + "/" + rout->get_default_page();
+                real_path_to_file = rtrim(realPathToFile, "/") + "/" + ltrim(rout->get_default_page(), "/");
                 if (::stat(real_path_to_file.c_str(), &st) == -1)
                 {
                     if (errno == EACCES)
@@ -624,7 +624,7 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
         real_path_to_file = realPathToFile;
     if (real_path_to_file[0] != '/')
     {
-        real_path_to_file = rtrim(getEnvValue("PWD="), "/") + '/' + real_path_to_file;
+        real_path_to_file = rtrim(getEnvValue("PWD="), "/") + '/' + ltrim(real_path_to_file, "/");
     }
     setExtension(real_path_to_file);
     check_rout();

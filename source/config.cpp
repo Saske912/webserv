@@ -131,14 +131,14 @@ void config::moveFromWait( const std::string &rpf )
                     std::cerr << "coming back for file " << rpf << std::endl;
                     it_serv->getSet().push_back(it->front());
                     it_serv->getSet().back().setClientNowInQueue(false);
+                    it->pop();
+                    if (it->empty())
+                        _wait.erase(it);
                     communication_with_client(it_serv->getSet().back(), *it_serv, *this);
                     break ;
                 }
                 it_serv++;
             }
-            it->pop();
-            if (it->empty())
-                _wait.erase(it);
             break ;
         }
         it++;

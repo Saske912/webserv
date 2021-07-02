@@ -334,6 +334,8 @@ void server::cgi_processing( Header &head, bool flag )
         return ;
     }
     file = open(head.getRealPathToFile().c_str(), O_RDONLY);
+    if (file == -1)
+        head.setFile(exception_processing(500, head));
     response_buffer = open((head.getRealPathToFile() + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
     if (response_buffer == -1)
         head.setFile(exception_processing(500, head));

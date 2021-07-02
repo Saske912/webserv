@@ -49,7 +49,7 @@ int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with
 
 void sendFile( Header &head, config &conf )
 {
-	char    str[BUFSIZE + 1];
+	static char    str[BUFSIZE + 1];
 	size_t  z = 0;
     int fd = head.getFile();
     struct stat st;
@@ -131,7 +131,7 @@ std::string getBaseSixteen(unsigned int n)
 
 void sendFileChunked( int fd, config &conf, Header &head )
 {
-	char line[BUFSIZE + 1];
+	static char line[BUFSIZE + 1];
 	std::string str;
 	int z;
 
@@ -167,47 +167,6 @@ void sendFileChunked( int fd, config &conf, Header &head )
         }
     }
 }
-
-//void cgiResponse( std::list<Header>::iterator &it, int &fd)
-//{
-//	char *line = 0;
-//	int	 size = 0;
-//	int     gnl;
-//	int ret;
-//	std::string string;
-//
-//	while ((gnl = get_next_line(fd, &line)) > 0)
-//	{
-//		if (line && line[0] == '\r')
-//        {
-//            size += 2;
-//            free(line);
-//            line = NULL;
-//            break ;
-//        }
-//		ret = parse_cgi(it, line);
-//		if (ret == 1)
-//        {
-//            lseek(fd, ((int)strlen(line) + 1) * (-1) ,SEEK_CUR);
-//            break ;
-//        }
-//		size += strlen(line) + 1;
-//		free(line);
-//		line = NULL;
-//	}
-//	if (gnl == 0)
-//    {
-//	    std::cerr << "gnl = 0"  << std::endl;
-//    }
-//	else if (gnl == -1)
-//    {
-//	    std::cerr << "gnl error -1"  << std::endl;
-//    }
-//	string = std::string(it->getResponse() + it->getContent_Type() + it->getDate() + it->getLast_Modified() + "Transfer-Encoding: chunked\r\n\r\n");
-//    if ( send_protected( string,  ))
-//        return ;
-//	sendFileChunked(it, fd);
-//}
 
 static int Select( int max_fd, config &conf )
 {
