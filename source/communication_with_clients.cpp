@@ -34,7 +34,7 @@ void communication_with_clients( std::list<Header> &set, server &serv, fd_set *c
 
 void communication_with_client(Header &head, server &serv, config & conf)
 {
-    int             opt;
+    int             opt = 0;
     socklen_t len = sizeof(opt);
 
     head.setPermission(true);

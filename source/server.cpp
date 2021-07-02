@@ -174,8 +174,6 @@ int server::exception_processing( int except, Header &head )
     {
         to_head = get_error(except, _default_error_pages);
         ret = pipe(fds);
-        try{env = head.env_to_char();}
-        catch(std::exception &e){std::cout << e.what() << std::endl;}
         if (ret == -1)
             error_exit("pipe in exception_processing");
         if ((pid = fork()) == 0)
@@ -196,6 +194,8 @@ int server::exception_processing( int except, Header &head )
             dup2(fds[1], 1);
             if (!env)
                 exit(2);
+            try{env = head.env_to_char();}
+            catch(std::exception &e){std::cout << e.what() << std::endl;}
             if (execve(arg[0], arg, env) == -1)
                 perror("execve");
             free(arg);
@@ -339,9 +339,6 @@ void server::cgi_processing( Header &head, bool flag )
         head.setFile(exception_processing(500, head));
     else
         head.setFile(response_buffer);
-    env = head.env_to_char();
-    if (!env)
-        throw std::exception();
     if ((pid = fork()) == 0)
     {
 //            close(fdset[0]);
@@ -350,6 +347,9 @@ void server::cgi_processing( Header &head, bool flag )
         dup2(file, 0);
 //            dup2(fdset[1], 1);
         dup2(response_buffer, 1);
+        env = head.env_to_char();
+        if (!env)
+            throw std::exception();
         execve(arg[0], arg, env);
         exit(1);
     }
