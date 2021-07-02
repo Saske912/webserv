@@ -167,14 +167,13 @@ int server::exception_processing( int except, Header &head )
         ret = open(to_head.c_str(), O_RDONLY);
         if (ret == -1)
             error_exit("open in exception_processing");
+        free(arg);
         return ret;
     }
     else
     {
         to_head = get_error(except, _default_error_pages);
         ret = pipe(fds);
-        try{env = head.env_to_char();}
-        catch(std::exception &e){std::cout << e.what() << std::endl;}
         if (ret == -1)
             error_exit("pipe in exception_processing");
         if ((pid = fork()) == 0)
@@ -195,8 +194,11 @@ int server::exception_processing( int except, Header &head )
             dup2(fds[1], 1);
             if (!env)
                 exit(2);
+            try{env = head.env_to_char();}
+            catch(std::exception &e){std::cout << e.what() << std::endl;}
             if (execve(arg[0], arg, env) == -1)
                 perror("execve");
+            free(arg);
             exit(3);
         }
         else if (pid == -1)
@@ -215,6 +217,7 @@ int server::exception_processing( int except, Header &head )
 //            error_exit("system error in fork");
         head.setResponse(const_cast<char *>((head.getHttp() + " " + ttostr(except)\
         + " " + to_head).c_str()));
+        free(arg);
         return fds[0];
     }
 }
@@ -293,18 +296,17 @@ void server::handle_cgi_response_headers(int fd, Header &head) {
         if (status == -1)
             break;
         status = parse_cgi(head, line);
-        std::cout << line << std::endl;
-        std::cout << "skipped line len: " << strlen(line) + 1 << std::endl;
         if (!status) {
             skip += strlen(line) + 1;
         }
         if (status && std::string("\r") == line) {
             skip += 2;
+            free(line);
             break;
         }
+        free(line);
         status = 1;
     }
-    std::cout << "skipped " << skip << std::endl;
     lseek(fd, 0, skip);
 }
 
@@ -337,9 +339,6 @@ void server::cgi_processing( Header &head, bool flag )
         head.setFile(exception_processing(500, head));
     else
         head.setFile(response_buffer);
-    env = head.env_to_char();
-    if (!env)
-        throw std::exception();
     if ((pid = fork()) == 0)
     {
 //            close(fdset[0]);
@@ -348,6 +347,9 @@ void server::cgi_processing( Header &head, bool flag )
         dup2(file, 0);
 //            dup2(fdset[1], 1);
         dup2(response_buffer, 1);
+        env = head.env_to_char();
+        if (!env)
+            throw std::exception();
         execve(arg[0], arg, env);
         exit(1);
     }

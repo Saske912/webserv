@@ -1,3 +1,4 @@
+#include "header.h"
 #include "Lexer.hpp"
 
 Lexer::Lexer() : fd(0) {
@@ -24,6 +25,9 @@ void Lexer::read_next() {
     if (bufpos >= bufmax) {
         bufmax = read(fd, buf, 1023);
         bufpos = 0;
+        if (bufmax < 0 && pos.line <= 1 && pos.col <= 1) {
+            error_exit("Couldn't read config file");
+        }
         if (bufmax < 1) {
             current_char = -1;
             buf[0] = 0;
@@ -36,8 +40,8 @@ void Lexer::read_next() {
 }
 
 void Lexer::advance() {
-    pos.advance(current_char);
     read_next();
+    pos.advance(current_char);
 }
 
 std::vector<Token> Lexer::make_tokens() {

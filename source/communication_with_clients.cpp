@@ -18,7 +18,7 @@ void communication_with_clients( std::list<Header> &set, server &serv, fd_set *c
             continue ;
         }
         if (opt)
-            strerror(opt);
+            std::cout << strerror(opt) << std::endl;
         if ( receive( it, serv, clients_with_data ))
         {
             it = update_descriptors( it->getRealPathToFile( ), it, set, conf );
@@ -34,7 +34,7 @@ void communication_with_clients( std::list<Header> &set, server &serv, fd_set *c
 
 void communication_with_client(Header &head, server &serv, config & conf)
 {
-    int             opt;
+    int             opt = 0;
     socklen_t len = sizeof(opt);
 
     head.setPermission(true);
