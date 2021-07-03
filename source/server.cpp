@@ -311,6 +311,9 @@ void server::handle_cgi_response_headers(int fd, Header &head) {
     lseek(fd, 0, skip);
 }
 
+//#define BONUS 1
+#ifndef BONUS
+
 void server::cgi_processing( Header &head, bool flag )
 {
     int     fd1 = dup(1);
@@ -342,13 +345,14 @@ void server::cgi_processing( Header &head, bool flag )
         head.setFile(exception_processing(500, head));
     else
         head.setFile(response_buffer);
+    int ret = chdir(head.getRout()->get_name().c_str());
+    if (ret == -1)
+        error_exit("chdir in exception_processing");
     if ((pid = fork()) == 0)
     {
-//            close(fdset[0]);
         arg[0] = strdup(root.c_str());
         arg[1] = NULL;
         dup2(file, 0);
-//            dup2(fdset[1], 1);
         dup2(response_buffer, 1);
         env = head.env_to_char();
         if (!env)
@@ -362,7 +366,6 @@ void server::cgi_processing( Header &head, bool flag )
         return ;
     }
     head.setPid(pid);
-//            close(fdset[1]);
     waitpid(pid, &stat, 0);
     close(file);
     if ( WIFSIGNALED(stat))
@@ -383,9 +386,107 @@ void server::cgi_processing( Header &head, bool flag )
     dup2(fd0, 0);
     close(fd1);
     close(fd0);
-//        return fdset[0];
-//        dup2(fd1, 1);
 }
+#endif
+#ifdef BONUS
+
+void server::cgi_processing( Header &head, bool flag )
+{
+    int     fd1 = dup(1);
+    int     fd0 = dup(0);
+    std::string root;
+    int     file;
+    int     response_buffer;
+    pid_t   pid;
+    char    *arg[2];
+    char    **env;
+    int     stat = 0;
+
+    head.setIsCgi(true);
+    if (!flag)
+        root = head.getRout()->get_cgi().second;
+    else
+        root = _cgi_path;
+    root = get_path_to_cgi(root, head.getEnvValue("PATH="), head.getEnvValue("PWD="));
+    if (root.empty())
+    {
+        head.setFile(exception_processing(500, head));
+        return ;
+    }
+    file = open(head.getRealPathToFile().c_str(), O_RDONLY);
+    if (file == -1)
+        head.setFile(exception_processing(500, head));
+    struct ::stat stats;
+    int ret;
+        if (head.getMethod() == "GET" && (ret = ::stat((head.getRealPathToFile() + ".cookie").c_str(), &stats)) != -1)
+        {
+            response_buffer = open((head.getRealPathToFile() + ".cookie").c_str(), O_RDONLY);
+            if (response_buffer == -1)
+                head.setFile(exception_processing(500, head));
+            else
+                head.setFile(response_buffer);
+            std::cout << "WE ARE IN COOKIEEs" << std::endl;
+            return ;
+        }
+		else
+        {
+           if (head.getMethod() == "GET")
+		   {
+		   	    if ((response_buffer = open((head.getRealPathToFile() + ".cookie").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+                    error_exit("open error");
+		   }
+		   else
+		   {
+		        response_buffer = open((head.getRealPathToFile() + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
+                if (response_buffer == -1)
+                {
+                     head.setFile(exception_processing(500, head));
+                     return ;
+                }
+                else
+                    head.setFile(response_buffer);
+           }
+        }
+    if ((pid = fork()) == 0)
+    {
+        arg[0] = strdup(root.c_str());
+        arg[1] = NULL;
+        dup2(file, 0);
+        dup2(response_buffer, 1);
+        env = head.env_to_char();
+        if (!env)
+            throw std::exception();
+        execve(arg[0], arg, env);
+        exit(1);
+    }
+    else if (pid == -1)
+    {
+        head.setFile(exception_processing(500, head));
+        return ;
+    }
+    head.setPid(pid);
+    waitpid(pid, &stat, 0);
+    close(file);
+    if ( WIFSIGNALED(stat))
+    {
+        std::cerr << "WTERMSIG: " << WTERMSIG(stat) << std::endl;
+        std::cerr << "WCOREDUMP: " << WCOREDUMP(stat) << std::endl;
+    }
+    else if (WIFSTOPPED(stat))
+        std::cerr << "WSTOPSIG: " << WSTOPSIG(stat) << std::endl;
+    else if ( WIFEXITED(stat) and WEXITSTATUS(stat))
+    {
+        std::cerr << WEXITSTATUS(stat)  << std::endl;
+        error_exit("error in fork");
+    }
+    lseek(response_buffer, 0, 0);
+    handle_cgi_response_headers(response_buffer, head);
+    dup2(fd1, 1);
+    dup2(fd0, 0);
+    close(fd1);
+    close(fd0);
+}
+#endif
 
 void server::is_cgi( Header &head )
 {

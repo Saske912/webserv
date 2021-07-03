@@ -405,12 +405,46 @@ void Header::setter( const std::string &line, server &serv )
     }
 }
 
+#ifndef BONUS
+
+void Header::http( std::string const & str )
+{
+    size_t  finder;
+    std::string string(str);
+
+    setDate(get_current_date());
+    if (string[0] == '\n')
+        string.erase(0, 1);
+    finder = string.find( ' ' );
+    setMethod( string.substr( 0, finder));
+    string.erase( 0, finder + 1);
+    if ((finder = string.find( '?')) != std::string::npos)
+    {
+        setRequest( string.substr( 0, finder));
+        string.erase( 0, finder + 1);
+        finder = string.find( ' ');
+        setQuery( string.substr( 0, finder));
+        string.erase( 0, finder + 1);
+    }
+    else
+    {
+        finder = string.find( ' ' );
+        setRequest( string.substr( 0, finder));
+        string.erase( 0, finder + 1);
+    }
+    string.erase( 0, strlen( HTTP));
+    setHttp(string);
+}
+
+#endif
+#ifdef BONUS
 void Header::http( std::string const & str )
 {
     size_t  finder;
     std::string string(str);
     int     fd;
 
+    std::cout << "bonus: " << BONUS  << std::endl;
     fd = open("server.log", O_CREAT | O_WRONLY | O_APPEND, 0777);
     if (fd == -1)
         serv->exception_processing(500, *this);
@@ -440,6 +474,8 @@ void Header::http( std::string const & str )
     string.erase( 0, strlen( HTTP));
     setHttp(string);
 }
+
+#endif
 
 void Header::host( const std::string &string )
 {

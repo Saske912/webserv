@@ -189,7 +189,10 @@ static int Select( int max_fd, config &conf )
     {
         return 1;
     }
-    usleep(sizeof(conf.conf_set) * 150);
+    if (sizeof(conf.conf_set) * 150 > 10000)
+        usleep(0);
+    else
+        usleep(sizeof(conf.conf_set) * 150);
 	return (0);
 }
 

@@ -48,4 +48,7 @@ fclean:		clean
 
 re:			fclean all
 
+bonus:	${OBJS}
+			clang++ ${FLAGS} -D BONUS=1  ${SRCS} -o ${NAME}
+
 .PHONY:		.cpp.o all clean fclean re client
