@@ -300,8 +300,9 @@ void server::handle_cgi_response_headers(int fd, Header &head) {
         if (!status) {
             skip += strlen(line) + 1;
         }
-        if (status && std::string("\r") == line) {
-            skip += 2;
+        if (status) {
+            if (std::string("\r") == line)
+                skip += 2;
             free(line);
             break;
         }
@@ -345,9 +346,9 @@ void server::cgi_processing( Header &head, bool flag )
         head.setFile(exception_processing(500, head));
     else
         head.setFile(response_buffer);
-    int ret = chdir(head.getRout()->get_name().c_str());
+    int ret = chdir(head.getRout()->get_root().c_str());
     if (ret == -1)
-        error_exit("chdir in exception_processing");
+        error_exit("chdir in cgi_processing");
     if ((pid = fork()) == 0)
     {
         arg[0] = strdup(root.c_str());
@@ -386,6 +387,9 @@ void server::cgi_processing( Header &head, bool flag )
     dup2(fd0, 0);
     close(fd1);
     close(fd0);
+    ret = chdir(head.getEnvValue("PWD=").c_str());
+    if (ret == -1)
+        error_exit("chdir(2) in cgi_processing");
 }
 #endif
 #ifdef BONUS

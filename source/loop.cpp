@@ -79,9 +79,8 @@ void buildHeader( Header &head )
 	if (!head.getIsCgi())
 	    str += head.getContent_Length();
 	else {
-//	    head.setTransfer_Encoding("Transfer-Encoding: Transfer-Encoding: chunked");
-//        str += head.getTransfer_Encoding();
-        str += "Transfer-Encoding: chunked" END;
+	    head.setTransfer_Encoding("Transfer-Encoding: chunked");
+        str += "Transfer-Encoding: " + head.getTransfer_Encoding() + END;
     }
     str += head.getContent_Language();
     str += head.getAllow();
