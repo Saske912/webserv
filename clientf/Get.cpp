@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #define CLIENTS 1
-#define REQUESTS 1
+#define REQUESTS 10
 #define RN "\r\n\r\n"
 #define IP "127.0.0.1"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -65,7 +65,7 @@ void    *func(void *t)
         if ( flag )
         {
             ret = recv(sock, buf, 32768, 0);
-               std::cout << buf  << std::endl;
+//               std::cout << buf  << std::endl;
             pthread_mutex_lock(&mutex3);
             if (ret < 0)
             {

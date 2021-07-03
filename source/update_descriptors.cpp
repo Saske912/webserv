@@ -20,6 +20,7 @@ update_descriptors( std::string const &realPathToFile, std::list<Header>::iterat
         }
         iter++;
     }
+    FD_CLR(it->getClient(), &conf.write_set);
     close(it->getClient());
     it->eraseStruct();
     it = set.erase(it);
@@ -41,5 +42,6 @@ void update_descriptors( std::string const &realPathToFile, Header &head, config
         }
         iter++;
     }
+    FD_CLR(head.getClient(), &conf.write_set);
     head.eraseStruct();
 }

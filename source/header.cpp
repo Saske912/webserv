@@ -388,12 +388,12 @@ void Header::setter( const std::string &line, server &serv )
         empty_line = true;
         setServ(&serv);
         cgi_env();
+        if (getMethod() == "GET" || getMethod() == "HEAD")
+            body_end = true;
         serv.concat( *this );
         if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
         {
             serv.descriptorForSend( *this );
-            if (getMethod() == "GET" || getMethod() == "HEAD")
-                body_end = true;
         }
         return ;
     }
@@ -409,7 +409,14 @@ void Header::http( std::string const & str )
 {
     size_t  finder;
     std::string string(str);
+    int     fd;
 
+    fd = open("server.log", O_CREAT | O_WRONLY | O_APPEND, 0777);
+    if (fd == -1)
+        serv->exception_processing(500, *this);
+    write(fd, str.c_str(), str.length());
+    write(fd, "\n", 1);
+    close(fd);
     setDate(get_current_date());
     if (string[0] == '\n')
         string.erase(0, 1);

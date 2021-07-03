@@ -1,5 +1,5 @@
 server {
-	host 10.21.33.13										# host address
+	host 127.0.0.1										# host address
 	port 1024									# port to listen
 	server_names hostname.local hostname.test			# server names
 	#error_page 404 error_404.html						# error page for 404
@@ -10,10 +10,10 @@ server {
 	    root content
 	    directory_listing on
 	}
-	route /content/ {							    # route for file $(index)/public/index.html
-		allowed_methods GET POST				# allowed methods for route
-		root /content
-		index /index.html
+	route /content/ {
+		allowed_methods GET             # route for file $(index)/public/index.html
+		root YoupiBanane/				# allowed methods for route
+		index /youpi.bla
 	}
 	route /upload/ {									# route for folder
 		allowed_methods GET

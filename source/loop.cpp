@@ -52,19 +52,20 @@ void sendFile( Header &head, config &conf )
 	static char    str[BUFSIZE + 1];
 	size_t  z = 0;
     int fd = head.getFile();
+    size_t  diff = BUFSIZE - head.getReminder().length();
     struct stat st;
 
+    bzero(str, sizeof(str));
     ::fstat(fd, &st);
     if (st.st_size == 0 || head.getMethod() == "HEAD")
         send_protected("", head);
-    else if ((z = read(fd, str, BUFSIZE - head.getReminder().length())) > 0)
+    else if ((z = read(fd, str, diff)) > 0)
 	{
 		str[z] = 0;
         if ( send_protected(str, head))
             return ;
-        bzero(str, sizeof(str));
 	}
-    if (z < BUFSIZE - head.getReminder().length() and head.getReminder().empty())
+    if (z != diff and head.getReminder().empty())
         update_descriptors( head.getRealPathToFile( ), head, conf );
 }
 
@@ -188,6 +189,7 @@ static int Select( int max_fd, config &conf )
     {
         return 1;
     }
+    usleep(sizeof(conf.conf_set) * 150);
 	return (0);
 }
 
@@ -204,7 +206,6 @@ void    loop(config &conf)
         it_serv = conf.getServers().begin();
         ite_serv = conf.getServers().end();
         FD_ZERO(&conf.conf_set);
-        FD_ZERO(&conf.write_set);
         conf.sockets.clear();
         while (it_serv != ite_serv)
         {

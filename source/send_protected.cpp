@@ -22,11 +22,11 @@ int send_protected( std::string str, Header &head )
     }
     else if ((size_t)ret != str.length())
     {
-        head.setReminder(std::string(str, ret, str.length() - ret));
+        head.setReminder(str.substr(ret));
         std::cout << "diff size (send)" << head.getReminder().length() << std::endl;
         return 1;
     }
-//    std::cout << str  << std::endl;
+    std::cout << "ret =" << head.getReminder().length() << std::endl;
     head.setReminder(std::string());
     return 0;
 }
