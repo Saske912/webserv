@@ -8,7 +8,7 @@
 #define CLIENTS 1
 #define REQUESTS 10
 #define RN "\r\n\r\n"
-#define IP "10.21.31.71"
+#define IP "10.21.31.73"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -22,7 +22,7 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "GET /directory/youpla.bla HTTP/1.1\r\nHost: 10.21.31.71:1024\r\n\r\n";
+    std::string tmp = "GET /directory/youpla.bla HTTP/1.1\r\nHost: 10.21.31.73:1024\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;
@@ -42,14 +42,20 @@ void    *func(void *t)
     addr.sin_port = htons(1024);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
     addrlen = sizeof(addr);
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
-        exit(1);
+//    sock = socket(AF_INET, SOCK_STREAM, 0);
+  //  if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
+  //      exit(1);
     pthread_mutex_unlock(&mutex2);
     while ( cnt-- )
     {
         if (!flag)
         {
+			sock = socket(AF_INET, SOCK_STREAM, 0);
+			if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
+			{
+				std::cout << "fail to connect" << std::endl;
+				exit(1);
+			}
             pthread_mutex_lock(&mutex);
             if (send(sock, tmp.c_str(), tmp.length(), 0) == -1)
             {
@@ -89,6 +95,7 @@ void    *func(void *t)
 				--cnt;
                 flag = false;
             	std::cout << num << ": response recieved" << std::endl;
+				close(sock);
 			}
 			++cnt;
 			bzero(buf, sizeof(buf));
