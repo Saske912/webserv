@@ -5,10 +5,10 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define CLIENTS 1
-#define REQUESTS 10
+#define CLIENTS 100
+#define REQUESTS 50
 #define RN "\r\n\r\n"
-#define IP "10.21.31.73"
+#define IP "10.21.31.85"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -22,7 +22,7 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "GET /directory/youpla.bla HTTP/1.1\r\nHost: 10.21.31.73:1024\r\n\r\n";
+    std::string tmp = "GET /directory/youpla.bla HTTP/1.1\r\nHost: 10.21.31.85:1024\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;

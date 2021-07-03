@@ -60,6 +60,9 @@ private:
     std::string host_header_response;
     std::string query;
 public:
+	bool write_management;
+	bool use_management;
+	int  management_fd;
     std::string &getBuffer( );
     void setBuffer( const std::string &buffer );
     void setPermission( bool permission );

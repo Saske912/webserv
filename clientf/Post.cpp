@@ -7,10 +7,10 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <fcntl.h>
-#define IP "127.0.0.1"
+#define IP "10.21.31.85"
 #define CLIENTS 100
 #define REQUESTS 10000
-#define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 127.0.0.1:1025\r\nTransfer-Encoding: chunked\r\n\r\n"
+#define HEADER "POST /directory/youpi.bla HTTP/1.1\r\nHost: 10.21.31.85:1025\r\nTransfer-Encoding: chunked\r\n\r\n"
 #define FILE_TO_OPEN "youpi.bla"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -63,7 +63,7 @@ void    *func(void *t)
     num = st->sock;
     st->sock++;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1024);
+    addr.sin_port = htons(1025);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
     addrlen = sizeof(addr);
     sock = socket(AF_INET, SOCK_STREAM, 0);

@@ -39,6 +39,9 @@ void Header::eraseStruct()
     empty_line = false;
     client_now_in_queue = false;
     permission = false;
+    write_management = false;
+    use_management = false;
+    management_fd = 0;
 //	Fdr = 0;
 	is_cgi = false;
 	Pid = 0;
@@ -438,13 +441,13 @@ void Header::http( std::string const & str )
 
 #endif
 #ifdef BONUS
+
 void Header::http( std::string const & str )
 {
     size_t  finder;
     std::string string(str);
     int     fd;
-
-    std::cout << "bonus: " << BONUS  << std::endl;
+    
     fd = open("server.log", O_CREAT | O_WRONLY | O_APPEND, 0777);
     if (fd == -1)
         serv->exception_processing(500, *this);
@@ -551,6 +554,9 @@ Header::Header( server &serv, const std::list<std::string> &env ) : rout(), serv
     empty_line = false;
     body_end = false;
     permission = false;
+    write_management = false;
+    use_management = false;
+    management_fd = 0;
     if (( client = ::accept( serv.getHostSock( ), reinterpret_cast<sockaddr *>(&ad), &adlen)) == -1)
     {
         perror("accept");
@@ -607,6 +613,8 @@ void Header::setQuery( const std::string &query ) {
 const std::string &Header::getRealPathToFile( ) const {
     return real_path_to_file;
 }
+
+#ifndef BONUS
 
 void Header::setRealPathToFile( const std::string &realPathToFile )
 {
@@ -681,6 +689,109 @@ void Header::setRealPathToFile( const std::string &realPathToFile )
         serv->getConf()->moveToWait(*this, serv->getSet());
     }
 }
+
+#endif
+#ifdef BONUS
+
+std::string createManagmentName(std::string str)
+{
+	size_t i = 0;
+	
+	if ((i = str.find('?')) != std::string::npos)
+		str.erase(i, str.length());
+	while ((i = str.find('/')) != std::string::npos)
+		str[i] = 'X';
+	return "management/" + str + ".management";
+}
+
+void Header::setRealPathToFile( const std::string &realPathToFile )
+{
+	struct stat st;
+	std::string temp;
+	size_t      finder;
+	if (::stat(realPathToFile.c_str(), &st) == -1)
+	{
+		if (Method == "PUT" or Method == "POST")
+		{
+			temp = trim(realPathToFile, "/");
+			finder = temp.rfind('/');
+			if (finder == std::string::npos)
+				setFile(serv->exception_processing(404, *this));
+			else
+			{
+				temp = temp.substr(0, finder);
+				if (::stat(temp.c_str(), &st) == -1)
+					setFile(serv->exception_processing(404, *this));
+				else
+					real_path_to_file = realPathToFile;
+			}
+		}
+		else
+		{
+			if (errno == EACCES)
+				setFile(serv->exception_processing(403, *this));
+			else
+				setFile(serv->exception_processing(404, *this));
+		}
+	}
+	else if (!(st.st_mode & S_IFREG))
+	{
+		if (st.st_mode & S_IFDIR)
+		{
+			if (rout->get_default_page().empty())
+			{
+				if (rout->get_autoindex())
+				{
+					setError(1);
+					setFile(serv->autoindex(*this, *rout));
+				}
+			}
+			else
+			{
+				real_path_to_file = rtrim(realPathToFile, "/") + "/" + ltrim(rout->get_default_page(), "/");
+				if (::stat(real_path_to_file.c_str(), &st) == -1)
+				{
+					if (errno == EACCES)
+						setFile(serv->exception_processing(403, *this));
+					else
+						setFile(serv->exception_processing(404, *this));
+				}
+			}
+		}
+	}
+	else
+		real_path_to_file = realPathToFile;
+	if (real_path_to_file[0] != '/')
+	{
+		real_path_to_file = rtrim(getEnvValue("PWD="), "/") + '/' + ltrim(real_path_to_file, "/");
+	}
+	setExtension(real_path_to_file);
+	check_rout();
+	if ( file_available(real_path_to_file))
+	{
+		Header::current_files_in_work.push_back(real_path_to_file);
+		permission = true;
+		if (getMethod() == "GET")
+		{
+			struct ::stat stats;
+			if (::stat((real_path_to_file + ".management").c_str(), &stats) != -1 and S_ISREG(stats.st_mode))
+			{
+				setFile(open((real_path_to_file + ".management").c_str(), O_RDONLY));
+				if (getFile() == -1)
+					error_exit("end of fd");
+				use_management = true;
+			}
+			else
+				write_management = true;
+		}
+	}
+	else
+	{
+		serv->getConf()->moveToWait(*this, serv->getSet());
+	}
+}
+
+#endif
 
 const std::string &Header::getExtension( ) const {
     return extension;
@@ -828,6 +939,9 @@ Header &Header::operator=(Header const & src) {
     env = src.env;
     permission = src.permission;
     buffer = src.buffer;
+    write_management = src.write_management;
+    use_management = src.use_management;
+    management_fd = src.management_fd;
     return *this;
 }
 

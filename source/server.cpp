@@ -151,7 +151,7 @@ int server::exception_processing( int except, Header &head )
     std::string concat;
     std::string to_head;
     int     ret;
-    char    **env;
+    char    **env = NULL;
 
     if (!arg)
         error_exit("server::exception_processing malloc 1");
@@ -193,10 +193,10 @@ int server::exception_processing( int except, Header &head )
             arg[3] = NULL;
             close(fds[0]);
             dup2(fds[1], 1);
-            if (!env)
-                exit(2);
             try{env = head.env_to_char();}
             catch(std::exception &e){std::cout << e.what() << std::endl;}
+			if (!env)
+				exit(2);
             if (execve(arg[0], arg, env) == -1)
                 perror("execve");
             free(arg);
@@ -312,7 +312,6 @@ void server::handle_cgi_response_headers(int fd, Header &head) {
     lseek(fd, 0, skip);
 }
 
-//#define BONUS 1
 #ifndef BONUS
 
 void server::cgi_processing( Header &head, bool flag )
@@ -422,35 +421,38 @@ void server::cgi_processing( Header &head, bool flag )
         head.setFile(exception_processing(500, head));
     struct ::stat stats;
     int ret;
-        if (head.getMethod() == "GET" && (ret = ::stat((head.getRealPathToFile() + ".cookie").c_str(), &stats)) != -1)
-        {
-            response_buffer = open((head.getRealPathToFile() + ".cookie").c_str(), O_RDONLY);
-            if (response_buffer == -1)
-                head.setFile(exception_processing(500, head));
-            else
-                head.setFile(response_buffer);
-            std::cout << "WE ARE IN COOKIEEs" << std::endl;
-            return ;
-        }
+	if (head.getMethod() == "GET" && (ret = ::stat((head.getRealPathToFile() + ".cookie").c_str(), &stats)) != -1)
+	{
+		response_buffer = open((head.getRealPathToFile() + ".cookie").c_str(), O_RDONLY);
+		if (response_buffer == -1)
+			head.setFile(exception_processing(500, head));
 		else
-        {
-           if (head.getMethod() == "GET")
-		   {
-		   	    if ((response_buffer = open((head.getRealPathToFile() + ".cookie").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
-                    error_exit("open error");
-		   }
-		   else
-		   {
-		        response_buffer = open((head.getRealPathToFile() + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
-                if (response_buffer == -1)
-                {
-                     head.setFile(exception_processing(500, head));
-                     return ;
-                }
-                else
-                    head.setFile(response_buffer);
-           }
-        }
+			head.setFile(response_buffer);
+		return ;
+	}
+	else
+	{
+	   if (head.getMethod() == "GET")
+	   {
+			if ((response_buffer = open((head.getRealPathToFile() + ".cookie").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777)) < 0)
+				error_exit("open error");
+			head.setFile(response_buffer);
+	   }
+	   else
+	   {
+			response_buffer = open((head.getRealPathToFile() + ".tmp").c_str(), O_RDWR | O_CREAT | O_TRUNC, 0777);
+			if (response_buffer == -1)
+			{
+				 head.setFile(exception_processing(500, head));
+				 return ;
+			}
+			else
+				head.setFile(response_buffer);
+	   }
+	}
+	ret = chdir(head.getRout()->get_root().c_str());
+	if (ret == -1)
+		error_exit("chdir in cgi_processing");
     if ((pid = fork()) == 0)
     {
         arg[0] = strdup(root.c_str());
@@ -489,6 +491,9 @@ void server::cgi_processing( Header &head, bool flag )
     dup2(fd0, 0);
     close(fd1);
     close(fd0);
+	ret = chdir(head.getEnvValue("PWD=").c_str());
+	if (ret == -1)
+		error_exit("chdir(2) in cgi_processing");
 }
 #endif
 

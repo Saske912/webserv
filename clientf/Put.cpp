@@ -7,10 +7,10 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <fcntl.h>
-#define IP "127.0.0.1"
-#define CLIENTS 100
-#define REQUESTS 1000
-#define HEADER "PUT /put_test/file_should_exist_after HTTP/1.1\r\nHost: 127.0.0.1:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
+#define IP "10.21.31.85"
+#define CLIENTS 10
+#define REQUESTS 50
+#define HEADER "PUT /put_test/file_should_exist_after HTTP/1.1\r\nHost: 10.21.31.85:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
 #define FILE_TO_OPEN "../YoupiBanane/youpla.bla"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

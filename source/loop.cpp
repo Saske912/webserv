@@ -46,7 +46,7 @@ int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with
 	}
     return 0;
 }
-
+#ifndef BONUS
 void sendFile( Header &head, config &conf )
 {
 	static char    str[BUFSIZE + 1];
@@ -68,6 +68,39 @@ void sendFile( Header &head, config &conf )
     if (z != diff and head.getReminder().empty())
         update_descriptors( head.getRealPathToFile( ), head, conf );
 }
+#endif
+#ifdef BONUS
+void sendFile( Header &head, config &conf )
+{
+	if (head.write_management and !head.management_fd)
+	{
+		head.management_fd = open((head.getRealPathToFile() + ".management").c_str(), O_WRONLY | O_CREAT, 0777);
+		if (head.management_fd == -1)
+			error_exit("no fd");
+	}
+	static char    str[BUFSIZE + 1];
+	size_t  z = 0;
+    int fd = head.getFile();
+    size_t  diff = BUFSIZE - head.getReminder().length();
+    struct stat st;
+
+    bzero(str, sizeof(str));
+    ::fstat(fd, &st);
+    if (st.st_size == 0 || head.getMethod() == "HEAD")
+        send_protected("", head, head.management_fd);
+    else if ((z = read(fd, str, diff)) > 0)
+	{
+		str[z] = 0;
+        if ( send_protected(str, head, head.management_fd))
+            return ;
+	}
+    if (z != diff and head.getReminder().empty())
+	{
+		update_descriptors( head.getRealPathToFile( ), head, conf );
+		close(head.management_fd);
+	}
+}
+#endif
 
 void buildHeader( Header &head )
 {
@@ -188,10 +221,7 @@ static int Select( int max_fd, config &conf )
     {
         return 1;
     }
-    if (sizeof(conf.conf_set) * 150 > 10000)
-        usleep(0);
-    else
-        usleep(sizeof(conf.conf_set) * 150);
+	usleep(conf.sockets.size() * 1500);
 	return (0);
 }
 
@@ -234,7 +264,7 @@ void    loop(config &conf)
         ite_serv = conf.getServers().end();
         while (it_serv != ite_serv)
         {
-            if (FD_ISSET( it_serv->getHostSock( ), &conf.conf_set))
+            if (FD_ISSET( it_serv->getHostSock( ), &conf.conf_set) and conf.sockets.size() < QUEUE)
             {
                 it_serv->getSet().push_back( Header( *it_serv, conf.getEnv()));
             }

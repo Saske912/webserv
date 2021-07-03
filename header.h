@@ -29,7 +29,7 @@
 #include <iomanip>
 #include <semaphore.h>
 
-#define QUEUE 256
+#define QUEUE 128
 #define TVS 3
 #define TVMS 0
 #define BUFSIZE 1048576
@@ -57,6 +57,7 @@ update_descriptors( std::string const &realPathToFile, std::list<Header>::iterat
                     config &conf );
 void update_descriptors( std::string const &realPathToFile, Header &head, config &conf );
 int                         send_protected( std::string str, Header &head );
+int 						send_protected( std::string str, Header &head, int wfd);
 bool                        file_available(const std::string& request);
 std::string                 split_buffer( std::string &buffer, Header &head, server &serv );
 std::string                 get_http_line( std::string &buffer, Header &head, server &serv );
