@@ -157,6 +157,7 @@ int server::exception_processing( int except, Header &head )
         error_exit("server::exception_processing malloc 1");
     to_head = get_error(except, _error_pages);
     head.setError(except);
+	head.setPermission(true);
     if (to_head.length())
     {
         ret = chdir(head.getEnvValue("PWD=").c_str());
