@@ -4,7 +4,7 @@ PUT			= put
 
 GET			= get
 
-
+DELETE		= delete
 
 POSTS		= Post.cpp
 
@@ -12,8 +12,10 @@ GETS		= Get.cpp
 
 PUTS		= Put.cpp
 
+DELETS		= Delete.cpp
 
-all:	${POST} ${PUT} ${GET}
+
+all:	${POST} ${PUT} ${GET} ${DELETE}
 
 
 ${POST}: ${POSTS}
@@ -25,10 +27,13 @@ ${PUT}: ${PUTS}
 ${GET}: ${GETS}
 		clang++ -Wall -Wextra -Werror ${GETS} -o ${GET}
 
+${DELETE}: ${DELETS}
+		clang++ -Wall -Wextra -Werror ${DELETS} -o ${DELETE}
+
 clean:
 
 fclean: clean
-		rm -rf ${PUT} ${POST} ${GET}
+		rm -rf ${PUT} ${POST} ${GET} ${DELETE}
 
 re:		fclean all
 

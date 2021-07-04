@@ -57,7 +57,7 @@ void sendFile( Header &head, config &conf )
 
     bzero(str, sizeof(str));
     ::fstat(fd, &st);
-    if (st.st_size == 0 || head.getMethod() == "HEAD")
+    if (st.st_size == 0 || head.getMethod() == "HEAD" ||  head.getMethod() == "DELETE")
         send_protected("", head);
     else if ((z = read(fd, str, diff)) > 0)
 	{
@@ -85,20 +85,38 @@ void sendFile( Header &head, config &conf )
     struct stat st;
 
     bzero(str, sizeof(str));
-    ::fstat(fd, &st);
-    if (st.st_size == 0 || head.getMethod() == "HEAD")
-        send_protected("", head, head.management_fd);
-    else if ((z = read(fd, str, diff)) > 0)
-	{
-		str[z] = 0;
-        if ( send_protected(str, head, head.management_fd))
-            return ;
-	}
-    if (z != diff and head.getReminder().empty())
-	{
-		update_descriptors( head.getRealPathToFile( ), head, conf );
-		close(head.management_fd);
-	}
+        ::fstat(fd, &st);
+    if (head.use_management)
+    {
+        if ((z = read(fd, str, diff)) > 0)
+        {
+            str[z] = 0;
+            if ( send_protected(str, head))
+                return ;
+        }
+        if (z != diff and head.getReminder().empty())
+        {
+            update_descriptors( head.getRealPathToFile( ), head, conf );
+        }
+    }
+    else
+    {
+        if (st.st_size == 0 || head.getMethod() == "HEAD" ||  head.getMethod() == "DELETE" )
+        {
+            send_protected("", head, head.management_fd);
+        }
+        else if ((z = read(fd, str, diff)) > 0)
+        {
+            str[z] = 0;
+            if ( send_protected(str, head, head.management_fd))
+                return ;
+        }
+        if (z != diff and head.getReminder().empty())
+        {
+            update_descriptors( head.getRealPathToFile( ), head, conf );
+            close(head.management_fd);
+        }
+    }
 }
 #endif
 
@@ -111,7 +129,8 @@ void buildHeader( Header &head )
 	str = head.getResponse();
 	if (!head.getIsCgi())
 	    str += head.getContent_Length();
-	else {
+	else
+	{
 	    head.setTransfer_Encoding("Transfer-Encoding: chunked");
         str += "Transfer-Encoding: " + head.getTransfer_Encoding() + END;
     }
@@ -162,6 +181,7 @@ std::string getBaseSixteen(unsigned int n)
 	return str;
 }
 
+#ifndef BONUS
 void sendFileChunked( int fd, config &conf, Header &head )
 {
 	static char line[BUFSIZE + 1];
@@ -200,6 +220,53 @@ void sendFileChunked( int fd, config &conf, Header &head )
         }
     }
 }
+#endif
+#ifdef BONUS
+void sendFileChunked( int fd, config &conf, Header &head )
+{
+    static char line[BUFSIZE + 1];
+    std::string str;
+    int z;
+
+    if (head.write_management and !head.management_fd)
+    {
+        head.management_fd = open((head.getRealPathToFile() + ".management").c_str(), O_WRONLY | O_CREAT, 0777);
+        if (head.management_fd == -1)
+            error_exit("no fd");
+    }
+    if ((head.getMethod() == "POST" or head.getMethod() == "PUT") and !head.getIsCgi())
+    {
+        send_protected("", head);
+        update_descriptors(  head.getRealPathToFile( ),  head, conf );
+    }
+    else
+    {
+        if (head.getReminder().length() >= BUFSIZE)
+        {
+            send_protected("", head, head.management_fd);
+        }
+        else
+        {
+            z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
+            if (z == 0)
+            {
+                if (head.getReminder().length())
+                {
+                    send_protected("", head, head.management_fd);
+                    if (head.getReminder().length())
+                        return ;
+                }
+                send_protected("0\r\n\r\n",  head, head.management_fd );
+                update_descriptors(  head.getRealPathToFile( ),  head, conf );
+                return;
+            }
+            line[z] = 0;
+            str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
+            send_protected(str,  head, head.management_fd );
+        }
+    }
+}
+#endif
 
 static int Select( int max_fd, config &conf )
 {

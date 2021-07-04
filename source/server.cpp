@@ -239,9 +239,8 @@ void server::descriptorForSend( Header &head )
         ret = chdir(head.getEnvValue("PWD=").c_str());
         if (ret == -1)
             error_exit("chdir in server::descriptorForSend");
-        is_cgi( head );
-//        if (!head.getError())
-//            Header::current_files_in_work.push_back(head.getRealPathToFile());
+        if (head.getMethod() != "DELETE")
+            is_cgi( head );
         if (head.getFile())
             return ;
         else if (head.getMethod() == "GET" or head.getMethod() == "HEAD")
@@ -250,6 +249,11 @@ void server::descriptorForSend( Header &head )
             if (ret == -1)
                 error_exit("open in server::descriptorForSend");
             head.setFile(ret);
+        }
+        else if (head.getMethod() == "DELETE")
+        {
+            remove(head.getRealPathToFile().c_str());
+            head.setFile(999);
         }
         else
             head.setContent_Length("0");

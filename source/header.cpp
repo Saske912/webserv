@@ -391,13 +391,11 @@ void Header::setter( const std::string &line, server &serv )
         empty_line = true;
         setServ(&serv);
         cgi_env();
-        if (getMethod() == "GET" || getMethod() == "HEAD")
+        if (getMethod() == "GET" || getMethod() == "HEAD" || getMethod() == "DELETE")
             body_end = true;
         serv.concat( *this );
-        if (getMethod() == "GET" || getMethod() == "HEAD" || getError())
-        {
+        if (getMethod() == "GET" || getMethod() == "HEAD" || getMethod() == "DELETE" || getError())
             serv.descriptorForSend( *this );
-        }
         return ;
     }
     for (std::map<std::string, Func>::iterator it(array.begin()); it != array.end();)

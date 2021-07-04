@@ -29,6 +29,8 @@
 #include <iomanip>
 #include <semaphore.h>
 
+#define BONUS 1
+
 #define QUEUE 128
 #define TVS 3
 #define TVMS 0
