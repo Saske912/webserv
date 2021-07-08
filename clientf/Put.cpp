@@ -7,11 +7,11 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <fcntl.h>
-#define IP "127.0.0.1"
-#define CLIENTS 100
-#define REQUESTS 2000
-#define HEADER "PUT /put_test/file_should_exist_after HTTP/1.1\r\nHost: 127.0.0.1:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
-#define FILE_TO_OPEN "youpi.bla"
+#define IP "10.21.31.85"
+#define CLIENTS 10
+#define REQUESTS 50
+#define HEADER "PUT /put_test/file_should_exist_after HTTP/1.1\r\nHost: 10.21.31.85:1024\r\nTransfer-Encoding: chunked\r\n\r\n"
+#define FILE_TO_OPEN "../YoupiBanane/youpla.bla"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
@@ -88,7 +88,7 @@ void    *func(void *t)
 			while ((ret = read(fd, buf, rand() % 32768)) > 0)
 			{
 				buf[ret] = 0;
-				str = getBaseSixteen(ret) + "\r\n" + buf; 
+				str = getBaseSixteen(ret) + "\r\n" + buf + "\r\n";
 				send(sock, str.c_str(), str.length(), 0);
 				bzero(buf, 32768);
 			}
@@ -109,7 +109,7 @@ void    *func(void *t)
                 exit(1);
             }
             buf[ret] = 0;
-	//		std::cout << buf << std::endl;
+			std::cout << buf << std::endl;
 			if (strstr(buf, "\n\r\n"))
 			{
 				std::cout << num << ": response recieved" << std::endl;

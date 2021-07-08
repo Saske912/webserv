@@ -13,3 +13,4 @@ client
 cfg/*
 libft/*.a
 libft/*.o
+cfg

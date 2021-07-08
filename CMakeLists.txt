@@ -10,7 +10,7 @@ include_directories(webserv source source/config .)
 add_compile_options(-g -Wall -Wextra)
 
 add_executable(webserv
-        source/erase.cpp
+        source/update_descriptors.cpp
         header.h
         itressa.h
         wpersimm.h
@@ -25,7 +25,6 @@ add_executable(webserv
         source/route.cpp
         source/route.hpp
         source/tests.cpp
-        source/find.cpp
         source/config.cpp
         source/config.hpp
         source/Number.cpp
@@ -49,7 +48,13 @@ add_executable(webserv
         source/header.hpp
         source/trim.cpp
         source/template.hpp
-        source/ft_doublecpy.cpp
+        source/templates.cpp
         source/ft_doublefree.cpp
         source/get_next_line.cpp
-        source/get_next_line_utils.cpp source/cgi_path.cpp source/datetime.cpp source/send_protected.cpp)
+        source/get_next_line_utils.cpp
+        source/cgi_path.cpp source/datetime.cpp
+        source/send_protected.cpp source/file_available.cpp
+        source/get_http_line.cpp source/split_buffer.cpp
+        source/parse_request.cpp
+        source/templates.cpp
+        source/update_descriptors.cpp source/communication_with_clients.cpp source/responce.cpp)

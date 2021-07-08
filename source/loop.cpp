@@ -4,451 +4,158 @@
 #include "../header.h"
 #include "Number.hpp"
 
-int		sorter(t_write a, t_write b)
+int		sorter(const Header& a, const Header& b)
 {
-	return (a.fd < b.fd);
+	return (a.getClient() < b.getClient());
 }
 
-
-static void parse_first_line(char *line, Header &head)
+std::string receive_buffer( std::list<Header>::iterator &it, server &serv )
 {
-	int i = -1;
-	int j;
+    int         z;
+    char        buf[BUFSIZE + 1];
+    std::string ret;
+
+    z = recv( it->getClient(), buf, BUFSIZE, 0 );
+    if (z == -1)
+    {
+        if (errno == EAGAIN)
+            return std::string("wait");
+        else
+            return std::string("error");
+    }
+    else if (z == 0)
+        return std::string("connection closed");
+    else
+    {
+        buf[z] = '\0';
+        it->setBuffer(it->getReminder() + buf);
+        it->setReminder(std::string());
+        return split_buffer( it->getBuffer(), *it, serv );
+    }
+}
+
+int receive( std::list<Header>::iterator &it, server &serv, fd_set *clients_with_data )
+{
+	if ( FD_ISSET(it->getClient(), clients_with_data) and !it->isBodyEnd())
+	{
+        std::string str;
+
+        str = receive_buffer( it, serv );
+        if (str == "connection closed")
+            return 1;
+	}
+    return 0;
+}
+#ifndef BONUS
+void sendFile( Header &head, config &conf )
+{
+	static char    str[BUFSIZE + 1];
+	size_t  z = 0;
+    int fd = head.getFile();
+    size_t  diff = BUFSIZE - head.getReminder().length();
+    struct stat st;
+
+    bzero(str, sizeof(str));
+    ::fstat(fd, &st);
+    if (st.st_size == 0 || head.getMethod() == "HEAD" ||  head.getMethod() == "DELETE")
+        send_protected("", head);
+    else if ((z = read(fd, str, diff)) > 0)
+	{
+		str[z] = 0;
+        if ( send_protected(str, head))
+            return ;
+	}
+    if (z != diff and head.getReminder().empty())
+        update_descriptors( head.getRealPathToFile( ), head, conf );
+}
+#endif
+#ifdef BONUS
+void sendFile( Header &head, config &conf )
+{
+	if (head.write_management and !head.management_fd)
+	{
+		head.management_fd = open((head.getRealPathToFile() + ".management").c_str(), O_WRONLY | O_CREAT, 0777);
+		if (head.management_fd == -1)
+			error_exit("no fd");
+	}
+	static char    str[BUFSIZE + 1];
+	size_t  z = 0;
+    int fd = head.getFile();
+    size_t  diff = BUFSIZE - head.getReminder().length();
+    struct stat st;
+
+    bzero(str, sizeof(str));
+        ::fstat(fd, &st);
+    if (head.use_management)
+    {
+        if ((z = read(fd, str, diff)) > 0)
+        {
+            str[z] = 0;
+            if ( send_protected(str, head))
+                return ;
+        }
+        if (z != diff and head.getReminder().empty())
+        {
+            update_descriptors( head.getRealPathToFile( ), head, conf );
+        }
+    }
+    else
+    {
+        if (st.st_size == 0 || head.getMethod() == "HEAD" ||  head.getMethod() == "DELETE" )
+        {
+            send_protected("", head, head.management_fd);
+        }
+        else if ((z = read(fd, str, diff)) > 0)
+        {
+            str[z] = 0;
+            if ( send_protected(str, head, head.management_fd))
+                return ;
+        }
+        if (z != diff and head.getReminder().empty())
+        {
+            update_descriptors( head.getRealPathToFile( ), head, conf );
+            close(head.management_fd);
+        }
+    }
+}
+#endif
+
+void buildHeader( Header &head )
+{
 	std::string str;
 
-	while (line[++i])
-		if (line[i] == ' ')
-			break ;
-    if (!line[i])
-    {
-        head.setMethod(std::string("THIS SHIT NOT IMPLEMENTED", 0, i));
-        return ;
-    }
-	head.setMethod(std::string(line, 0, i));
-	j = i + 1;
-	while (line[++i])
-		if (line[i] == ' ')
-			break ;
-	if (!line[i])
-	{
-        head.setMethod(std::string("THIS SHIT NOT IMPLEMENTED", 0, i));
-        return ;
-    }
-	head.setRequest(std::string(line, j, i - j));
-	j = i + 1;
-	while (line[++i]);
-	head.setHttp(std::string(line, j, i - j));
-	head.addEnv((char *)("REQUEST_URI=" + head.getRequest()).c_str());
-	head.addEnv((char *)("REQUEST_METHOD=" + head.getMethod()).c_str());
-	head.addEnv((char *)("SERVER_PROTOCOL=" + head.getHttp()).c_str());
-	head.addEnv((char *)("PATH_INFO=" + head.getRequest()).c_str());
-	head.addEnv((char *)("PATH_TRANSLATED=" + head.getRequest()).c_str());
-	str = head.getRequest();
-	if (str.find('?') != std::string::npos)
-		head.addEnv((char *)("QUERY_STRING=" + str.erase(0, str.find('?') + 1)).c_str());
-}
-
-static void parse_request(char *line, Header &head)
-{
-	char *tmp;
-	char *tmp2;
-	std::string str;
-	unsigned long int i = -1;
-	int count = 0;
-
-	if ((tmp = strstr(line, "Accept-Language: ")))
-	{
-		tmp += strlen("Accept-Language: ");
-		head.setContent_Language("Content-Language: " + std::string(tmp) + "\n");
-	}
-	else if ((tmp = strstr(line, "Host: ")))
-	{
-        tmp += strlen("Host: ");
-        tmp2 = strchr(tmp, ':');
-        if (head.getHost().empty() and tmp2 != NULL )
-        {
-            head.setHost(std::string(tmp, 0, tmp2 - tmp));
-        }
-		else
-        {
-		    std::cout << "line : " << line  << std::endl;
-            head.setHost("400");
-            std::cout << "HOST ERROR"  << std::endl;
-        }
-		head.setPort(atoi(tmp2 + 1));
-	}
-	else if ((tmp = strstr(line, "Referer: ")))
-	{
-
-        tmp += strlen("Referer: ");
-		head.setReferer(tmp);
-		while (line[++i])
-		{
-			if (line[i] == '/')
-				count++;
-			if (count == 3)
-				break ;
-		}
-		str = std::string(line + i);
-		if ((i = str.find('?')) != std::string::npos)
-			str.erase(i);
-		if ((i = str.rfind('.')) != std::string::npos)
-			str.erase(0, i);
-		if ((i = str.find('/')) != std::string::npos)
-		{
-			char tmpp[150];
-			str.erase(0, i);
-			head.addEnv((char *)("PATH_INFO=" + str).c_str());
-			head.addEnv((char *)("PATH_TRANSLATED=" + std::string(getcwd(tmpp, sizeof(tmpp))) + str).c_str());
-		}
-	}
-	else if ((tmp = strstr(line, "Accept: ")))
-	{
-
-        tmp += strlen("Accept: ");
-		str = std::string(tmp);
-		head.addEnv((char *)("CONTENT_TYPE=" + std::string(str, 0, str.find(','))).c_str());
-	}
-	else if (head.getMethod() == "POST" && strchr(line, '='))
-	{
-
-        head.addEnv((char *)("QUERY_STRING=" + std::string(line)).c_str());
-	}
-    else if ((tmp = strstr(line, "Transfer-Encoding: ")))
-    {
-
-        tmp += strlen("Transfer-Encoding: ");
-        head.setTransfer_Encoding(std::string(tmp));
-    }
-    else if ((tmp = strstr(line, "Authorization: ")))
-    {
-        tmp += strlen("Authorization: ");
-		head.addEnv((char *)("AUTH_TYPE=" + std::string(tmp, 0, strchr(tmp, ' ') - tmp)).c_str());
-		if (std::string(head.getEnvValue("AUTH_TYPE=")) == "BASIC" || std::string(head.getEnvValue("AUTH_TYPE=")) == "DIGEST")
-		{
-			tmp = strchr(tmp, ' ') + 1;
-			head.addEnv((char *)("REMOTE_USER=" + std::string(tmp, 0, strchr(tmp, ':') - tmp)).c_str());
-			tmp = strchr(tmp, ':') + 1;
-			head.addEnv((char *)("REMOTE_IDENT=" + std::string(tmp)).c_str());
-		}
-    }
-}
-
-int recv_next_line(int fd, char **line) {
-    int z;
-    char    buf[2];
-    std::string str("");
-    while (( z = recv( fd, buf, 1, 0 )) > 0 ) {
-        if ( buf[0] == '\n' )
-            break;
-        buf[1] = 0;
-        if ( buf[0] != '\r' )
-            str += std::string( buf );
-    }
-    *line = strdup(str.c_str());
-    return z;
-}
-
-int	chunked(std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
-{
-	char *line = 0;
-	char *buf = 0;
-	struct stat stat;
-
-	if (it->head.getFd() == 1)
-    {
-        it->head.setFd(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
-        if (it->head.getFd() == -2)
-        {
-            it->head.setFd(1);
-            return 1;
-        }
-    }
-	if (it->count == 0)
-	{
-		t.rd = recv_next_line((*it).fd, &line);
-		if (t.rd == -1 && line && line[0])
-		{
-			if (it->reminder.empty())
-				it->reminder = std::string(line);
-			else
-				it->reminder += std::string(line);
-			free(line);
-			return 1;
-		}
-        if (!it->reminder.empty())
-		{
-			if (line)
-			{
-				buf = line;
-				line = strdup((it->reminder + std::string(line)).c_str());
-				free(buf);
-				buf = 0;
-			}
-			else
-				line = strdup(it->reminder.c_str());
-			it->reminder.erase();
-		}
-        if (!t.rd)
-        {
-            if (it->head.getFd() != 1)
-                close(it->head.getFd());
-            erase(it, it->fd, false);
-		    it = set.erase(it);
-            return 1;
-        }
-		if (line && std::string(line).find_last_not_of("1234567890abcdef") != std::string::npos)
-		{
-			free(line);
-			return 1;
-		}
-	}
-    if (line && !line[0] && it->eshe_odin_flag) {
-		if (it->head.getFd() != 1)
-		{
-			fstat(it->head.getFd(), &stat);
-			it->head.addEnv(("CONTENT_LENGTH=" + ttostr(stat.st_size + 1)).c_str());
-			erase(it, it->head.getFd(), false);
-			it->ct = 0;
-		}
-		it->flag = true;
-	}
+	if (head.getMethod() == "HEAD")
+	    head.setContent_Length("0");
+	str = head.getResponse();
+	if (!head.getIsCgi())
+	    str += head.getContent_Length();
 	else
 	{
-        if (line && !line[0])
-		{
-			free(line);
-			return 1;
-		}
-		if (line)
-		{
-			 it->bytes = ( int ) strtol( line, 0, 16 );
-		}
-		if (line && !it->bytes)
-		{
-			it->eshe_odin_flag = true;
-			it->head.setBodySize(it->ct);
-		}
-		else
-		{
-			int n = it->bytes - it->count;
-			buf = (char *)malloc(sizeof(char) * (n + 1));
-			t.rd = recv( it->fd, buf, n , 0 );
-            if (t.rd == 0)
-            {
-                erase(it, it->fd, false);
-                it = set.erase(it);
-				if (line)
-					free(line);
-				if (buf)
-					free(buf);
-                return 1;
-            }
-			if (t.rd == -1 && !buf[0])
-			{
-				if (line)
-					free(line);
-				free(buf);
-				return 1;
-			}
-			if (t.rd == -1)
-			{
-				t.rd = strlen(buf);
-			}
-			if (it->head.getFd() != 1)
-			{
-			    if (t.rd != -1)
-                {
-                    buf[t.rd] = 0;
-                    write(it->head.getFd(), buf, t.rd);
-                }
-			}
-			if (t.rd != -1)
-			  it->ct += t.rd;
-			it->count += t.rd;
-			free(buf);
-			if (it->count >= it->bytes)
-			{
-				it->count = 0;
-			}
-		}
-	}
-	if (line)
-		free(line);
-	return 0;
+	    head.setTransfer_Encoding("Transfer-Encoding: chunked");
+        str += "Transfer-Encoding: " + head.getTransfer_Encoding() + END;
+    }
+    str += head.getContent_Language();
+    str += head.getAllow();
+	str += head.getDate();
+	str += head.getLast_Modified();
+	str += head.getContent_Location();
+	str += head.getHostHeaderResponse();
+	str += END;
+	head.setEmptyLine(false);
+	head.setReminder(str);
 }
 
-std::string createManagmentName(std::string str)
-{
-	size_t i = 0;
-
-	if ((i = str.find('?')) != std::string::npos)
-		str.erase(i, str.length());
-	while ((i = str.find('/')) != std::string::npos)
-		str[i] = 'X';
-	return str;
-}
-
-
-int sendManagment(std::list<t_write>::iterator &it, int fd)
-{
-	char str[32769];
-	int z;
-	std::string str2;
-
-	while ((z = read(fd, str, 32768)) > 0)
-	{
-		str[z] = 0;
-		str2 += str;
-	}
-    if (send_protected(str2, it, "sendFile"))
-        return 1;
-	return 0;
-}
-
-void recive( std::list<t_write> &set, std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf)
-{
-	char    *line = 0;
-	char    *buf;
-
-	if ( FD_ISSET((*it).fd, &t.read))
-	{
-		if (!it->first_line)
-		{
-			(*it).head.setEnv(t.env);
-			it->head.initEnv();
-		}
-        if ( it->head_readed && it->head.getTransfer_Encoding() == "chunked")
-        {
-			if (chunked(set, it, t, conf))
-				return ;
-        }
-        else
-        {
-            t.rd = recv_next_line((*it).fd, &line);
-            if (t.rd != 0 and !line[0] and !it->first_line)
-            {
-                free(line);
-                return ;
-            }
-            if (!it->reminder.empty())
-            {
-                buf = line;
-                line = strdup((it->reminder + line).c_str());
-                free(buf);
-                buf = 0;
-                it->reminder.erase();
-            }
-            if (t.rd == -1 && line[0])
-            {
-                it->reminder = std::string(line);
-				free(line);
-                return ;
-            }
-            if (t.rd == 0)
-            {
-                erase(it, it->fd, false);
-                it = set.erase(it);
-                free(line);
-                return ;
-            }
-            if (!line[0]) {
-				struct stat st;
-                it->head_readed = true;
-				if (it->head.getMethod() == "GET")
-				{
-					std::string man = "managment/" + createManagmentName(it->head.getRequest() + ".managment"); 
-					if (stat(man.c_str(), &st) != -1)
-					{
-						free(line);
-						int FileD = open(man.c_str(), O_RDONLY);
-						it->head.setFdr(FileD);
-						sendManagment(it, FileD);
-						if (it->reminder.empty())
-                			erase(it, FileD, true);
-						return ;
-					}
-				}
-            }
-            else if ( !it->first_line )
-            {
-                it->first_line = true;
-                parse_first_line(line, (*it).head);
-            }
-            else
-                parse_request(line, (*it).head);
-                if (std::string(line).empty() && it->head.getTransfer_Encoding() != "chunked" \
-                    && it->head.getMethod() != "PUT")
-                (*it).flag = true;
-        }
-        free(line);
-        line = 0;
-	}
-}
-
-
-int sendFile(std::list<t_write>::iterator &it, int fd, std::string &str2)
-{
-	char str[32769];
-	int z;
-
-	while ((z = read(fd, str, 32768)) > 0)
-	{
-		str[z] = 0;
-		str2 += str;
-	}
-	if (it->head.getMethod() == "GET")
-	{
-		int mng = open(("managment/" + createManagmentName(it->head.getRequest()) + ".managment").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-		write(mng, str2.c_str(), str2.length());
-		close(mng);
-	}
-    if (send_protected(str2, it, "sendFile"))
-        return 1;
-	return 0;
-}
-
-void noBodyResponse(std::list<t_write>::iterator &it, int fd, std::list<t_write> &set, std::string &str)
-{
-    if (send_protected(str + "\r\n", it, "noBodyResponse"))
-        return ;//send error
-    if (fd != -1)
-	    erase(it, fd, false);
-    erase(it, it->fd, false);
-	it = set.erase(it);
-}
-
-std::string  sendHeader(std::list<t_write>::iterator &it)
-{
-	std::string str;
-
-	str = (*it).head.getResponse();
-	if (!((*it).head.getContent_Language().empty()))	
-	{
-		str += (*it).head.getContent_Language();
-	}
-	if (!((*it).head.getAllow().empty()))
-	{
-		str += (*it).head.getAllow();
-	}
-	(*it).head.setDate("Date: " + get_current_date());
-	str += (*it).head.getDate();
-	str += (*it).head.getLast_Modified();
-	str += (*it).head.getContent_Location();
-	return str;
-}
-
-int     parse_cgi(std::list<t_write>::iterator &it, char *line)
+int     parse_cgi(Header &head, char *line)
 {
 	char *tmp;
 
 	if ((tmp = strstr(line, "Status: ")))
 	{
 		tmp += strlen("Status: ");
-		it->head.setResponse("HTTP/1.1 " + std::string(tmp) + "\n");
+		head.setResponse("HTTP/1.1 " + std::string(tmp));
 	}
 	else if ((tmp = strstr(line, "Content-Type: ")))
-		it->head.setContent_Type(std::string(tmp) + "\n");
+		head.setContent_Type(std::string(tmp));
 	else
         return 1;
     return 0;
@@ -474,227 +181,162 @@ std::string getBaseSixteen(unsigned int n)
 	return str;
 }
 
-void resetIt(std::list<t_write>::iterator &it)
+#ifndef BONUS
+void sendFileChunked( int fd, config &conf, Header &head )
 {
-	it->first_line = false;
-	it->head_readed = false;
-	it->eshe_odin_flag = false;
-	it->flag = false;
-	it->bytes = 0;
-	it->count = 0;
-	it->ct = 0;
-}
-
-void  sendFileChunked(std::list<t_write>::iterator &it, int &fd)
-{
-	char line[32769];
+	static char line[BUFSIZE + 1];
 	std::string str;
 	int z;
 
-    z = read(fd, line, 1000);
-    if (z == 0)
+	if ((head.getMethod() == "POST" or head.getMethod() == "PUT") and !head.getIsCgi())
     {
-		if (waitpid(it->head.getPid(), 0, WNOHANG) == 0)
-			return ;
-        send_protected("0\r\n\r\n", it, "sendFileChunkedLast");
-        erase(it, fd, true);
-        return ;
+        send_protected("", head);
+        update_descriptors(  head.getRealPathToFile( ),  head, conf );
     }
-    line[z] = 0;
-    str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
-    send_protected(str, it, "sendFileChunked");
-}
-
-void cgiResponse(std::list<t_write>::iterator &it, int &fd)
-{
-	char *line = 0;
-	int	 size = 0;
-	int     gnl;
-	int ret;
-	std::string string;
-
-	while ((gnl = get_next_line(fd, &line)) > 0)
-	{
-		if (line && line[0] == '\r')
-        {
-            size += 2;
-            free(line);
-            line = NULL;
-            break ;
-        }
-		ret = parse_cgi(it, line);
-		if (ret == 1)
-        {
-            lseek(fd, ((int)strlen(line) + 1) * (-1) ,SEEK_CUR);
-            break ;
-        }
-		size += strlen(line) + 1;
-		free(line);
-		line = NULL;
-	}
-	if (gnl == 0)
-    {
-	    std::cerr << "gnl = 0"  << std::endl;
-    }
-	else if (gnl == -1)
-    {
-	    std::cerr << "gnl error -1"  << std::endl;
-    }
-	if (it->head.getResponse().empty())
-	    it->head.setResponse("HTTP/1.1 200 OK\r\n");
-	string = std::string(it->head.getResponse() + it->head.getContent_Type() + (*it).head.getDate() + (*it).head.getLast_Modified() + "Transfer-Encoding: chunked\r\n\r\n");
-    if (send_protected(string, it, "sendFileChunked"))
-        return ;
-	sendFileChunked(it, fd);
-}
-
-std::string  sendBodyHeader(std::list<t_write>::iterator &it)
-{
-	std::string str;
-	struct stat stat;
-
-	fstat(it->head.getFdr(), &stat);
-	return std::string("Content-Length: " + ttostr(stat.st_size) + "\r\n\r\n");
-}
-
-void response(std::list<t_write>::iterator &it, t_data &t, std::list<server> &conf, std::list<t_write> &set)
-{
-	int fd;
-	std::string string;
-	std::string string2;
-
-	if ( FD_ISSET((*it).fd, &t.write))
-	{
-		if (!it->reminder.empty())
-		{
-            if (send_protected(it->reminder, it, it->send_error))
-                return ;
-			it->reminder.erase();
-			if (it->send_error == "sendFile" || it->send_error == "sendFileChunkedLast")
-			{
-				it->send_error.erase();
-                erase(it, it->head.getFdr(), true);
-                return;
-			}
-			else if (it->send_error == "noBodyResponse")
-			{
-				it->send_error.erase();
-                erase(it, it->fd, false);
-				it = set.erase(it);
-				return ;
-			}
-		}
-		if (it->head.getFdr())
-			return (sendFileChunked(it, it->head.getFdr()));
-		it->head.addEnv((char *)"GATEWAY_INTERFACE=CGI/0.9");
-		it->head.addEnv((char *)("REMOTE_ADDR=" + it->addr).c_str());
-		it->head.addEnv((char *)"SERVER_SOFTWARE=webserv/1.0 (Unix)");
-		it->head.setFdr(find_server(conf, (*it).head.getHost(), (*it).head.getPort()).responce((*it).head));
-		fd = it->head.getFdr();
-		if (fd == -2)
-        {
-		    it->head.setFdr(0);
-            return;
-        }
-		chdir(it->head.getEnvValue("PWD=").c_str());
-		if (it->head.getIsCgi()) {
-			return cgiResponse(it, it->head.getFdr());
-		}
-		string2 = sendHeader(it);
-		if (it->head.getMethod() == "PUT" || it->head.getFdr() == -1)
-			return (noBodyResponse(it, it->head.getFdr(), set, string2));
-		string2 += sendBodyHeader(it);
-		if (sendFile(it, it->head.getFdr(), string2))
-			return ;
-		erase(it, it->head.getFdr(), true);
-	}
-}
-
-static void	communication_with_clients(std::list<t_write> &set, t_data &t, std::list<server> &conf)
-{
-	int opt = 0;
-	socklen_t opt_len = sizeof(opt);
-
-	std::list<t_write>::iterator it = set.begin();
-	while (it != set.end())
-	{
-		getsockopt(it->fd, SOL_SOCKET, SO_ERROR, &opt, &opt_len);
-		if (opt == 54)
-		{
-			close(it->fd);
-			it = set.erase(it);
-			continue ;
-		}
-		recive(set, it, t, conf);
-        if (it == set.end())
-            continue;
-		response(it, t, conf, set);
-		if (it != set.end())
-		    it++;
-	}
-}
-
-static int	Select(std::list<t_write> &set, t_data &t, timeval &tv, t_serv &serv)
-{
-	if (set.empty())
-	{
-		t.max_d = serv.host;
-	}
 	else
-	{
-		set.sort(sorter);
-		t.max_d = (*set.rbegin()).fd > serv.host ? (*set.rbegin()).fd : serv.host;
-		if ((t.ret = select(t.max_d + 1, &t.read, &t.write, NULL, &tv)) < 1)
-		{
-			if (errno != EINTR)
-                return 1;
-			else
-				return 1;
-		}
-		if (!t.ret)
-			return 1;
-	}
+    {
+	    if (head.getReminder().length() >= BUFSIZE)
+        {
+            send_protected("", head);
+        }
+	    else
+        {
+            z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
+            if (z == 0)
+            {
+                if (head.getReminder().length())
+                {
+                    send_protected("", head);
+                    if (head.getReminder().length())
+                        return ;
+                }
+                send_protected("0\r\n\r\n",  head );
+                update_descriptors(  head.getRealPathToFile( ),  head, conf );
+                return;
+            }
+            line[z] = 0;
+            str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
+            send_protected(str,  head );
+        }
+    }
+}
+#endif
+#ifdef BONUS
+void sendFileChunked( int fd, config &conf, Header &head )
+{
+    static char line[BUFSIZE + 1];
+    std::string str;
+    int z;
+
+    if (head.write_management and !head.management_fd)
+    {
+        head.management_fd = open((head.getRealPathToFile() + ".management").c_str(), O_WRONLY | O_CREAT, 0777);
+        if (head.management_fd == -1)
+            error_exit("no fd");
+    }
+    if ((head.getMethod() == "POST" or head.getMethod() == "PUT") and !head.getIsCgi())
+    {
+        send_protected("", head);
+        update_descriptors(  head.getRealPathToFile( ),  head, conf );
+    }
+    else
+    {
+        if (head.getReminder().length() >= BUFSIZE)
+        {
+            send_protected("", head, head.management_fd);
+        }
+        else
+        {
+            z = read(fd, line, BUFSIZE - 9 - head.getReminder().length());
+            if (z == 0)
+            {
+                if (head.getReminder().length())
+                {
+                    send_protected("", head, head.management_fd);
+                    if (head.getReminder().length())
+                        return ;
+                }
+                send_protected("0\r\n\r\n",  head, head.management_fd );
+                update_descriptors(  head.getRealPathToFile( ),  head, conf );
+                return;
+            }
+            line[z] = 0;
+            str = (getBaseSixteen(z) + "\r\n" + line + "\r\n");
+            send_protected(str,  head, head.management_fd );
+        }
+    }
+}
+#endif
+
+static int Select( int max_fd, config &conf )
+{
+    int ret;
+    if ((ret = select( max_fd, &conf.conf_set, &conf.write_set, NULL, &conf.tv)) < 0)
+    {
+        if (errno != EINTR)
+        {
+            perror("EINTR");
+            return 1;
+        }
+        else
+        {
+            perror("errno");
+            return 1;
+        }
+    }
+    if (!ret)
+    {
+        return 1;
+    }
+	usleep(conf.sockets.size() * 1500);
 	return (0);
 }
 
-void    loop(timeval &tv, t_serv &serv, t_data &t, std::list<server> &conf)
+void    loop(config &conf)
 {
-    t_client            cli;
-    std::list<t_write>       set;
-    std::list<t_write>::iterator it;
-    std::string ipstr;
+    std::list<Header>::iterator it;
+    std::list<Header>::iterator ite;
+    std::list<server>::iterator it_serv;
+    std::list<server>::iterator ite_serv;
+    int                         temp_sock;
+
     while (true)
     {
-        init_fd_sets(t);
-        FD_SET(serv.host, &t.read);
-        it = set.begin();
-        while ( it != set.end())
+        it_serv = conf.getServers().begin();
+        ite_serv = conf.getServers().end();
+        FD_ZERO(&conf.conf_set);
+        conf.sockets.clear();
+        while (it_serv != ite_serv)
         {
-            if (!it->head.getFdr())
-                FD_SET((*it).fd, &t.read);
-            if ((*it).flag)
+            temp_sock = it_serv->getHostSock( );
+            FD_SET( temp_sock, &conf.conf_set );
+            conf.sockets.push_back(temp_sock);
+            it = it_serv->getSet().begin();
+            ite = it_serv->getSet().end();
+            while ( it != ite)
             {
-                FD_SET(( *it ).fd, &t.write );
+                temp_sock = it->getClient();
+                FD_SET(temp_sock, &conf.conf_set);
+                conf.sockets.push_back(temp_sock);
+                if (it->getFile())
+                    FD_SET(temp_sock, &conf.write_set);
+                it++;
             }
-            it++;
+            it_serv++;
         }
-        if (Select(set, t, tv, serv))
+        conf.sockets.sort();
+        if ( Select( conf.sockets.back() + 1, conf ))
             continue ;
-        if ( FD_ISSET(serv.host, &t.read))
+        it_serv = conf.getServers().begin();
+        ite_serv = conf.getServers().end();
+        while (it_serv != ite_serv)
         {
-            if (( cli.client = accept( serv.host, reinterpret_cast<sockaddr *>(&cli.ad), &cli.adlen)) == -1)
-                continue ;
-            fcntl( cli.client, F_SETFL, O_NONBLOCK);
-            serv.opt = 1;
-            setsockopt(cli.client, SOL_SOCKET, SO_NOSIGPIPE, &serv.opt, sizeof(serv.opt));
-            ipstr = ttostr(cli.ad.sin_addr.s_addr & 255) + '.' +
-                    ttostr(cli.ad.sin_addr.s_addr >> 8 & 255) + '.' +
-                    ttostr(cli.ad.sin_addr.s_addr >> 16 & 255) + '.' +
-                    ttostr(cli.ad.sin_addr.s_addr >> 24);
-
-            t_write a = {Header(), ipstr, std::string(), cli.client, 0, 0, 0, false, false, false, false, std::string()};
-            set.push_back(a);
+            if (FD_ISSET( it_serv->getHostSock( ), &conf.conf_set) and conf.sockets.size() < QUEUE)
+            {
+                it_serv->getSet().push_back( Header( *it_serv, conf.getEnv()));
+            }
+            communication_with_clients( it_serv->getSet( ), *it_serv, &conf.conf_set, conf );
+            it_serv++;
         }
-        communication_with_clients(set, t, conf);
     }
 }

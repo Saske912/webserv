@@ -3,23 +3,61 @@
 //
 #include "header.h"
 
-int send_protected(std::string const & str, std::list<t_write>::iterator &it, std::string str2)
+int send_protected( std::string str, Header &head )
 {
-    int ret;
+    ssize_t  ret;
 
-    ret = send(it->fd, str.c_str(), str.length(), 0);
+	str = head.getReminder() + str;
+	if (str.length() > BUFSIZE)
+    {
+	    ret = send(head.getClient(), str.c_str(), BUFSIZE, 0);
+    }
+	else
+        ret = send(head.getClient(), str.c_str(), str.length(), 0);
     if (ret == -1)
     {
-        perror("SEND ERROR");
-        it->reminder = std::string(str);
-        it->send_error = str2;
+        head.setReminder(str);
+        perror("send");
         return 1;
     }
     else if ((size_t)ret != str.length())
     {
-        it->reminder = std::string(str, ret, str.length() - ret);
-        it->send_error = str2;
+        head.setReminder(str.substr(ret));
+        std::cout << "diff size (send)" << head.getReminder().length() << std::endl;
         return 1;
     }
+    std::cout << "ret =" << head.getReminder().length() << std::endl;
+    head.setReminder(std::string());
     return 0;
+}
+
+int send_protected( std::string str, Header &head, int wfd)
+{
+	ssize_t  ret;
+	
+	std::cout << "use management" << std::endl;
+	str = head.getReminder() + str;
+	if (str.length() > BUFSIZE)
+	{
+		ret = send(head.getClient(), str.c_str(), BUFSIZE, 0);
+	}
+	else
+		ret = send(head.getClient(), str.c_str(), str.length(), 0);
+	if (ret == -1)
+	{
+		head.setReminder(str);
+		perror("send");
+		return 1;
+	}
+	else if ((size_t)ret != str.length())
+	{
+		write(wfd, str.c_str(), ret);
+		head.setReminder(str.substr(ret));
+//		std::cout << "diff size (send)" << head.getReminder().length() << std::endl;
+		return 1;
+	}
+	write(wfd, str.c_str(), ret);
+//	std::cout << "ret =" << head.getReminder().length() << std::endl;
+	head.setReminder(std::string());
+	return 0;
 }

@@ -1,46 +1,48 @@
 //
 // Created by Pamula File on 5/6/21.
 //
-#include "../header.h"
+#include "header.h"
 
-void init_fd_sets(t_data &ret)
-{
-    FD_ZERO(&ret.read);
-    FD_ZERO(&ret.write);
-    FD_ZERO(&ret.emerg);
-}
-
-sockaddr_in init_host_addr(void)
+sockaddr_in init_host_addr( unsigned int port, const std::string& host )
 {
     sockaddr_in         addr;
+    in_addr_t           in_addr = inet_addr(host.c_str());
 
+    if (in_addr == INADDR_NONE)
+    {
+        std::cerr << "inet_addr: malformed addr" << std::endl;
+        exit(1);
+    }
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(1024);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = in_addr;
     return (addr);
 }
 
-timeval init_timevals(void)
+void init_serv( config &config )
 {
-    timeval tv;
+    int     sock;
 
-    tv.tv_usec = TVMS;
-    tv.tv_sec = TVS;
-    return  tv;
-}
-
-t_serv  init_serv(void)
-{
-    t_serv              serv;
-
-    serv.addr = init_host_addr();
-    if ((serv.host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        error_exit("bind error");
-    serv.opt = 1;
-    setsockopt(serv.host, SOL_SOCKET, SO_REUSEADDR, &serv.opt, sizeof(serv.opt));
-    if (bind(serv.host, reinterpret_cast<sockaddr *>(&serv.addr), sizeof(serv.addr)) == -1)
-        error_exit("fail to bind IP");
-    if (listen(serv.host, QUEUE) == -1)
-        error_exit("listening error");
-    return serv;
+    std::list<server>::iterator it = config.getServers().begin();
+    while ( it != config.getServers().end())
+    {
+        it->addr = init_host_addr(it->get_port(), it->get_host());
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock == -1)
+            error_exit("socket error");
+        it->setHostRaw(sock);
+        config.opt = 1;
+        setsockopt( it->getHostSock( ), SOL_SOCKET, SO_REUSEADDR, &config.opt, sizeof(config.opt));
+        if ( config.opt != 1)
+            error_exit("SO_REUSEADDR");
+        config.opt = BUFSIZE;
+        setsockopt( it->getHostSock( ), SOL_SOCKET, SO_RCVBUF, &config.opt, sizeof(config.opt));
+        if ( config.opt != BUFSIZE)
+            error_exit("SO_RCVBUF");
+        if ( bind( it->getHostSock( ), reinterpret_cast<sockaddr *>(&it->addr), sizeof(it->addr)) == -1)
+            error_exit("fail to bind IP");
+        if ( listen( it->getHostSock( ), QUEUE) == -1)
+            error_exit("listening error");
+        it++;
+    }
 }

@@ -7,7 +7,11 @@
 #include <pthread.h>
 #define CLIENTS 1
 #define REQUESTS 1
-#define IP "10.21.33.13"
+<<<<<<< HEAD:clientf/Get.cpp
+#define IP "127.0.0.1"
+=======
+#define IP "10.21.31.73"
+>>>>>>> origin/chunked:clientf/Delete.cpp
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -21,7 +25,11 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "DELETE /put_test/file_should_exist_after HTTP/1.1\r\nHost: 10.21.33.13:1024\r\n\r\n";
+<<<<<<< HEAD:clientf/Get.cpp
+    std::string tmp = "GET / HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
+=======
+    std::string tmp = "DELETE /put_test/file_should_exist_after HTTP/1.1\r\nHost: 10.21.31.73:1024\r\n\r\n";
+>>>>>>> origin/chunked:clientf/Delete.cpp
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;

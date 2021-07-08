@@ -3,6 +3,7 @@
 //
 #include "../header.h"
 #include "config.hpp"
+#include <semaphore.h>
 
 void print_usage() {
     std::cerr << std::endl << "usage: webserv [file]" <<
@@ -13,25 +14,9 @@ void print_usage() {
         std::endl;
 }
 
-void deleteAllManagment(void)
-{
-	DIR *dir = opendir("managment");
-	if (dir == NULL)
-		error_exit("Please, create \"managment\" directory in the root folder");
-	struct dirent *dirent;
-
-	while ((dirent = readdir(dir)))
-		remove (("managment/" + std::string(dirent->d_name)).c_str());
-	closedir(dir);
-}
-
 int main(int ac, char *av[], char *env[])
 {
-    t_data              t;
-    t_serv              serv;
-    timeval             tv = init_timevals();
-    config              config_class;
-
+    config              *config_class;
 
     if (ac == 2) {
         config_class = parse(av[1]);
@@ -45,10 +30,9 @@ int main(int ac, char *av[], char *env[])
         print_usage();
         return 1;
     }
-	deleteAllManagment();
-    serv = init_serv();
-    if (!(t.env = ft_doublecpy(env)))
-        error_exit("malloc error");
-    loop(tv, serv, t, config_class.servers);
+    init_serv(*config_class);
+    set_env(env, *config_class);
+    loop(*config_class);
+    delete config_class;
     return (0);
 }

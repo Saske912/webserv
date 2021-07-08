@@ -11,6 +11,10 @@
 #include "route.hpp"
 #include "../wpersimm.h"
 #include <fcntl.h>
+#include <queue>
+
+class config;
+class Header;
 
 class server {
 public:
@@ -40,36 +44,48 @@ public:
     void                        setAllow(const std::pair<std::string, std::string>& allow);
     std::string                 getCgiPath() const;
     void                        setCgiPath(const std::string &cgi_path);
-
-    int                        responce( Header & head );
-protected:
-    int autoindex( Header &head, route route );
-	int                         request_processing(std::string const & request, \
-    std::string const & def_file, route const & route, Header & head);
-    static bool                 is_file_with_extension( std::string request) ;
-	bool                        is_file( const std::string& request);
-    int                         get_path_to_request(std::string const & request, Header & head);
     int                         exception_processing(int except, Header &head);
-    int                         targeting(Header &head, std::string request, route const & route);
-    bool                        is_cgi(const std::string& request, route  const & route, std::string const & method, bool *flag  ) const;
+    void                        concat( Header & head );
+    int                         autoindex( Header &head, route route );
+    void descriptorForSend( Header &head);
+    int                         descriptorForReceive( Header &head);
+    const std::list<std::string> &getListOfMethods( ) const;
+    void setListOfMethods( const std::list<std::string> &listOfMethods );
+    std::list<Header> &getSet( );
+    void setSet( const std::list<Header> &set );
+    int getHostSock( ) const;
+    void setHostRaw( int hostRaw );
+    config *getConf( ) const;
+    void setConf( config *conf );
+    bool head_in_set(Header &head);
+    bool operator==(Header const & head) const;
+    fd_set                      read;
+    sockaddr_in                 addr;
+protected:
+    void cgi_processing( Header &head, bool flag );
+    void handle_cgi_response_headers(int fd, Header &head);
+    static bool                 is_file_with_extension( std::string request);
+	bool                        is_file( const std::string& request);
+    void is_cgi( Header &head );
     std::string                 get_error(int, std::map<int, std::string> ers);
     void                        set_default_pages();
-    bool                        check_methods(std::string str, std::list<std::string> arr) const;
     std::string                 get_allow(std::list<std::string> arr);
     void                        set_list_of_methods();
     std::string                 set_location(route &  route, Header &  head);
-    bool                        is_allow(std::string const & request, std::string const & method, const route& r) const;
 private:
-    std::string                 _host;
-    unsigned int                _port;
-    std::list<std::string>      _server_names;
-    std::map<int, std::string>  _error_pages;
-    std::map<int, std::string>  _default_error_pages;
-    std::list<route>            _routs;
-    long int                    _client_body_size;
-    std::list<std::string>      _list_of_methods;
+    config                              *_conf;
+    std::list<Header>                   _set;
+    std::string                         _host;
+    unsigned int                        _port;
+    std::list<std::string>              _server_names;
+    std::map<int, std::string>          _error_pages;
+    std::map<int, std::string>          _default_error_pages;
+    std::list<route>                    _routs;
+    long int                            _client_body_size;
+    std::list<std::string>              _list_of_methods;
     std::pair<std::string, std::string> _allow;
-    std::string                 _cgi_path;
+    std::string                         _cgi_path;
+    int                                 _host_socket;
 };
 
 std::ostream &operator<<(std::ostream &o, const server &serv);

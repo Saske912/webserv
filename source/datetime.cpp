@@ -21,10 +21,11 @@ std::string get_current_date()
             "April",
             "May",
             "June",
-            "August"
-            "September"
-            "October"
-            "November"
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
             "December"
     };
     time_t rawtime;
@@ -37,8 +38,10 @@ std::string get_current_date()
     date = daysOfWeek[timeinfo->tm_wday] + ", ";
     strftime(buffer,sizeof(buffer),"%d",timeinfo);
     date += std::string(buffer) + " ";
+	bzero(buffer, sizeof(buffer));
     strftime(buffer,sizeof(buffer),"%m",timeinfo);
     date += monthsOfYear[atoi(buffer) - 1] + " ";
+	bzero(buffer, sizeof(buffer));
     strftime(buffer,sizeof(buffer),"%Y %H:%M:%S",timeinfo);
     date += std::string(buffer) + "\n";
     return date;

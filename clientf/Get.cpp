@@ -5,9 +5,10 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define CLIENTS 1
-#define REQUESTS 1
-#define IP "127.0.0.1"
+#define CLIENTS 100
+#define REQUESTS 50
+#define RN "\r\n\r\n"
+#define IP "10.21.31.85"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
@@ -21,7 +22,7 @@ typedef struct s_str
 void    *func(void *t)
 {
     int     sock;
-    std::string tmp = "GET / HTTP/1.1\r\nHost: 127.0.0.1:1024\r\n\r\n";
+    std::string tmp = "GET /directory/youpla.bla HTTP/1.1\r\nHost: 10.21.31.85:1024\r\n\r\n";
     t_str  *st = (t_str *)t;
     char buf[32769];
     int ret;
@@ -30,6 +31,8 @@ void    *func(void *t)
     socklen_t           addrlen;
     std::string     ip = IP;
     int num;
+	int counter = 0;
+	int size = 0;
     bool flag = false;
 
     pthread_mutex_lock(&mutex2);
@@ -39,14 +42,20 @@ void    *func(void *t)
     addr.sin_port = htons(1024);
     addr.sin_addr.s_addr = inet_addr(ip.c_str());
     addrlen = sizeof(addr);
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
-        exit(1);
+//    sock = socket(AF_INET, SOCK_STREAM, 0);
+  //  if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
+  //      exit(1);
     pthread_mutex_unlock(&mutex2);
     while ( cnt-- )
     {
         if (!flag)
         {
+			sock = socket(AF_INET, SOCK_STREAM, 0);
+			if (connect(sock, reinterpret_cast<sockaddr *>(&addr), addrlen) == -1)
+			{
+				std::cout << "fail to connect" << std::endl;
+				exit(1);
+			}
             pthread_mutex_lock(&mutex);
             if (send(sock, tmp.c_str(), tmp.length(), 0) == -1)
             {
@@ -55,27 +64,41 @@ void    *func(void *t)
             }
 			std::cout << num << ": request(" << REQUESTS - cnt << ") sended" << std::endl;
             flag = true;
+			counter = 0;
+			size = 0;
             pthread_mutex_unlock(&mutex);
         }
         if ( flag )
         {
             ret = recv(sock, buf, 32768, 0);
-               std::cout << buf  << std::endl;
+//               std::cout << buf  << std::endl;
             pthread_mutex_lock(&mutex3);
             if (ret < 0)
             {
                 perror("recive");
                 exit(1);
             }
-            buf[ret] = 0;
-            if (ret == -1)
-            {
-                std::cout << "ret: " << ret << " buf: " << buf  << std::endl;
+			else if (ret == -1)
                 st->err = 1;
-            }
-            std::cout << num << ": response recieved" << std::endl;
+            buf[ret] = 0;
+			if (!size)
+			{
+				size = std::string(buf).find("Content-Length: ");
+				size = atoi(&buf[size + strlen("Content-Length: ")]);
+			}
+			counter += ret;
+			std::cout << "Size: " << size << std::endl;
+			std::cout << "counter: " << counter << std::endl;
             pthread_mutex_unlock(&mutex3);
-            flag = false;
+            if (counter >= size - 100)
+			{
+				--cnt;
+                flag = false;
+            	std::cout << num << ": response recieved" << std::endl;
+				close(sock);
+			}
+			++cnt;
+			bzero(buf, sizeof(buf));
         }
     }
     std::cout << num << ": finished" << std::endl;
